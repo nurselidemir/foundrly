@@ -34,17 +34,21 @@ Bu komut container ayaga kalkarken migration ve `collectstatic` islemlerini otom
 - `POST /api/verification-requests/`
 - `PATCH /api/verification-requests/<id>/review/`
 - `GET /api/dashboard/summary/`
+- `GET /api/dashboard/recommended-projects/`
 - `GET /api/projects/`
 - `POST /api/projects/`
 - `GET /api/projects/<id>/`
 - `PATCH /api/projects/<id>/`
 - `DELETE /api/projects/<id>/`
+- `GET /api/projects/<id>/matches/`
 - `GET /api/applications/`
 - `POST /api/applications/`
 - `PATCH /api/applications/<id>/status/`
 
 `POST /api/projects/` ve `POST /api/applications/` endpointleri JWT ile giris yapmis kullanici ister. Proje sahibi ve basvuru sahibi alanlari oturumdaki kullanicidan otomatik atanir.
 `GET /api/dashboard/summary/` endpointi giris yapan kullanicinin ozet panel verilerini dondurur.
+`GET /api/dashboard/recommended-projects/` ve `GET /api/projects/<id>/matches/` AI Team Builder endpointleridir ve sadece premium kullanicilar icindir.
+AI Team Builder, backend icinde calisan TF-IDF ve cosine similarity tabanli anlamsal eslesme mantigi ile `ai_summary`, `recommended_role` ve `match_label` uretir. Ekstra ucretli API veya kullanici tarafinda yerel model kurulumu gerektirmez.
 `GET /api/projects/<id>/` herkese aciktir. `PATCH` ve `DELETE` islemlerini ise sadece ilgili projenin sahibi yapabilir.
 `PATCH /api/applications/<id>/status/` endpointinde basvuru durumunu sadece ilgili projenin sahibi degistirebilir.
 Proje detayinda `problem_statement`, `tech_stack` ve `needed_roles` alanlari sadece proje sahibi ve basvurusu `accepted` olan kullanicilara gosterilir. `applications` listesi ise yalnizca proje sahibine gorunur.
@@ -73,4 +77,4 @@ Proje detayinda `problem_statement`, `tech_stack` ve `needed_roles` alanlari sad
 Bu ilk surumde dokumana sadik kalarak temel altyapi kurulmustur. Ozel kullanici modeli, kayit/giris akisi, proje paylasimi ve ekip basvurulari auth ile iliskilendirilmistir. Siradaki adimlar:
 
 - Dashboard metriklerini frontend ile eslemek
-- AI Team Builder onerileri icin servis katmani eklemek
+- Web landing uygulamasini baslatmak

@@ -1,21 +1,28 @@
 from rest_framework import generics
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.views import APIView
 
 from apps.projects.models import Project, TeamApplication
 from apps.projects.permissions import (
+    IsPremiumUser,
     IsProjectOwnerForApplicationStatusUpdate,
     IsProjectOwnerOrReadOnly,
 )
 from apps.projects.serializers import (
     DashboardSummarySerializer,
+    MatchCandidateSerializer,
     ProjectListSerializer,
     ProjectSerializer,
+    RecommendedProjectSerializer,
     TeamApplicationSerializer,
     TeamApplicationStatusSerializer,
     UserSummarySerializer,
 )
+from apps.projects.services.ai_matching import enrich_match_with_ai
+from apps.projects.services.matching import score_project_for_user, score_user_for_project
+from apps.users.models import User
 
 
 class ProjectListCreateView(generics.ListCreateAPIView):
@@ -157,4 +164,108 @@ class DashboardSummaryView(APIView):
         }
 
         serializer = DashboardSummarySerializer(data)
+        return Response(serializer.data)
+
+
+class ProjectMatchesView(APIView):
+    permission_classes = [IsAuthenticated, IsPremiumUser]
+
+    def get(self, request, pk):
+        project = Project.objects.get(pk=pk)
+
+        if project.owner_id != request.user.id:
+            raise PermissionDenied("Aday eslesmelerini sadece proje sahibi gorebilir.")
+
+        candidates = User.objects.exclude(id=project.owner_id)
+        results = []
+
+        for candidate in candidates:
+            match = score_user_for_project(candidate, project)
+            if match.score == 0:
+                continue
+            ai_result = enrich_match_with_ai(
+                base_result=match,
+                subject_payload={
+                    "full_name": candidate.full_name,
+                    "title": candidate.title,
+                    "skills": candidate.skills,
+                    "interests": candidate.interests,
+                    "is_verified_talent": candidate.is_verified_talent,
+                    "is_premium": candidate.is_premium,
+                },
+                target_payload={
+                    "project_title": project.title,
+                    "tech_stack": project.tech_stack,
+                    "needed_roles": project.needed_roles,
+                    "summary": project.summary,
+                },
+                target_name=candidate.title,
+            )
+            results.append(
+                {
+                    "user": UserSummarySerializer(candidate).data,
+                    "score": match.score,
+                    "match_label": ai_result["match_label"],
+                    "recommended_role": ai_result["recommended_role"],
+                    "ai_summary": ai_result["ai_summary"],
+                    "ai_enabled": ai_result["ai_enabled"],
+                    "reasons": match.reasons,
+                    "matched_skills": match.matched_skills,
+                    "matched_interests": match.matched_interests,
+                    "missing_skills": match.missing_skills,
+                }
+            )
+
+        results.sort(key=lambda item: item["score"], reverse=True)
+        serializer = MatchCandidateSerializer(results[:10], many=True)
+        return Response(serializer.data)
+
+
+class RecommendedProjectsView(APIView):
+    permission_classes = [IsAuthenticated, IsPremiumUser]
+
+    def get(self, request):
+        user = request.user
+        projects = Project.objects.select_related("owner").exclude(owner=user)
+        results = []
+
+        for project in projects:
+            match = score_project_for_user(project, user)
+            if match.score == 0:
+                continue
+            ai_result = enrich_match_with_ai(
+                base_result=match,
+                subject_payload={
+                    "full_name": user.full_name,
+                    "title": user.title,
+                    "skills": user.skills,
+                    "interests": user.interests,
+                    "is_verified_talent": user.is_verified_talent,
+                    "is_premium": user.is_premium,
+                },
+                target_payload={
+                    "project_title": project.title,
+                    "tech_stack": project.tech_stack,
+                    "needed_roles": project.needed_roles,
+                    "summary": project.summary,
+                },
+                target_name=user.title,
+            )
+            results.append(
+                {
+                    "project": ProjectListSerializer(project).data,
+                    "score": match.score,
+                    "match_label": ai_result["match_label"],
+                    "recommended_role": ai_result["recommended_role"],
+                    "ai_summary": ai_result["ai_summary"],
+                    "ai_enabled": ai_result["ai_enabled"],
+                    "reasons": match.reasons,
+                    "matched_skills": match.matched_skills,
+                    "matched_interests": match.matched_interests,
+                    "missing_skills": match.missing_skills,
+                }
+            )
+
+        results.sort(key=lambda item: item["score"], reverse=True)
+        serializer = RecommendedProjectSerializer(results[:10], many=True)
         return Response(serializer.data)

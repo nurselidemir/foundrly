@@ -15,3 +15,10 @@ class IsProjectOwnerOrReadOnly(BasePermission):
         if request.method in ("GET", "HEAD", "OPTIONS"):
             return True
         return obj.owner_id == request.user.id
+
+
+class IsPremiumUser(BasePermission):
+    message = "Bu ozellik sadece premium kullanicilar icindir."
+
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and request.user.is_premium)

@@ -134,3 +134,29 @@ class DashboardSummarySerializer(serializers.Serializer):
     recent_projects = ProjectListSerializer(many=True)
     recent_received_applications = TeamApplicationSerializer(many=True)
     recent_sent_applications = TeamApplicationSerializer(many=True)
+
+
+class MatchCandidateSerializer(serializers.Serializer):
+    user = UserSummarySerializer()
+    score = serializers.IntegerField()
+    match_label = serializers.CharField()
+    recommended_role = serializers.CharField()
+    ai_summary = serializers.CharField()
+    ai_enabled = serializers.BooleanField()
+    reasons = serializers.ListField(child=serializers.CharField())
+    matched_skills = serializers.ListField(child=serializers.CharField())
+    matched_interests = serializers.ListField(child=serializers.CharField())
+    missing_skills = serializers.ListField(child=serializers.CharField())
+
+
+class RecommendedProjectSerializer(serializers.Serializer):
+    project = ProjectListSerializer()
+    score = serializers.IntegerField()
+    match_label = serializers.CharField()
+    recommended_role = serializers.CharField()
+    ai_summary = serializers.CharField()
+    ai_enabled = serializers.BooleanField()
+    reasons = serializers.ListField(child=serializers.CharField())
+    matched_skills = serializers.ListField(child=serializers.CharField())
+    matched_interests = serializers.ListField(child=serializers.CharField())
+    missing_skills = serializers.ListField(child=serializers.CharField())
