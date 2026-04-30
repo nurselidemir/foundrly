@@ -1,80 +1,187 @@
-# Foundrly Backend
+# Foundrly
 
-Bu depo, `proje.md` dokumanindaki teknik kararlarla birebir uyumlu ilk backend iskeletini icerir:
+> **Turn ideas into teams.**
 
-- Backend: Django
-- API: REST
-- Veritabani: PostgreSQL
-- Kimlik dogrulama: JWT
-- Konteynerizasyon: Docker + Docker Compose
+Foundrly, proje fikri olan kişilerin doğru ekip arkadaşlarını bulmasını sağlayan AI destekli ekip kurma platformudur. Startup, hackathon ve üniversite projelerini hedefler.
 
-## Hemen Baslamak
+---
 
-1. `.env.example` dosyasini `.env` olarak kopyalayin.
-2. Docker ile calistirin:
+## Hızlı Başlangıç
 
 ```bash
+# .env dosyasını oluştur (ilk kez)
+cp .env.example .env
+
+# Tüm servisleri ayağa kaldır
 docker compose up --build
 ```
 
-Bu komut container ayaga kalkarken migration ve `collectstatic` islemlerini otomatik olarak calistirir.
+| Servis | Adres |
+|---|---|
+| 🌐 Web Landing | http://localhost:3000 |
+| 🔐 Giriş Yap | http://localhost:3000/#login |
+| 📝 Kayıt Ol | http://localhost:3000/#register |
+| 🔧 Django Admin | http://localhost:8000/admin/ |
+| 🚀 API Health | http://localhost:8000/api/health/ |
+| 📖 DRF Browser | http://localhost:8000/api/ |
 
-3. Servis ayaga kalktiktan sonra su endpointleri kullanabilirsiniz:
+---
 
-- `GET /api/health/`
-- `POST /api/auth/register/`
-- `POST /api/auth/token/`
-- `POST /api/auth/token/refresh/`
-- `GET /api/users/`
-- `GET /api/users/me/`
-- `PATCH /api/users/me/`
-- `GET /api/premium/subscription/`
-- `POST /api/premium/subscription/`
-- `GET /api/verification-requests/`
-- `POST /api/verification-requests/`
-- `PATCH /api/verification-requests/<id>/review/`
-- `GET /api/dashboard/summary/`
-- `GET /api/dashboard/recommended-projects/`
-- `GET /api/projects/`
-- `POST /api/projects/`
-- `GET /api/projects/<id>/`
-- `PATCH /api/projects/<id>/`
-- `DELETE /api/projects/<id>/`
-- `GET /api/projects/<id>/matches/`
-- `GET /api/applications/`
-- `POST /api/applications/`
-- `PATCH /api/applications/<id>/status/`
+## Teknoloji Yığını
 
-`POST /api/projects/` ve `POST /api/applications/` endpointleri JWT ile giris yapmis kullanici ister. Proje sahibi ve basvuru sahibi alanlari oturumdaki kullanicidan otomatik atanir.
-`GET /api/dashboard/summary/` endpointi giris yapan kullanicinin ozet panel verilerini dondurur.
-`GET /api/dashboard/recommended-projects/` ve `GET /api/projects/<id>/matches/` AI Team Builder endpointleridir ve sadece premium kullanicilar icindir.
-AI Team Builder, backend icinde calisan TF-IDF ve cosine similarity tabanli anlamsal eslesme mantigi ile `ai_summary`, `recommended_role` ve `match_label` uretir. Ekstra ucretli API veya kullanici tarafinda yerel model kurulumu gerektirmez.
-`GET /api/projects/<id>/` herkese aciktir. `PATCH` ve `DELETE` islemlerini ise sadece ilgili projenin sahibi yapabilir.
-`PATCH /api/applications/<id>/status/` endpointinde basvuru durumunu sadece ilgili projenin sahibi degistirebilir.
-Proje detayinda `problem_statement`, `tech_stack` ve `needed_roles` alanlari sadece proje sahibi ve basvurusu `accepted` olan kullanicilara gosterilir. `applications` listesi ise yalnizca proje sahibine gorunur.
-`POST /api/premium/subscription/` ile kullanici `monthly` veya `yearly` premium uyeligi baslatabilir. Premium kullanicinin projesi otomatik olarak `is_premium_highlighted=true` olur.
-`POST /api/verification-requests/` sadece premium kullanicilar tarafindan kullanilabilir. Verified Talent incelemesi admin tarafinda `PATCH /api/verification-requests/<id>/review/` ile sonuclandirilir.
+| Katman | Teknoloji |
+|---|---|
+| Backend | Django + Django REST Framework |
+| Veritabanı | PostgreSQL 16 |
+| Auth | JWT (djangorestframework-simplejwt) |
+| AI Matching | TF-IDF + Cosine Similarity (scikit-learn) |
+| Frontend | React + TypeScript + Tailwind CSS + Vite |
+| Konteyner | Docker + Docker Compose |
+
+---
+
+## Web Deneyimi
+
+Frontend tarafında şu akışlar hazırdır:
+
+- Landing page (`/`)
+- Giriş yap sayfası (`/#login`)
+- Kayıt ol sayfası (`/#register`)
+- Backend health durumunu landing üzerinden izleme
+
+Kayıt ol ekranı doğrudan `POST /api/auth/register/` endpointine bağlıdır.  
+Giriş yap ekranı `POST /api/auth/token/` ile JWT alır ve ardından `GET /api/users/me/` çağrısı yapar.
+
+---
+
+## API Referansı
+
+### Auth
+```
+POST  /api/auth/register/
+POST  /api/auth/token/
+POST  /api/auth/token/refresh/
+```
+
+### Kullanıcılar
+```
+GET   /api/users/
+GET   /api/users/me/
+PATCH /api/users/me/
+```
+
+### Projeler
+```
+GET    /api/projects/
+POST   /api/projects/
+GET    /api/projects/<id>/
+PATCH  /api/projects/<id>/
+DELETE /api/projects/<id>/
+GET    /api/projects/<id>/matches/   ← Premium · AI Team Builder
+```
+
+### Başvurular
+```
+GET   /api/applications/
+POST  /api/applications/
+PATCH /api/applications/<id>/status/
+```
+
+### Dashboard & AI
+```
+GET /api/dashboard/summary/
+GET /api/dashboard/recommended-projects/   ← Premium
+```
+
+### Premium & Doğrulama
+```
+GET  /api/premium/subscription/
+POST /api/premium/subscription/
+GET  /api/verification-requests/
+POST /api/verification-requests/
+PATCH /api/verification-requests/<id>/review/
+```
+
+### Health
+```
+GET /api/health/
+```
+
+---
 
 ## Filtreler
 
-- `GET /api/projects/?mine=true`
-- `GET /api/projects/?joined=true`
-- `GET /api/projects/?premium_only=true`
-- `GET /api/projects/?search=ai`
-- `GET /api/users/?skill=django`
-- `GET /api/users/?interest=startup`
-- `GET /api/users/?verified_only=true`
-- `GET /api/applications/?mine=true`
-- `GET /api/applications/?received=true`
-- `GET /api/applications/?status=pending`
-- `GET /api/applications/?project=1`
+```
+/api/projects/?mine=true
+/api/projects/?joined=true
+/api/projects/?premium_only=true
+/api/projects/?search=ai
 
-`/api/applications/` listesi guvenlik nedeniyle anonim kullaniciya kapatilidir. Giris yapan kullanici varsayilan olarak sadece sahibi oldugu projelere gelen basvurulari gorur. `mine=true` verilirse kendi yaptigi basvurulari listeler.
-`/api/users/` uzerindeki `skill`, `interest` ve `verified_only` filtreleri gelismis ekip filtreleme kapsamindadir ve sadece premium kullanicilar tarafindan kullanilabilir.
+/api/users/?skill=django
+/api/users/?interest=startup
+/api/users/?verified_only=true          ← Premium
 
-## Ilk Yol Haritasi
+/api/applications/?mine=true
+/api/applications/?received=true
+/api/applications/?status=pending
+/api/applications/?project=<id>
+```
 
-Bu ilk surumde dokumana sadik kalarak temel altyapi kurulmustur. Ozel kullanici modeli, kayit/giris akisi, proje paylasimi ve ekip basvurulari auth ile iliskilendirilmistir. Siradaki adimlar:
+---
 
-- Dashboard metriklerini frontend ile eslemek
-- Web landing uygulamasini baslatmak
+## Yetki Kuralları
+
+- Proje güncelleme/silme → yalnızca proje sahibi
+- Başvuru durumu değiştirme → yalnızca proje sahibi
+- Kendi projesine başvurulamaz
+- Aynı projeye ikinci kez başvurulamaz
+- `problem_statement`, `tech_stack`, `needed_roles` → yalnızca proje sahibi + `accepted` başvurusu olan kullanıcı
+- AI endpointleri → yalnızca Premium kullanıcılar
+- `skill`/`interest`/`verified_only` filtreleri → yalnızca Premium
+
+---
+
+## AI Team Builder
+
+Ücretli dış API kullanmaz, kullanıcı tarafında kurulum gerektirmez.  
+Backend içinde **TF-IDF + cosine similarity** tabanlı semantic matching çalışır.
+
+**Çıktı:**
+- `score` — eşleşme yüzdesi
+- `match_label` — High / Medium / Low Match
+- `recommended_role` — önerilen rol
+- `ai_summary` — doğal dil özeti
+- `matched_skills` / `missing_skills`
+
+Kullanım endpointleri:
+- `GET /api/dashboard/recommended-projects/`
+- `GET /api/projects/<id>/matches/`
+
+---
+
+## Proje Yapısı
+
+```
+foundrly-backend/
+├── apps/
+│   ├── users/          # Custom user modeli, auth, premium, verified talent
+│   └── projects/
+│       ├── services/
+│       │   ├── matching.py      # Rule-based skor motoru
+│       │   └── ai_matching.py   # TF-IDF semantic matching
+│       └── ...                  # Proje + başvuru API'leri
+├── config/             # Django settings, urls, wsgi
+├── frontend/           # React + TypeScript + Tailwind + Vite
+├── Dockerfile          # Backend image
+├── docker-compose.yml  # Backend + Frontend + PostgreSQL
+└── requirements.txt
+```
+
+---
+
+## Katkı & Geliştirme
+
+Her büyük aşama `docker compose up --build` ile test edilmelidir.  
+Git commit/push için açık onay gereklidir.
+
+© 2026 Foundrly · Nurseli Demir (22253042)
