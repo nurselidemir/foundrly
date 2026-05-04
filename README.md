@@ -97,6 +97,8 @@ GET /api/dashboard/recommended-projects/   ← Premium
 ```
 GET  /api/premium/subscription/
 POST /api/premium/subscription/
+POST /api/billing/create-checkout-session/
+POST /api/billing/webhook/
 GET  /api/verification-requests/
 POST /api/verification-requests/
 PATCH /api/verification-requests/<id>/review/

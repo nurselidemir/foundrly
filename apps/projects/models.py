@@ -43,3 +43,24 @@ class TeamApplication(models.Model):
 
     def __str__(self) -> str:
         return f"{self.applicant.full_name} -> {self.project.title}"
+
+
+class ApplicationMessage(models.Model):
+    application = models.ForeignKey(
+        TeamApplication,
+        on_delete=models.CASCADE,
+        related_name="messages",
+    )
+    sender = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="sent_application_messages",
+    )
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.sender.email} -> application {self.application_id}"

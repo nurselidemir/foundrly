@@ -74,6 +74,7 @@ class PremiumSubscription(models.Model):
         ],
         default=STATUS_ACTIVE,
     )
+
     started_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -1,28 +1,53 @@
-from rest_framework import generics
+from django.db.models import Count, Q
+from rest_framework import generics, serializers
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.projects.models import Project, TeamApplication
+from apps.projects.models import ApplicationMessage, Project, TeamApplication
 from apps.projects.permissions import (
     IsPremiumUser,
     IsProjectOwnerForApplicationStatusUpdate,
     IsProjectOwnerOrReadOnly,
 )
 from apps.projects.serializers import (
+    AdminProjectDetailSerializer,
+    AdminProjectListSerializer,
     DashboardSummarySerializer,
     MatchCandidateSerializer,
+    MessageThreadDetailSerializer,
+    MessageThreadSerializer,
     ProjectListSerializer,
     ProjectSerializer,
     RecommendedProjectSerializer,
     TeamApplicationSerializer,
     TeamApplicationStatusSerializer,
+    ApplicationMessageSerializer,
     UserSummarySerializer,
 )
 from apps.projects.services.ai_matching import enrich_match_with_ai
 from apps.projects.services.matching import score_project_for_user, score_user_for_project
 from apps.users.models import User
+
+
+def _get_accessible_message_application(user, application_id):
+    try:
+        application = TeamApplication.objects.select_related(
+            "project__owner",
+            "applicant",
+            "project",
+        ).prefetch_related("messages__sender").get(pk=application_id)
+    except TeamApplication.DoesNotExist as exc:
+        raise serializers.ValidationError("Mesajlasma kaydi bulunamadi.") from exc
+
+    if application.status != "accepted":
+        raise PermissionDenied("Mesajlasma sadece accepted basvurular icin acilir.")
+
+    if user.id not in {application.project.owner_id, application.applicant_id}:
+        raise PermissionDenied("Bu mesajlasma kaydina erisemezsiniz.")
+
+    return application
 
 
 class ProjectListCreateView(generics.ListCreateAPIView):
@@ -269,3 +294,121 @@ class RecommendedProjectsView(APIView):
         results.sort(key=lambda item: item["score"], reverse=True)
         serializer = RecommendedProjectSerializer(results[:10], many=True)
         return Response(serializer.data)
+
+
+class MessageThreadListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        applications = (
+            TeamApplication.objects.select_related("project__owner", "applicant", "project")
+            .prefetch_related("messages__sender")
+            .filter(status="accepted")
+            .filter(Q(project__owner=user) | Q(applicant=user))
+            .distinct()
+            .order_by("-created_at")
+        )
+
+        threads = []
+        for application in applications:
+            counterpart = (
+                application.applicant
+                if application.project.owner_id == user.id
+                else application.project.owner
+            )
+            latest_message = application.messages.last()
+            threads.append(
+                {
+                    "application_id": application.id,
+                    "project": ProjectListSerializer(application.project).data,
+                    "counterpart": UserSummarySerializer(counterpart).data,
+                    "status": application.status,
+                    "latest_message": (
+                        ApplicationMessageSerializer(latest_message).data if latest_message else None
+                    ),
+                    "unread_count": 0,
+                }
+            )
+
+        serializer = MessageThreadSerializer(threads, many=True)
+        return Response(serializer.data)
+
+
+class MessageThreadDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        application = _get_accessible_message_application(request.user, pk)
+        counterpart = (
+            application.applicant
+            if application.project.owner_id == request.user.id
+            else application.project.owner
+        )
+        serializer = MessageThreadDetailSerializer(
+            {
+                "application_id": application.id,
+                "project": ProjectListSerializer(application.project).data,
+                "counterpart": UserSummarySerializer(counterpart).data,
+                "status": application.status,
+                "messages": ApplicationMessageSerializer(application.messages.all(), many=True).data,
+            }
+        )
+        return Response(serializer.data)
+
+
+class MessageCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        application = _get_accessible_message_application(request.user, pk)
+        content = request.data.get("content", "").strip()
+
+        if not content:
+            raise serializers.ValidationError({"content": ["Mesaj bos olamaz."]})
+
+        message = ApplicationMessage.objects.create(
+            application=application,
+            sender=request.user,
+            content=content,
+        )
+        serializer = ApplicationMessageSerializer(message)
+        return Response(serializer.data, status=201)
+
+
+class AdminProjectListView(generics.ListAPIView):
+    serializer_class = AdminProjectListSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        if not self.request.user.is_staff:
+            raise PermissionDenied("Bu alan sadece admin kullanicilar icindir.")
+
+        queryset = (
+            Project.objects.select_related("owner")
+            .annotate(
+                applications_count=Count("applications", distinct=True),
+                accepted_applications_count=Count(
+                    "applications",
+                    filter=Q(applications__status="accepted"),
+                    distinct=True,
+                ),
+            )
+            .all()
+        )
+
+        search = self.request.query_params.get("search")
+        if search:
+            queryset = queryset.filter(Q(title__icontains=search) | Q(owner__full_name__icontains=search))
+        return queryset
+
+
+class AdminProjectDetailView(generics.RetrieveDestroyAPIView):
+    queryset = Project.objects.select_related("owner").prefetch_related("applications__applicant").all()
+    serializer_class = AdminProjectDetailSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        if not self.request.user.is_staff:
+            raise PermissionDenied("Bu alan sadece admin kullanicilar icindir.")
+        return super().get_object()

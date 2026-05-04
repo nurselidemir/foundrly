@@ -17,9 +17,18 @@ class UserSerializer(serializers.ModelSerializer):
             "interests",
             "is_verified_talent",
             "is_premium",
+            "is_staff",
+            "is_superuser",
             "date_joined",
         ]
-        read_only_fields = ["id", "is_verified_talent", "is_premium", "date_joined"]
+        read_only_fields = [
+            "id",
+            "is_verified_talent",
+            "is_premium",
+            "is_staff",
+            "is_superuser",
+            "date_joined",
+        ]
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -136,3 +145,146 @@ class VerificationReviewSerializer(serializers.ModelSerializer):
         user.is_verified_talent = status == VerificationRequest.STATUS_APPROVED
         user.save(update_fields=["is_verified_talent"])
         return instance
+
+
+class AdminUserRoleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "email",
+            "full_name",
+            "title",
+            "is_staff",
+            "is_superuser",
+        ]
+        read_only_fields = ["id", "email", "full_name", "title"]
+
+    def validate(self, attrs):
+        request = self.context["request"]
+        if not request.user.is_superuser:
+            raise serializers.ValidationError("Bu islem sadece superuser tarafindan yapilabilir.")
+        return attrs
+
+    def update(self, instance, validated_data):
+        instance.is_staff = validated_data.get("is_staff", instance.is_staff)
+        instance.is_superuser = validated_data.get("is_superuser", instance.is_superuser)
+
+        if instance.is_superuser:
+            instance.is_staff = True
+
+        if not instance.is_staff:
+            instance.is_superuser = False
+
+        instance.save(update_fields=["is_staff", "is_superuser"])
+        return instance
+
+
+class AdminUserDetailSerializer(serializers.ModelSerializer):
+    recent_projects = serializers.SerializerMethodField()
+    recent_applications = serializers.SerializerMethodField()
+    recent_messages = serializers.SerializerMethodField()
+    metrics = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "email",
+            "full_name",
+            "title",
+            "bio",
+            "skills",
+            "interests",
+            "is_verified_talent",
+            "is_premium",
+            "is_staff",
+            "is_superuser",
+            "is_active",
+            "date_joined",
+            "metrics",
+            "recent_projects",
+            "recent_applications",
+            "recent_messages",
+        ]
+
+    def get_metrics(self, obj):
+        return {
+            "owned_projects_count": obj.projects.count(),
+            "applications_count": obj.applications.count(),
+            "accepted_memberships_count": obj.applications.filter(status="accepted").count(),
+            "sent_messages_count": obj.sent_application_messages.count(),
+            "verification_requests_count": obj.verification_requests.count(),
+        }
+
+    def get_recent_projects(self, obj):
+        return [
+            {
+                "id": project.id,
+                "title": project.title,
+                "created_at": project.created_at,
+            }
+            for project in obj.projects.order_by("-created_at")[:5]
+        ]
+
+    def get_recent_applications(self, obj):
+        return [
+            {
+                "id": application.id,
+                "project_id": application.project_id,
+                "project_title": application.project.title,
+                "status": application.status,
+                "created_at": application.created_at,
+            }
+            for application in obj.applications.select_related("project").order_by("-created_at")[:5]
+        ]
+
+    def get_recent_messages(self, obj):
+        return [
+            {
+                "id": message.id,
+                "application_id": message.application_id,
+                "content": message.content,
+                "created_at": message.created_at,
+            }
+            for message in obj.sent_application_messages.order_by("-created_at")[:5]
+        ]
+
+
+class AdminUserModerationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["is_active", "is_verified_talent", "is_premium"]
+
+    def validate(self, attrs):
+        request = self.context["request"]
+        if not request.user.is_superuser:
+            raise serializers.ValidationError("Bu islem sadece superuser tarafindan yapilabilir.")
+        return attrs
+
+
+class AdminVerificationRequestSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+
+    class Meta:
+        model = VerificationRequest
+        fields = [
+            "id",
+            "user",
+            "requested_title",
+            "portfolio_url",
+            "note",
+            "status",
+            "reviewed_note",
+            "created_at",
+            "reviewed_at",
+        ]
+
+    def get_user(self, obj):
+        return {
+            "id": obj.user.id,
+            "email": obj.user.email,
+            "full_name": obj.user.full_name,
+            "title": obj.user.title,
+            "is_verified_talent": obj.user.is_verified_talent,
+        }

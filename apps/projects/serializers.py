@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.projects.models import Project, TeamApplication
+from apps.projects.models import ApplicationMessage, Project, TeamApplication
 
 
 class UserSummarySerializer(serializers.Serializer):
@@ -9,6 +9,9 @@ class UserSummarySerializer(serializers.Serializer):
     full_name = serializers.CharField(read_only=True)
     title = serializers.CharField(read_only=True)
     is_verified_talent = serializers.BooleanField(read_only=True)
+    is_premium = serializers.BooleanField(read_only=True)
+    is_staff = serializers.BooleanField(read_only=True)
+    is_superuser = serializers.BooleanField(read_only=True)
 
 
 class TeamApplicationSerializer(serializers.ModelSerializer):
@@ -160,3 +163,70 @@ class RecommendedProjectSerializer(serializers.Serializer):
     matched_skills = serializers.ListField(child=serializers.CharField())
     matched_interests = serializers.ListField(child=serializers.CharField())
     missing_skills = serializers.ListField(child=serializers.CharField())
+
+
+class ApplicationMessageSerializer(serializers.ModelSerializer):
+    sender = UserSummarySerializer(read_only=True)
+
+    class Meta:
+        model = ApplicationMessage
+        fields = ["id", "sender", "content", "created_at"]
+        read_only_fields = ["id", "sender", "created_at"]
+
+
+class MessageThreadSerializer(serializers.Serializer):
+    application_id = serializers.IntegerField()
+    project = ProjectListSerializer()
+    counterpart = UserSummarySerializer()
+    status = serializers.CharField()
+    latest_message = ApplicationMessageSerializer(allow_null=True)
+    unread_count = serializers.IntegerField()
+
+
+class MessageThreadDetailSerializer(serializers.Serializer):
+    application_id = serializers.IntegerField()
+    project = ProjectListSerializer()
+    counterpart = UserSummarySerializer()
+    status = serializers.CharField()
+    messages = ApplicationMessageSerializer(many=True)
+
+
+class AdminProjectListSerializer(serializers.ModelSerializer):
+    owner = UserSummarySerializer(read_only=True)
+    applications_count = serializers.IntegerField(read_only=True)
+    accepted_applications_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Project
+        fields = [
+            "id",
+            "owner",
+            "title",
+            "summary",
+            "is_premium_highlighted",
+            "applications_count",
+            "accepted_applications_count",
+            "created_at",
+            "updated_at",
+        ]
+
+
+class AdminProjectDetailSerializer(serializers.ModelSerializer):
+    owner = UserSummarySerializer(read_only=True)
+    applications = TeamApplicationSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Project
+        fields = [
+            "id",
+            "owner",
+            "title",
+            "summary",
+            "problem_statement",
+            "tech_stack",
+            "needed_roles",
+            "is_premium_highlighted",
+            "applications",
+            "created_at",
+            "updated_at",
+        ]
