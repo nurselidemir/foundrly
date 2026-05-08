@@ -175,17 +175,9 @@ class DashboardSummaryView(APIView):
                 "sent_applications_count": sent_applications.count(),
                 "accepted_memberships_count": accepted_memberships.count(),
             },
-            "recent_projects": ProjectListSerializer(recent_projects, many=True).data,
-            "recent_received_applications": TeamApplicationSerializer(
-                recent_received_applications,
-                many=True,
-                context={"request": request},
-            ).data,
-            "recent_sent_applications": TeamApplicationSerializer(
-                recent_sent_applications,
-                many=True,
-                context={"request": request},
-            ).data,
+            "recent_projects": recent_projects,
+            "recent_received_applications": recent_received_applications,
+            "recent_sent_applications": recent_sent_applications,
         }
 
         serializer = DashboardSummarySerializer(data)

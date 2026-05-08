@@ -3,6 +3,7 @@ import json
 from django.conf import settings
 from django.db.models import Q
 from django.utils import timezone
+from django.shortcuts import get_object_or_404
 
 from rest_framework import generics
 from rest_framework.exceptions import PermissionDenied
@@ -16,10 +17,13 @@ from apps.users.serializers import (
     AdminUserModerationSerializer,
     AdminUserRoleSerializer,
     AdminVerificationRequestSerializer,
+    PublicUserReviewSerializer,
+    PublicUserProfileSerializer,
     PremiumSubscribeSerializer,
     PremiumSubscriptionSerializer,
     RegisterSerializer,
     UserSerializer,
+    UserReviewCreateSerializer,
     VerificationRequestSerializer,
     VerificationReviewSerializer,
 )
@@ -63,7 +67,9 @@ class UserListView(generics.ListAPIView):
         verified_only = request.query_params.get("verified_only")
 
         if search:
-            queryset = queryset.filter(full_name__icontains=search)
+            queryset = queryset.filter(
+                Q(full_name__icontains=search) | Q(title__icontains=search)
+            )
 
         used_premium_filter = any([skill, interest, verified_only == "true"])
         if used_premium_filter:
@@ -88,6 +94,48 @@ class CurrentUserView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class PublicUserProfileView(generics.RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = PublicUserProfileSerializer
+    permission_classes = [AllowAny]
+
+
+class UserReviewListCreateView(generics.ListCreateAPIView):
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        profile_user = get_object_or_404(User, pk=self.kwargs["pk"])
+        return profile_user.received_reviews.select_related(
+            "reviewer",
+            "application__project",
+        ).all()
+
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return UserReviewCreateSerializer
+        return PublicUserReviewSerializer
+
+    def list(self, request, *args, **kwargs):
+        reviews = self.get_queryset()[:20]
+
+        serializer = PublicUserReviewSerializer(reviews, many=True)
+        return Response(serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            raise PermissionDenied("Yorum birakmak icin giris yapman gerekiyor.")
+
+        profile_user = get_object_or_404(User, pk=self.kwargs["pk"])
+        serializer = UserReviewCreateSerializer(
+            data=request.data,
+            context={"request": request, "profile_user": profile_user},
+        )
+        serializer.is_valid(raise_exception=True)
+        review = serializer.save()
+
+        return Response(PublicUserReviewSerializer(review).data, status=201)
 
 
 class PremiumSubscriptionView(APIView):

@@ -5,13 +5,20 @@ type RouteName =
   | "home"
   | "login"
   | "register"
+  | "premium"
+  | "about"
+  | "privacy"
+  | "careers"
+  | "faq"
+  | "contact"
   | "app-home"
   | "app-create"
   | "app-messages"
   | "app-profile"
   | "app-ai-builder"
   | "app-networking"
-  | "app-admin";
+  | "app-admin"
+  | "app-member";
 
 type CurrentUser = {
   id: number;
@@ -45,6 +52,84 @@ type DashboardSummary = {
   }>;
 };
 
+type ProjectCard = {
+  id: number;
+  owner: {
+    id: number;
+    email: string;
+    full_name: string;
+    title: string;
+    is_verified_talent: boolean;
+    is_premium?: boolean;
+    is_staff?: boolean;
+    is_superuser?: boolean;
+  };
+  title: string;
+  summary: string;
+  is_premium_highlighted: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+type TeamApplication = {
+  id: number;
+  project: number;
+  applicant: {
+    id: number;
+    email: string;
+    full_name: string;
+    title: string;
+    is_verified_talent: boolean;
+  };
+  message: string;
+  status: string;
+  created_at: string;
+};
+
+type PublicReview = {
+  id: number;
+  reviewer: {
+    id: number;
+    full_name: string;
+    title: string;
+    is_verified_talent: boolean;
+  };
+  project: {
+    id: number;
+    title: string;
+  };
+  rating: number;
+  comment: string;
+  created_at: string;
+};
+
+type PublicProfile = {
+  id: number;
+  full_name: string;
+  title: string;
+  bio: string;
+  skills: string[];
+  interests: string[];
+  is_verified_talent: boolean;
+  is_premium: boolean;
+  date_joined: string;
+  average_rating: number | null;
+  reviews_count: number;
+  reviews: PublicReview[];
+  recent_projects: Array<{
+    id: number;
+    title: string;
+    summary: string;
+    created_at: string;
+  }>;
+  eligible_review_applications: Array<{
+    application_id: number;
+    project_id: number;
+    project_title: string;
+    counterpart_role: string;
+  }>;
+};
+
 type MessageThread = {
   application_id: number;
   project: {
@@ -53,6 +138,7 @@ type MessageThread = {
     summary: string;
   };
   counterpart: {
+    id: number;
     full_name: string;
     title: string;
   };
@@ -69,6 +155,7 @@ type ThreadDetail = {
     summary: string;
   };
   counterpart: {
+    id: number;
     full_name: string;
     title: string;
   };
@@ -181,8 +268,12 @@ type AdminProject = {
 };
 
 const NAV_LINKS = [
-  { label: "Özellikler", href: "#features" },
-  { label: "Nasıl Çalışır?", href: "#how-it-works" },
+  { label: "Ana Sayfa", href: "#home" },
+  { label: "Keşfet", href: "#discover" },
+  { label: "Takım Bul", href: "#teammates" },
+  { label: "Girişim Merkezi", href: "#hub" },
+  { label: "Etkinlikler", href: "#events" },
+  { label: "Topluluk", href: "#community" },
   { label: "Fiyatlandırma", href: "#pricing" },
 ];
 
@@ -191,36 +282,49 @@ const ENTRY_LINKS = [
     label: "Giriş Yap",
     href: "#login",
     className:
-      "border border-ink/12 bg-white/80 text-ink hover:border-primary/25 hover:text-primary",
+      "border border-white/12 bg-white/6 text-white hover:border-accent/35 hover:text-accent-light",
   },
   {
-    label: "Kayıt Ol",
+    label: "Takımını Kur",
     href: "#register",
-    className: "bg-primary text-white hover:bg-primary/90 shadow-halo",
+    className: "bg-accent text-white hover:bg-accent/90 shadow-halo",
   },
+];
+
+const FOOTER_COMPANY_LINKS = [
+  { label: "Hakkımızda", href: "#about" },
+  { label: "Kariyer", href: "#careers" },
+  { label: "Topluluk", href: "#community" },
+];
+
+const FOOTER_SUPPORT_LINKS = [
+  { label: "İletişim", href: "#contact" },
+  { label: "Discord", href: "#community" },
+  { label: "Gizlilik Politikası", href: "#privacy" },
+  { label: "SSS", href: "#faq" },
 ];
 
 const APP_NAV_BASE = [
   { label: "Anasayfa", href: "#app-home" },
   { label: "Proje Oluştur", href: "#app-create" },
   { label: "Mesajlar", href: "#app-messages" },
-  { label: "AI Takım Kurucu", href: "#app-ai-builder" },
-  { label: "Networking", href: "#app-networking" },
+  { label: "YZ Ekip Kurucu", href: "#app-ai-builder" },
+  { label: "Ağ Kurma", href: "#app-networking" },
   { label: "Profilim", href: "#app-profile" },
 ];
 
 const FEATURES = [
   {
     icon: "👤",
-    title: "Founder Profili",
+    title: "Kurucu Profili",
     description:
-      "Teknik becerilerini, ilgi alanlarını ve proje geçmişini tek bir güçlü profil üzerinden paylaş. Verified Talent rozeti ile güvenilirliğini kanıtla.",
+      "Teknik becerilerini, ilgi alanlarını ve proje geçmişini tek bir güçlü profil üzerinden paylaş. Doğrulanmış yetenek rozeti ile güvenilirliğini kanıtla.",
     badge: "Ücretsiz",
     badgeColor: "bg-success/10 text-success",
   },
   {
     icon: "🤖",
-    title: "AI Team Builder",
+    title: "YZ Ekip Kurucu",
     description:
       "TF-IDF tabanlı semantic matching motoru, proje ihtiyaçlarını ve kullanıcı becerilerini analiz ederek en uygun ekip üyelerini önerir.",
     badge: "Premium",
@@ -236,15 +340,15 @@ const FEATURES = [
   },
   {
     icon: "✅",
-    title: "Verified Talent",
+    title: "Doğrulanmış Yetenek",
     description:
-      "Admin onaylı doğrulama sistemiyle profilini güçlendir. Ekip kuranlar önce doğrulanmış yeteneklere başvurur.",
+      "Yönetim onaylı doğrulama sistemiyle profilini güçlendir. Ekip kuranlar önce doğrulanmış yeteneklere başvurur.",
     badge: "Premium",
     badgeColor: "bg-primary/10 text-primary",
   },
   {
     icon: "📊",
-    title: "Dashboard",
+    title: "Kontrol Paneli",
     description:
       "Gönderdiğin ve aldığın başvuruları, projelerini ve eşleşme skorlarını tek ekrandan yönet.",
     badge: "Ücretsiz",
@@ -292,14 +396,145 @@ const PROBLEMS = [
 
 const SOLUTIONS = [
   { icon: "🎯", text: "Beceri odaklı, proje bazlı akıllı eşleştirme" },
-  { icon: "🤝", text: "Verified Talent rozetiyle güvenilir profiller" },
-  { icon: "⚡", text: "AI ile dakikalar içinde en uygun adaylar" },
+  { icon: "🤝", text: "Doğrulanmış yetenek rozetiyle güvenilir profiller" },
+  { icon: "⚡", text: "Yapay zeka ile dakikalar içinde en uygun adaylar" },
   { icon: "📈", text: "Şeffaf başvuru ve değerlendirme akışı" },
+];
+
+const DISCOVER_GROUPS = [
+  {
+    title: "Yükselen Projeler",
+    meta: "Bu hafta",
+    stat: "24 açık ekip",
+    description: "İlgi gören ve ekip arayan projeleri hızlıca keşfet.",
+  },
+  {
+    title: "Açık Girişim Ekipleri",
+    meta: "Kurucu odaklı",
+    stat: "12 yeni ilan",
+    description: "Erken aşamada rol al ve ürünün merkezinde yer al.",
+  },
+  {
+    title: "Hackathon Takımları",
+    meta: "Hızlı ekipleşme",
+    stat: "8 aktif takım",
+    description: "Yarışmalara hazırlanan ekipleri ve açık rolleri incele.",
+  },
+  {
+    title: "Yapay Zeka Girişimleri",
+    meta: "Trend alan",
+    stat: "19 proje",
+    description: "YZ odaklı ürün, araç ve araştırma projelerine göz at.",
+  },
+  {
+    title: "Üniversite Projeleri",
+    meta: "Kampüs akışı",
+    stat: "31 ekip",
+    description: "Öğrenci ekipleri ve bitirme projeleri burada.",
+  },
+  {
+    title: "Uzaktan Ekipler",
+    meta: "Konum bağımsız",
+    stat: "14 açık rol",
+    description: "Uzaktan çalışan ekiplerle üretim fırsatlarını yakala.",
+  },
+];
+
+const TEAMMATE_GROUPS = [
+  { role: "Yapay Zeka Mühendisi", levels: "Başlangıç · Orta · İleri" },
+  { role: "Backend Geliştirici", levels: "Başlangıç · Orta · İleri" },
+  { role: "UI/UX Tasarımcı", levels: "Başlangıç · Orta · İleri" },
+  { role: "Siber Güvenlik", levels: "Başlangıç · Orta · İleri" },
+  { role: "Veri Bilimci", levels: "Başlangıç · Orta · İleri" },
+  { role: "Ürün Yöneticisi", levels: "Başlangıç · Orta · İleri" },
+  { role: "Oyun Geliştirici", levels: "Başlangıç · Orta · İleri" },
+];
+
+const HUB_CONTENT = [
+  "Girişim rehberleri",
+  "Pitch deck örnekleri",
+  "MVP yol haritası",
+  "Yatırımın temelleri",
+  "Hackathon ipuçları",
+  "Kurucu sözleşmesi notları",
+];
+
+const EVENT_CONTENT = [
+  "Yaklaşan hackathonlar",
+  "Girişim yarışmaları",
+  "Yapay zeka etkinlikleri",
+  "Üniversite etkinlikleri",
+  "Çevrim içi networking oturumları",
+  "Topluluk buluşmaları",
+];
+
+const COMMUNITY_CONTENT = [
+  "Başarı hikayeleri",
+  "Öne çıkan builder'lar",
+  "Öne çıkan founder'lar",
+  "Haftanın spotlight profili",
+  "İş birliği hikayeleri",
+  "Topluluk güncellemeleri",
+];
+
+const LIVE_ACTIVITY = [
+  "3 yeni yapay zeka startup ekibi oluşturuldu",
+  "Backend geliştirici fintech ekibine katıldı",
+  "Bugün 12 yeni builder topluluğa dahil oldu",
+  "Hackathon ekibi son rolünü tamamladı",
+];
+
+const FEATURE_SPOTLIGHTS = [
+  {
+    title: "Yapay Zeka Destekli Takım Eşleşmesi",
+    lead: "Profil, rol ve proje ihtiyaçlarını birlikte okuyarak daha isabetli takım önerileri üretir.",
+    tag: "Canlı eşleşme",
+  },
+  {
+    title: "Doğrulanmış Builder Profilleri",
+    lead: "Kurucuların güvenle ekip kurabilmesi için profil kalitesini öne çıkarır.",
+    tag: "Güven katmanı",
+  },
+  {
+    title: "Uyumluluk Skoru",
+    lead: "İnsanların gerçekten üretip üretemeyeceğine dair daha somut bir sinyal verir.",
+    tag: "Karar desteği",
+  },
+  {
+    title: "Startup İşbirliği Araçları",
+    lead: "Başvuru, kabul, takım içi mesajlaşma ve proje akışını tek çatı altında toplar.",
+    tag: "Üretim akışı",
+  },
+  {
+    title: "Founder Reputation Sistemi",
+    lead: "Kurucuların geri dönüş kalitesi ve takım yönetim disiplini görünür olur.",
+    tag: "İtibar sinyali",
+  },
+  {
+    title: "Takım Analitiği",
+    lead: "Hangi projelerin ilgi çektiğini, hangi rollerin eksik kaldığını ve hareketliliği gösterir.",
+    tag: "İçgörü paneli",
+  },
+];
+
+const SOCIAL_PROOF = [
+  "PAÜ",
+  "HackathonTR",
+  "Teknokent",
+  "Yapay Zeka Topluluğu",
+  "Üniversite Kulüpleri",
+  "Builder Ağları",
+];
+
+const BUILDER_STORIES = [
+  "İki yabancı nasıl yapay zeka startup kurdu?",
+  "Hackathon arkadaşlığından startup ortaklığına",
+  "Foundrly sayesinde CTO’muzu bulduk",
 ];
 
 const PLANS = [
   {
-    name: "Free",
+    name: "Ücretsiz",
     price: "$0",
     period: "sonsuza kadar",
     desc: "Platformu keşfetmek için başla.",
@@ -311,25 +546,26 @@ const PLANS = [
       "Proje paylaşma ve keşfetme",
       "Ekip başvurusu",
       "Temel ekip eşleşmesi",
-      "Dashboard özeti",
+      "Proje görünürlüğü",
+      "Topluluk erişimi",
     ],
-    locked: ["AI Team Builder", "Verified Talent rozeti", "Görünürlük artışı"],
+    locked: ["Öncelikli eşleşme", "Doğrulanmış profil", "Yüksek görünürlük"],
   },
   {
     name: "Premium",
     price: "$5",
     period: "/ ay · $48/yıl",
-    desc: "Doğru ekibi çok daha hızlı kur.",
+    desc: "Daha hızlı eşleş, daha görünür ol, daha güçlü ekip kur.",
     cta: "Premium'a Geç",
     ctaClass: "bg-white text-primary hover:bg-white/90",
     cardClass: "border-primary/20 bg-primary text-white shadow-halo",
     items: [
-      "Free'deki her şey",
-      "AI Team Builder (semantic matching)",
-      "Verified Talent rozeti",
-      "Proje görünürlük artışı",
+      "Yapay zeka uyum skoru",
+      "Doğrulanmış profil başvurusu",
+      "Öncelikli eşleşme görünürlüğü",
+      "Kurucu itibar puanı desteği",
       "Gelişmiş ekip filtreleme",
-      "Reklamsız kullanım + öncelikli destek",
+      "Yüksek görünürlük ve öncelikli destek",
     ],
     locked: [],
   },
@@ -337,7 +573,22 @@ const PLANS = [
 
 function getRouteFromHash(): RouteName {
   if (typeof window === "undefined") return "home";
+  if (window.location.hash.startsWith("#app-member-")) {
+    return "app-member";
+  }
   switch (window.location.hash) {
+    case "#premium":
+      return "premium";
+    case "#about":
+      return "about";
+    case "#privacy":
+      return "privacy";
+    case "#careers":
+      return "careers";
+    case "#faq":
+      return "faq";
+    case "#contact":
+      return "contact";
     case "#login":
       return "login";
     case "#register":
@@ -362,6 +613,12 @@ function getRouteFromHash(): RouteName {
   }
 }
 
+function getPublicProfileIdFromHash() {
+  if (typeof window === "undefined") return null;
+  const match = window.location.hash.match(/^#app-member-(\d+)$/);
+  return match ? Number(match[1]) : null;
+}
+
 function getStoredAccessToken() {
   return localStorage.getItem("foundrly_access_token");
 }
@@ -377,6 +634,264 @@ async function parseError(response: Response) {
     return "Bir hata oluştu. Lütfen tekrar dene.";
   }
   return "Bir hata oluştu. Lütfen tekrar dene.";
+}
+
+function formatJoinedDate(value?: string) {
+  if (!value) return "-";
+  return new Date(value).toLocaleDateString("tr-TR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function renderStars(rating: number) {
+  return "★".repeat(rating) + "☆".repeat(5 - rating);
+}
+
+function PremiumSimulationPage({
+  authenticated,
+  currentUser,
+  onStartSimulation,
+  feedback,
+}: {
+  authenticated: boolean;
+  currentUser: CurrentUser | null;
+  onStartSimulation?: (plan: "monthly" | "yearly") => Promise<void> | void;
+  feedback?: string;
+}) {
+  const alreadyPremium = Boolean(currentUser?.is_premium);
+
+  return (
+    <main className="mx-auto max-w-7xl px-6 py-16 lg:px-10 lg:py-20">
+      <section className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+        <div className="space-y-6">
+          <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/8 px-4 py-1.5 text-sm font-semibold text-primary">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+            Premium Deneyimi
+          </span>
+          <div className="space-y-4">
+            <h1 className="max-w-3xl text-5xl font-extrabold leading-[1.08] tracking-tight lg:text-6xl">
+              Daha fazla görünürlük, daha iyi eşleşme,
+              <span className="bg-gradient-to-r from-primary to-[#6B7FD4] bg-clip-text text-transparent">
+                {" "}daha güçlü ekipler.
+              </span>
+            </h1>
+            <p className="max-w-2xl text-lg leading-8 text-ink/68">
+              Foundrly Premium ile YZ Ekip Kurucu, doğrulanmış yetenek başvurusu, gelişmiş filtreleme ve proje görünürlük artışı gibi ürünün en güçlü akışlarına erişebilirsin.
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            {[
+              "YZ Ekip Kurucu ile daha isabetli aday önerileri",
+              "Doğrulanmış yetenek başvurusu ile daha güçlü profil",
+              "Öne çıkan proje kartları ile daha fazla başvuru",
+              "Gelişmiş arama ve ekip filtreleri",
+            ].map((item) => (
+              <div
+                key={item}
+                className="rounded-2xl border border-white/60 bg-white/80 p-4 text-sm leading-6 text-ink/68 shadow-sm backdrop-blur"
+              >
+                {item}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-[2.25rem] border border-primary/15 bg-white/92 p-8 shadow-halo backdrop-blur">
+          <div className="rounded-[1.75rem] bg-ink p-6 text-white">
+            <p className="text-sm font-bold uppercase tracking-[0.22em] text-white/60">
+              Premium Aktivasyon
+            </p>
+            <h2 className="mt-3 text-3xl font-extrabold">
+              {alreadyPremium ? "Premium aktif" : "Premium'a yükselt"}
+            </h2>
+            <p className="mt-3 text-sm leading-7 text-white/70">
+              Premium plan ile YZ Ekip Kurucu, doğrulanmış yetenek başvurusu, gelişmiş filtreleme ve daha yüksek görünürlük gibi ürünün en güçlü özelliklerine anında erişebilirsin.
+            </p>
+
+            {feedback && (
+              <div className="mt-5 rounded-2xl border border-success/20 bg-success/10 px-4 py-3 text-sm text-white">
+                {feedback}
+              </div>
+            )}
+
+            {!authenticated ? (
+              <div className="mt-6 space-y-3">
+                <a
+                  href="#register"
+                  className="block rounded-2xl bg-white px-5 py-3 text-center text-sm font-bold text-primary transition hover:bg-white/90"
+                >
+                  Hesap Oluştur
+                </a>
+                <a
+                  href="#login"
+                  className="block rounded-2xl border border-white/15 px-5 py-3 text-center text-sm font-semibold text-white/88 transition hover:bg-white/10"
+                >
+                  Giriş Yap
+                </a>
+              </div>
+            ) : alreadyPremium ? (
+              <div className="mt-6 space-y-3">
+                <div className="rounded-2xl border border-white/10 bg-white/8 px-4 py-4 text-sm text-white/82">
+                  Hesabın şu anda premium özelliklere erişebiliyor. Şimdi YZ Ekip Kurucu ve Ağ Kurma alanlarını deneyebilirsin.
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <a
+                    href="#app-ai-builder"
+                    className="rounded-2xl bg-white px-5 py-3 text-center text-sm font-bold text-primary transition hover:bg-white/90"
+                  >
+                    YZ Ekip Kurucu'ya Git
+                  </a>
+                  <a
+                    href="#app-profile"
+                    className="rounded-2xl border border-white/15 px-5 py-3 text-center text-sm font-semibold text-white/88 transition hover:bg-white/10"
+                  >
+                    Profilime Dön
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-6 space-y-4">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => onStartSimulation?.("monthly")}
+                    className="rounded-2xl bg-white px-5 py-4 text-left text-primary transition hover:bg-white/90"
+                  >
+                    <span className="block text-xs font-bold uppercase tracking-widest text-primary/60">
+                      Aylık
+                    </span>
+                    <span className="mt-1 block text-2xl font-extrabold">$5</span>
+                    <span className="mt-1 block text-sm font-medium text-ink/60">
+                      Anında premium erişimini aç
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onStartSimulation?.("yearly")}
+                    className="rounded-2xl border border-white/15 bg-white/8 px-5 py-4 text-left text-white transition hover:bg-white/12"
+                  >
+                    <span className="block text-xs font-bold uppercase tracking-widest text-white/72">
+                      Yıllık
+                    </span>
+                    <span className="mt-1 block text-2xl font-extrabold">$48</span>
+                    <span className="mt-1 block text-sm font-medium text-white/70">
+                      Yıllık premium erişim
+                    </span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function InfoPage({
+  eyebrow,
+  title,
+  lead,
+  sections,
+}: {
+  eyebrow: string;
+  title: string;
+  lead: string;
+  sections: Array<{ title: string; body: string }>;
+}) {
+  return (
+    <main className="mx-auto max-w-5xl px-6 py-16 lg:px-10 lg:py-20">
+      <section className="rounded-[2.5rem] border border-white/10 bg-white/5 p-8 shadow-halo backdrop-blur lg:p-12">
+        <p className="text-sm font-bold uppercase tracking-[0.25em] text-accent-light/70">
+          {eyebrow}
+        </p>
+        <h1 className="mt-4 text-4xl font-extrabold leading-tight text-white lg:text-5xl">
+          {title}
+        </h1>
+        <p className="mt-5 max-w-3xl text-base leading-8 text-white/72">{lead}</p>
+
+        <div className="mt-10 space-y-8">
+          {sections.map((section) => (
+            <article key={section.title} className="rounded-[1.75rem] border border-white/8 bg-[#121A2F]/88 p-6">
+              <h2 className="text-xl font-extrabold text-white">{section.title}</h2>
+              <p className="mt-3 text-sm leading-7 text-white/68">{section.body}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function SiteFooter() {
+  return (
+    <footer className="relative overflow-hidden border-t border-white/10 bg-[#11193B] text-white">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.08),_transparent_36%),radial-gradient(circle_at_20%_20%,_rgba(71,93,178,0.22),_transparent_28%)]" />
+      <div className="absolute inset-0 opacity-30 [background-image:radial-gradient(rgba(255,255,255,0.16)_1px,transparent_1px)] [background-size:28px_28px]" />
+      <div className="relative mx-auto max-w-7xl px-6 py-16 lg:px-10">
+        <div className="grid gap-12 lg:grid-cols-[1.35fr_0.7fr_0.7fr_1fr]">
+          <div className="max-w-md">
+            <p className="text-3xl font-extrabold">Foundrly</p>
+            <p className="mt-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
+              Fikirleri Ekiplere Dönüştür
+            </p>
+            <p className="mt-6 text-base leading-8 text-white/72">
+              Foundrly, proje fikri olan kişilerin doğru ekip arkadaşlarını daha hızlı ve daha güvenilir şekilde bulmasını sağlayan bir ekip kurma platformudur.
+            </p>
+            <p className="mt-6 text-base leading-8 text-white/72">
+              Yapay zeka destekli eşleşme, verified yetenek akışı ve güçlü founder araçlarıyla gerçek ürün seviyesinde bir ekip deneyimi sunmayı hedefliyoruz.
+            </p>
+          </div>
+
+          <div>
+            <h3 className="text-2xl font-extrabold">Şirket</h3>
+            <div className="mt-6 space-y-4 text-base text-white/72">
+              {FOOTER_COMPANY_LINKS.map((item) => (
+                <a key={item.href} href={item.href} className="block transition hover:text-white">
+                  {item.label}
+                </a>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-2xl font-extrabold">Destek</h3>
+            <div className="mt-6 space-y-4 text-base text-white/72">
+              {FOOTER_SUPPORT_LINKS.map((item) => (
+                <a key={item.href} href={item.href} className="block transition hover:text-white">
+                  {item.label}
+                </a>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-2xl font-extrabold">İletişim Bilgileri</h3>
+            <div className="mt-6 space-y-5 text-base leading-8 text-white/72">
+              <p>
+                <span className="font-semibold text-white">Konum:</span>{" "}
+                PAÜ Mühendislik Fakültesi, Kınıklı Kampüsü, Pamukkale / Denizli
+              </p>
+              <p>
+                <span className="font-semibold text-white">E-posta:</span>{" "}
+                <a href="mailto:hello@joinfoundrly.com" className="transition hover:text-white">
+                  hello@joinfoundrly.com
+                </a>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-14 flex flex-col gap-3 border-t border-white/10 pt-6 text-sm text-white/40 md:flex-row md:items-center md:justify-between">
+          <p>© 2026 Foundrly. Tüm hakları saklıdır.</p>
+          <p className="text-white/55">joinfoundrly.com</p>
+        </div>
+      </div>
+    </footer>
+  );
 }
 
 function AuthPage({
@@ -473,14 +988,14 @@ function AuthPage({
 
   return (
     <div className="min-h-screen bg-mesh font-sans text-ink antialiased">
-      <header className="border-b border-white/40 bg-white/70 backdrop-blur-xl">
+      <header className="border-b border-white/10 bg-[#0B1020]/72 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
           <a href="#" className="flex flex-col leading-none">
-            <span className="text-2xl font-extrabold tracking-tight text-ink">
+            <span className="text-2xl font-extrabold tracking-tight text-white">
               Foundrly
             </span>
-            <span className="text-[11px] font-medium tracking-widest text-primary/70">
-              TURN IDEAS INTO TEAMS
+            <span className="text-[11px] font-medium tracking-widest text-accent-light/70">
+              FİKİRLERİ EKİPLERE DÖNÜŞTÜR
             </span>
           </a>
           <div className="flex items-center gap-3">
@@ -495,7 +1010,7 @@ function AuthPage({
             />
             <a
               href="#"
-              className="rounded-full border border-ink/12 bg-white/80 px-5 py-2 text-sm font-semibold text-ink transition hover:border-primary/25 hover:text-primary"
+              className="rounded-full border border-white/12 bg-white/6 px-5 py-2 text-sm font-semibold text-white transition hover:border-accent/40 hover:text-accent-light"
             >
               Ana Sayfa
             </a>
@@ -504,9 +1019,9 @@ function AuthPage({
       </header>
 
       <main className="mx-auto grid min-h-[calc(100vh-88px)] max-w-7xl gap-10 px-6 py-12 lg:grid-cols-[0.9fr_1.1fr] lg:px-10 lg:py-20">
-        <section className="flex flex-col justify-between rounded-[2.5rem] bg-ink p-8 text-white shadow-halo lg:p-10">
+        <section className="flex flex-col justify-between rounded-[2.5rem] border border-white/10 bg-[#121A2F]/88 p-8 text-white shadow-halo lg:p-10">
           <div>
-            <p className="text-sm font-bold uppercase tracking-[0.25em] text-white/45">
+            <p className="text-sm font-bold uppercase tracking-[0.25em] text-white/65">
               {isRegister ? "Yeni Ekip Arkadaşları Bul" : "Tekrar Hoş Geldin"}
             </p>
             <h1 className="mt-4 text-4xl font-extrabold leading-tight lg:text-5xl">
@@ -516,25 +1031,25 @@ function AuthPage({
             </h1>
             <p className="mt-5 max-w-md text-base leading-7 text-white/72">
               {isRegister
-                ? "Foundrly ile fikrini paylaşabilir, ekip arkadaşları bulabilir ve AI Team Builder ile en uygun eşleşmeleri görebilirsin."
-                : "Dashboard, proje yönetimi, premium özellikler ve AI Team Builder önerileri seni içeride bekliyor."}
+                ? "Foundrly ile fikrini paylaşabilir, ekip arkadaşları bulabilir ve YZ Ekip Kurucu ile en uygun eşleşmeleri görebilirsin."
+                : "Kontrol paneli, proje yönetimi, premium özellikler ve YZ Ekip Kurucu önerileri seni içeride bekliyor."}
             </p>
           </div>
 
-          <div className="mt-10 rounded-[1.75rem] border border-white/10 bg-white/8 p-6">
-            <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/45">
+          <div className="mt-10 rounded-[1.75rem] border border-white/10 bg-white/6 p-6">
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/65">
               Platform Özeti
             </p>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               {[
-                "AI Team Builder ile ekip önerileri",
-                "Verified Talent ile daha güvenli profiller",
+                "YZ Ekip Kurucu ile ekip önerileri",
+                "Doğrulanmış yetenek ile daha güvenli profiller",
                 "Premium ile daha yüksek görünürlük",
                 "Docker içinde çalışan canlı backend",
               ].map((item) => (
                 <div
                   key={item}
-                  className="rounded-2xl border border-white/10 bg-white/8 p-4 text-sm text-white/78"
+                  className="rounded-2xl border border-white/8 bg-white/6 p-4 text-sm text-white/78"
                 >
                   {item}
                 </div>
@@ -544,12 +1059,12 @@ function AuthPage({
         </section>
 
         <section className="flex items-center">
-          <div className="w-full rounded-[2.5rem] border border-white/60 bg-white/88 p-8 shadow-halo backdrop-blur lg:p-10">
+          <div className="w-full rounded-[2.5rem] border border-white/10 bg-white/6 p-8 shadow-halo backdrop-blur lg:p-10">
             <div>
-              <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">
+              <p className="text-sm font-bold uppercase tracking-[0.2em] text-accent-light/70">
                 {isRegister ? "Kayıt Ol" : "Giriş Yap"}
               </p>
-              <h2 className="mt-2 text-3xl font-extrabold">
+              <h2 className="mt-2 text-3xl font-extrabold text-white">
                 {isRegister
                   ? "Foundrly hesabını oluştur"
                   : "Foundrly hesabına giriş yap"}
@@ -567,14 +1082,14 @@ function AuthPage({
                     placeholder="Nurseli Demir"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="w-full rounded-2xl border border-ink/10 bg-[#F7F8FC] px-4 py-3 text-sm outline-none transition focus:border-primary/40 focus:bg-white"
+                    className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/28 focus:border-accent/40 focus:bg-white/10"
                     required
                   />
                 </label>
               )}
 
               <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-ink/72">
+                <span className="mb-2 block text-sm font-semibold text-white/76">
                   E-posta
                 </span>
                 <input
@@ -582,13 +1097,13 @@ function AuthPage({
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-2xl border border-ink/10 bg-[#F7F8FC] px-4 py-3 text-sm outline-none transition focus:border-primary/40 focus:bg-white"
+                  className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/28 focus:border-accent/40 focus:bg-white/10"
                   required
                 />
               </label>
 
               <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-ink/72">
+                <span className="mb-2 block text-sm font-semibold text-white/76">
                   Şifre
                 </span>
                 <input
@@ -596,7 +1111,7 @@ function AuthPage({
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-2xl border border-ink/10 bg-[#F7F8FC] px-4 py-3 text-sm outline-none transition focus:border-primary/40 focus:bg-white"
+                  className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/28 focus:border-accent/40 focus:bg-white/10"
                   minLength={8}
                   required
                 />
@@ -605,7 +1120,7 @@ function AuthPage({
               {isRegister && (
                 <>
                   <label className="block">
-                    <span className="mb-2 block text-sm font-semibold text-ink/72">
+                    <span className="mb-2 block text-sm font-semibold text-white/76">
                       Rolün
                     </span>
                     <input
@@ -613,26 +1128,26 @@ function AuthPage({
                       placeholder="Frontend Developer"
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      className="w-full rounded-2xl border border-ink/10 bg-[#F7F8FC] px-4 py-3 text-sm outline-none transition focus:border-primary/40 focus:bg-white"
+                      className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/28 focus:border-accent/40 focus:bg-white/10"
                       required
                     />
                   </label>
 
                   <label className="block">
-                    <span className="mb-2 block text-sm font-semibold text-ink/72">
+                    <span className="mb-2 block text-sm font-semibold text-white/76">
                       Kısa Biyografi
                     </span>
                     <textarea
                       placeholder="Kısaca ne yaptığını ve ne aradığını yaz."
                       value={bio}
                       onChange={(e) => setBio(e.target.value)}
-                      className="min-h-28 w-full rounded-2xl border border-ink/10 bg-[#F7F8FC] px-4 py-3 text-sm outline-none transition focus:border-primary/40 focus:bg-white"
+                      className="min-h-28 w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/28 focus:border-accent/40 focus:bg-white/10"
                       required
                     />
                   </label>
 
                   <label className="block">
-                    <span className="mb-2 block text-sm font-semibold text-ink/72">
+                    <span className="mb-2 block text-sm font-semibold text-white/76">
                       Yetenekler
                     </span>
                     <input
@@ -640,13 +1155,13 @@ function AuthPage({
                       placeholder="React, TypeScript, UI"
                       value={skills}
                       onChange={(e) => setSkills(e.target.value)}
-                      className="w-full rounded-2xl border border-ink/10 bg-[#F7F8FC] px-4 py-3 text-sm outline-none transition focus:border-primary/40 focus:bg-white"
+                      className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/28 focus:border-accent/40 focus:bg-white/10"
                       required
                     />
                   </label>
 
                   <label className="block">
-                    <span className="mb-2 block text-sm font-semibold text-ink/72">
+                    <span className="mb-2 block text-sm font-semibold text-white/76">
                       İlgi Alanları
                     </span>
                     <input
@@ -654,7 +1169,7 @@ function AuthPage({
                       placeholder="startup, frontend, product"
                       value={interests}
                       onChange={(e) => setInterests(e.target.value)}
-                      className="w-full rounded-2xl border border-ink/10 bg-[#F7F8FC] px-4 py-3 text-sm outline-none transition focus:border-primary/40 focus:bg-white"
+                      className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/28 focus:border-accent/40 focus:bg-white/10"
                       required
                     />
                   </label>
@@ -688,7 +1203,7 @@ function AuthPage({
               </button>
             </form>
 
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm text-ink/58">
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm text-white/58">
               <span>{isRegister ? "Zaten hesabın var mı?" : "Hesabın yok mu?"}</span>
               <a
                 href={isRegister ? "#login" : "#register"}
@@ -707,9 +1222,16 @@ function AuthPage({
 function DashboardPage({ route }: { route: Exclude<RouteName, "home" | "login" | "register"> }) {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [threads, setThreads] = useState<MessageThread[]>([]);
+  const [publicProjects, setPublicProjects] = useState<ProjectCard[]>([]);
+  const [receivedApplications, setReceivedApplications] = useState<TeamApplication[]>([]);
+  const [sentApplications, setSentApplications] = useState<TeamApplication[]>([]);
   const [selectedThread, setSelectedThread] = useState<ThreadDetail | null>(null);
   const [messageDraft, setMessageDraft] = useState("");
   const [messageError, setMessageError] = useState("");
+  const [projectSearch, setProjectSearch] = useState("");
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [applicationMessage, setApplicationMessage] = useState("");
+  const [applicationFeedback, setApplicationFeedback] = useState("");
   const [projectForm, setProjectForm] = useState({
     title: "",
     summary: "",
@@ -732,6 +1254,14 @@ function DashboardPage({ route }: { route: Exclude<RouteName, "home" | "login" |
   const [aiAnalysisState, setAiAnalysisState] = useState<"idle" | "analyzing" | "done">("idle");
   const [verifiedForm, setVerifiedForm] = useState({ requested_title: "", portfolio_url: "", note: "" });
   const [verifiedFeedback, setVerifiedFeedback] = useState("");
+  const [publicProfile, setPublicProfile] = useState<PublicProfile | null>(null);
+  const [publicProfileFeedback, setPublicProfileFeedback] = useState("");
+  const [publicProfileLoading, setPublicProfileLoading] = useState(false);
+  const [reviewForm, setReviewForm] = useState({
+    application_id: "",
+    rating: 5,
+    comment: "",
+  });
 
   const accessToken = getStoredAccessToken();
   const storedUser = localStorage.getItem("foundrly_current_user");
@@ -744,15 +1274,20 @@ function DashboardPage({ route }: { route: Exclude<RouteName, "home" | "login" |
     : null;
 
   const isAdmin = Boolean(summary?.profile.is_staff || summary?.profile.is_superuser || currentUser?.is_staff || currentUser?.is_superuser);
+  const isPremium = Boolean(summary?.profile.is_premium || currentUser?.is_premium);
   const appNav = isAdmin
     ? [...APP_NAV_BASE, { label: "Yönetim", href: "#app-admin" }]
     : APP_NAV_BASE;
+  const publicProfileId = route === "app-member" ? getPublicProfileIdFromHash() : null;
 
   const loadDashboard = async () => {
     if (!authHeaders) return;
-    const [summaryResponse, threadsResponse] = await Promise.all([
+    const [summaryResponse, threadsResponse, projectsResponse, receivedResponse, sentResponse] = await Promise.all([
       fetch("/api/dashboard/summary/", { headers: authHeaders }),
       fetch("/api/messages/threads/", { headers: authHeaders }),
+      fetch("/api/projects/", { headers: authHeaders }),
+      fetch("/api/applications/?received=true", { headers: authHeaders }),
+      fetch("/api/applications/?mine=true", { headers: authHeaders }),
     ]);
 
     if (summaryResponse.ok) {
@@ -765,6 +1300,81 @@ function DashboardPage({ route }: { route: Exclude<RouteName, "home" | "login" |
       const threadsData = await threadsResponse.json();
       setThreads(threadsData);
     }
+
+    if (projectsResponse.ok) {
+      setPublicProjects(await projectsResponse.json());
+    }
+
+    if (receivedResponse.ok) {
+      setReceivedApplications(await receivedResponse.json());
+    }
+
+    if (sentResponse.ok) {
+      setSentApplications(await sentResponse.json());
+    }
+  };
+
+  const openPublicProfile = (userId: number) => {
+    window.location.hash = `#app-member-${userId}`;
+  };
+
+  const loadPublicProfile = async (userId: number) => {
+    setPublicProfileLoading(true);
+    setPublicProfileFeedback("");
+    try {
+      const headers = accessToken
+        ? { Authorization: `Bearer ${accessToken}` }
+        : undefined;
+      const response = await fetch(`/api/users/${userId}/`, { headers });
+      if (!response.ok) {
+        throw new Error(await parseError(response));
+      }
+      const data = (await response.json()) as PublicProfile;
+      setPublicProfile(data);
+      setReviewForm({
+        application_id: data.eligible_review_applications[0]?.application_id
+          ? String(data.eligible_review_applications[0].application_id)
+          : "",
+        rating: 5,
+        comment: "",
+      });
+    } catch (error) {
+      setPublicProfileFeedback(
+        error instanceof Error ? error.message : "Profil bilgisi alınamadı.",
+      );
+      setPublicProfile(null);
+    } finally {
+      setPublicProfileLoading(false);
+    }
+  };
+
+  const handleCreateReview = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!accessToken || !publicProfileId) {
+      setPublicProfileFeedback("Yorum bırakmak için giriş yapmalısın.");
+      return;
+    }
+    setPublicProfileFeedback("");
+    const response = await fetch(`/api/users/${publicProfileId}/reviews/`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        application_id: Number(reviewForm.application_id),
+        rating: reviewForm.rating,
+        comment: reviewForm.comment,
+      }),
+    });
+
+    if (!response.ok) {
+      setPublicProfileFeedback(await parseError(response));
+      return;
+    }
+
+    await loadPublicProfile(publicProfileId);
+    setPublicProfileFeedback("Yorum başarıyla eklendi.");
   };
 
   const loadAdminUsers = async (search = "") => {
@@ -848,6 +1458,12 @@ function DashboardPage({ route }: { route: Exclude<RouteName, "home" | "login" |
       loadThreadDetail(threads[0].application_id);
     }
   }, [route, threads]);
+
+  useEffect(() => {
+    if (route === "app-member" && publicProfileId) {
+      loadPublicProfile(publicProfileId);
+    }
+  }, [route, publicProfileId]);
 
   const logout = () => {
     localStorage.removeItem("foundrly_access_token");
@@ -1028,13 +1644,72 @@ function DashboardPage({ route }: { route: Exclude<RouteName, "home" | "login" |
     loadAdminDashboard();
   };
 
-  const startPremiumCheckout = async (plan: "monthly" | "yearly") => {
+  const startPremiumSimulation = async (plan: "monthly" | "yearly") => {
     if (!authHeaders) {
       window.location.hash = "#login";
       return;
     }
 
-    setBillingFeedback("Ödeme sistemi şu anda güncelleniyor. Lütfen daha sonra tekrar deneyin.");
+    setBillingFeedback("");
+    const response = await fetch("/api/premium/subscription/", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({ plan }),
+    });
+
+    if (!response.ok) {
+      setBillingFeedback(await parseError(response));
+      return;
+    }
+
+    setBillingFeedback("Premium erişimin aktif edildi.");
+    loadDashboard();
+  };
+
+  const handleApplicationSubmit = async (projectId: number) => {
+    if (!authHeaders || !applicationMessage.trim()) return;
+    setApplicationFeedback("");
+    const response = await fetch("/api/applications/", {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({
+        project: projectId,
+        message: applicationMessage.trim(),
+      }),
+    });
+
+    if (!response.ok) {
+      setApplicationFeedback(await parseError(response));
+      return;
+    }
+
+    setApplicationFeedback("Başvurun gönderildi.");
+    setApplicationMessage("");
+    setSelectedProjectId(null);
+    loadDashboard();
+  };
+
+  const handleApplicationStatus = async (
+    applicationId: number,
+    status: "accepted" | "rejected",
+  ) => {
+    if (!authHeaders) return;
+    setApplicationFeedback("");
+    const response = await fetch(`/api/applications/${applicationId}/status/`, {
+      method: "PATCH",
+      headers: authHeaders,
+      body: JSON.stringify({ status }),
+    });
+
+    if (!response.ok) {
+      setApplicationFeedback(await parseError(response));
+      return;
+    }
+
+    setApplicationFeedback(
+      status === "accepted" ? "Başvuru kabul edildi." : "Başvuru reddedildi.",
+    );
+    loadDashboard();
   };
 
   const handleVerifiedSubmit = async (event: React.FormEvent) => {
@@ -1057,14 +1732,14 @@ function DashboardPage({ route }: { route: Exclude<RouteName, "home" | "login" |
 
   return (
     <div className="min-h-screen bg-mesh font-sans text-ink antialiased">
-      <header className="sticky top-0 z-50 border-b border-white/40 bg-white/70 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0B1020]/72 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
           <a href="#" className="flex flex-col leading-none">
-            <span className="text-2xl font-extrabold tracking-tight text-ink">
+            <span className="text-2xl font-extrabold tracking-tight text-white">
               Foundrly
             </span>
-            <span className="text-[11px] font-medium tracking-widest text-primary/70">
-              TURN IDEAS INTO TEAMS
+            <span className="text-[11px] font-medium tracking-widest text-accent-light/70">
+              FİKİRLERİ EKİPLERE DÖNÜŞTÜR
             </span>
           </a>
 
@@ -1077,12 +1752,20 @@ function DashboardPage({ route }: { route: Exclude<RouteName, "home" | "login" |
                   window.location.hash === item.href ||
                   (item.href === "#app-home" && window.location.hash === "#dashboard")
                     ? "bg-primary text-white shadow-halo"
-                    : "border border-ink/10 bg-white/80 text-ink hover:border-primary/25 hover:text-primary"
+                    : "border border-white/10 bg-white/6 text-white hover:border-accent/35 hover:text-accent-light"
                 }`}
               >
                 {item.label}
               </a>
             ))}
+            {!isPremium && (
+              <a
+                href="#premium"
+                className="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-white shadow-halo transition hover:bg-accent/90"
+              >
+                Premium'a Yükselt
+              </a>
+            )}
             <button
               type="button"
               onClick={logout}
@@ -1096,38 +1779,268 @@ function DashboardPage({ route }: { route: Exclude<RouteName, "home" | "login" |
 
       <main className="mx-auto max-w-7xl px-6 py-10 lg:px-10">
         {route === "app-home" && (
-          <section className="rounded-[2.25rem] bg-ink p-8 text-white shadow-halo lg:p-10">
-            <p className="text-sm font-bold uppercase tracking-[0.24em] text-white/45">
-              Anasayfa
-            </p>
-            <h1 className="mt-4 text-4xl font-extrabold leading-tight lg:text-5xl">
-              {summary?.profile.full_name || currentUser?.full_name || "Hoş geldin"}
-            </h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-white/72">
-              {summary?.profile.title || currentUser?.title || "Kullanıcı"} · {loadingLabel}
-            </p>
+          <div className="space-y-6">
+            <section className="rounded-[2.25rem] bg-ink p-8 text-white shadow-halo lg:p-10">
+              <p className="text-sm font-bold uppercase tracking-[0.24em] text-white/65">
+                Anasayfa
+              </p>
+              <h1 className="mt-4 text-4xl font-extrabold leading-tight lg:text-5xl">
+                {summary?.profile.full_name || currentUser?.full_name || "Hoş geldin"}
+              </h1>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-white/72">
+                {summary?.profile.title || currentUser?.title || "Kullanıcı"} · {loadingLabel}
+              </p>
 
-            <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {[
-                ["Projelerim", summary?.metrics.owned_projects_count ?? 0],
-                ["Gelen Başvurular", summary?.metrics.received_applications_count ?? 0],
-                ["Bekleyenler", summary?.metrics.pending_received_applications_count ?? 0],
-                ["Kabul Edilenler", summary?.metrics.accepted_received_applications_count ?? 0],
-                ["Gönderdiğim", summary?.metrics.sent_applications_count ?? 0],
-                ["Katıldığım Ekip", summary?.metrics.accepted_memberships_count ?? 0],
-              ].map(([label, value]) => (
-                <div
-                  key={String(label)}
-                  className="rounded-2xl border border-white/10 bg-white/8 p-5"
-                >
-                  <p className="text-xs font-bold uppercase tracking-widest text-white/42">
-                    {label}
-                  </p>
-                  <p className="mt-2 text-3xl font-extrabold">{value}</p>
+              <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {[
+                  ["Projelerim", summary?.metrics.owned_projects_count ?? 0],
+                  ["Gelen Başvurular", summary?.metrics.received_applications_count ?? 0],
+                  ["Bekleyenler", summary?.metrics.pending_received_applications_count ?? 0],
+                  ["Kabul Edilenler", summary?.metrics.accepted_received_applications_count ?? 0],
+                  ["Gönderdiğim", summary?.metrics.sent_applications_count ?? 0],
+                  ["Katıldığım Ekip", summary?.metrics.accepted_memberships_count ?? 0],
+                ].map(([label, value]) => (
+                  <div
+                    key={String(label)}
+                    className="rounded-2xl border border-white/10 bg-white/8 p-5"
+                  >
+                    <p className="text-xs font-bold uppercase tracking-widest text-white/65">
+                      {label}
+                    </p>
+                    <p className="mt-2 text-3xl font-extrabold">{value}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {applicationFeedback && (
+              <div className="rounded-2xl border border-primary/10 bg-primary/5 px-4 py-3 text-sm text-primary">
+                {applicationFeedback}
+              </div>
+            )}
+
+            {!isPremium && (
+              <section className="rounded-[2rem] border border-primary/20 bg-gradient-to-r from-primary to-[#5D73CD] p-6 text-white shadow-halo">
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="max-w-2xl">
+                    <p className="text-sm font-bold uppercase tracking-[0.22em] text-white/72">
+                      Premium Açık Değil
+                    </p>
+                    <h2 className="mt-2 text-2xl font-extrabold">
+                      YZ Ekip Kurucu ve doğrulanmış yetenek akışları için premium'u aktive et
+                    </h2>
+                    <p className="mt-2 text-sm leading-7 text-white/78">
+                      Bu hesap şu anda standart planda. Premium sayfasına geçerek gelişmiş ekip filtrelerini, görünürlük artışını ve premium founder deneyimini anında açabilirsin.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <a
+                      href="#premium"
+                      className="rounded-2xl bg-white px-6 py-3 text-sm font-bold text-primary transition hover:bg-white/90"
+                    >
+                      Premium Sayfasını Aç
+                    </a>
+                    <a
+                      href="#app-profile"
+                      className="rounded-2xl border border-white/15 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                    >
+                      Profilimi Gör
+                    </a>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </section>
+              </section>
+            )}
+
+            <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+              <div className="rounded-[2rem] border border-white/60 bg-white/88 p-6 shadow-halo backdrop-blur">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">
+                      Aktif Projeler
+                    </p>
+                    <h2 className="mt-1 text-2xl font-extrabold text-ink">
+                      Başvurabileceğin projeler
+                    </h2>
+                  </div>
+                  <input
+                    value={projectSearch}
+                    onChange={(e) => setProjectSearch(e.target.value)}
+                    placeholder="Proje ara"
+                    className="w-full rounded-2xl border border-ink/10 bg-[#F7F8FC] px-4 py-3 text-sm outline-none transition focus:border-primary/40 sm:max-w-xs"
+                  />
+                </div>
+
+                <div className="mt-5 space-y-4">
+                  {publicProjects
+                    .filter((project) => {
+                      const matchesSearch =
+                        !projectSearch ||
+                        project.title.toLowerCase().includes(projectSearch.toLowerCase()) ||
+                        project.summary.toLowerCase().includes(projectSearch.toLowerCase());
+                      return matchesSearch && project.owner.id !== currentUser?.id;
+                    })
+                    .slice(0, 6)
+                    .map((project) => {
+                      const alreadyApplied = sentApplications.some(
+                        (application) => application.project === project.id,
+                      );
+
+                      return (
+                        <article
+                          key={project.id}
+                          className="rounded-2xl border border-ink/8 bg-[#F7F8FC] p-5"
+                        >
+                          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                            <div>
+                              <p className="text-lg font-bold text-ink">{project.title}</p>
+                              <button
+                                type="button"
+                                onClick={() => openPublicProfile(project.owner.id)}
+                                className="mt-1 text-left text-sm text-ink/58 transition hover:text-primary"
+                              >
+                                {project.owner.full_name} · {project.owner.title}
+                              </button>
+                              <p className="mt-3 text-sm leading-6 text-ink/68">{project.summary}</p>
+                            </div>
+                            <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+                              {project.is_premium_highlighted ? "Premium" : "Açık"}
+                            </span>
+                          </div>
+
+                          {alreadyApplied ? (
+                            <div className="mt-4 rounded-2xl border border-success/20 bg-success/8 px-4 py-3 text-sm text-success">
+                              Bu projeye zaten başvurdun.
+                            </div>
+                          ) : (
+                            <div className="mt-4 space-y-3">
+                              {selectedProjectId === project.id && (
+                                <textarea
+                                  value={applicationMessage}
+                                  onChange={(e) => setApplicationMessage(e.target.value)}
+                                  placeholder="Projeye neden uygun olduğunu kısa yaz."
+                                  className="min-h-24 w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary/40"
+                                />
+                              )}
+                              <div className="flex flex-wrap gap-3">
+                                {selectedProjectId === project.id ? (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleApplicationSubmit(project.id)}
+                                      className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white transition hover:bg-primary/90"
+                                    >
+                                      Başvuruyu Gönder
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedProjectId(null);
+                                        setApplicationMessage("");
+                                      }}
+                                      className="rounded-full border border-ink/10 bg-white px-5 py-2 text-sm font-semibold text-ink transition hover:border-primary/25 hover:text-primary"
+                                    >
+                                      Vazgeç
+                                    </button>
+                                  </>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedProjectId(project.id)}
+                                    className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white transition hover:bg-primary/90"
+                                  >
+                                    Başvur
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </article>
+                      );
+                    })}
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <section className="rounded-[2rem] border border-white/60 bg-white/88 p-6 shadow-halo backdrop-blur">
+                  <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">
+                    Gelen Başvurular
+                  </p>
+                  <div className="mt-4 space-y-3">
+                    {receivedApplications.length ? (
+                      receivedApplications.slice(0, 5).map((application) => (
+                        <article
+                          key={application.id}
+                          className="rounded-2xl border border-ink/8 bg-[#F7F8FC] p-4"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => openPublicProfile(application.applicant.id)}
+                            className="font-bold text-ink transition hover:text-primary"
+                          >
+                            {application.applicant.full_name}
+                          </button>
+                          <p className="mt-1 text-sm text-ink/58">{application.message}</p>
+                          <p className="mt-2 text-xs font-bold uppercase tracking-widest text-ink/42">
+                            {application.status}
+                          </p>
+                          {application.status === "pending" && (
+                            <div className="mt-4 flex gap-3">
+                              <button
+                                type="button"
+                                onClick={() => handleApplicationStatus(application.id, "accepted")}
+                                className="rounded-full bg-success px-4 py-2 text-sm font-semibold text-white transition hover:bg-success/90"
+                              >
+                                Kabul Et
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleApplicationStatus(application.id, "rejected")}
+                                className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-500 transition hover:bg-red-100"
+                              >
+                                Reddet
+                              </button>
+                            </div>
+                          )}
+                        </article>
+                      ))
+                    ) : (
+                      <div className="rounded-2xl border border-dashed border-ink/15 bg-[#F7F8FC] p-4 text-sm text-ink/55">
+                        Henüz gelen başvuru yok.
+                      </div>
+                    )}
+                  </div>
+                </section>
+
+                <section className="rounded-[2rem] border border-white/60 bg-white/88 p-6 shadow-halo backdrop-blur">
+                  <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">
+                    Son Başvuruların
+                  </p>
+                  <div className="mt-4 space-y-3">
+                    {sentApplications.length ? (
+                      sentApplications.slice(0, 5).map((application) => (
+                        <article
+                          key={application.id}
+                          className="rounded-2xl border border-ink/8 bg-[#F7F8FC] p-4"
+                        >
+                          <p className="text-sm font-bold text-ink">
+                            Proje #{application.project}
+                          </p>
+                          <p className="mt-1 text-sm text-ink/58">{application.message}</p>
+                          <p className="mt-2 text-xs font-bold uppercase tracking-widest text-primary/55">
+                            {application.status}
+                          </p>
+                        </article>
+                      ))
+                    ) : (
+                      <div className="rounded-2xl border border-dashed border-ink/15 bg-[#F7F8FC] p-4 text-sm text-ink/55">
+                        Henüz gönderilmiş başvuru yok.
+                      </div>
+                    )}
+                  </div>
+                </section>
+              </div>
+            </section>
+          </div>
         )}
 
         {route === "app-create" && (
@@ -1213,9 +2126,24 @@ function DashboardPage({ route }: { route: Exclude<RouteName, "home" | "login" |
                           : "border-ink/8 bg-[#F7F8FC]"
                       }`}
                     >
-                      <p className="text-sm font-bold text-ink">
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openPublicProfile(thread.counterpart.id);
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            openPublicProfile(thread.counterpart.id);
+                          }
+                        }}
+                        className="text-sm font-bold text-ink transition hover:text-primary"
+                      >
                         {thread.counterpart.full_name}
-                      </p>
+                      </span>
                       <p className="mt-1 text-xs uppercase tracking-widest text-ink/42">
                         {thread.project.title}
                       </p>
@@ -1237,9 +2165,16 @@ function DashboardPage({ route }: { route: Exclude<RouteName, "home" | "login" |
               {selectedThread ? (
                 <>
                   <div className="border-b border-ink/8 pb-4">
-                    <p className="text-sm font-bold text-ink">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const counterpart = selectedThread.counterpart as { id?: number };
+                        if (counterpart.id) openPublicProfile(counterpart.id);
+                      }}
+                      className="text-sm font-bold text-ink transition hover:text-primary"
+                    >
                       {selectedThread.counterpart.full_name}
-                    </p>
+                    </button>
                     <p className="mt-1 text-xs uppercase tracking-widest text-ink/42">
                       {selectedThread.project.title}
                     </p>
@@ -1308,7 +2243,7 @@ function DashboardPage({ route }: { route: Exclude<RouteName, "home" | "login" |
               [
                 "Durum",
                 summary?.profile.is_verified_talent || currentUser?.is_verified_talent
-                  ? "Verified Talent"
+                  ? "Doğrulanmış Yetenek"
                   : "Standart Kullanıcı",
               ],
             ].map(([label, value]) => (
@@ -1323,28 +2258,64 @@ function DashboardPage({ route }: { route: Exclude<RouteName, "home" | "login" |
               </div>
             ))}
 
+            <div className="rounded-[2rem] border border-white/60 bg-white/88 p-6 shadow-halo backdrop-blur lg:col-span-2">
+              <p className="text-xs font-bold uppercase tracking-widest text-ink/42">
+                Herkese Açık Profil
+              </p>
+              <p className="mt-2 text-sm leading-6 text-ink/62">
+                Diğer kullanıcıların seni nasıl gördüğünü, puan ve yorumlarının nasıl listelendiğini buradan kontrol edebilirsin.
+              </p>
+              <button
+                type="button"
+                onClick={() => currentUser && openPublicProfile(currentUser.id)}
+                className="mt-4 rounded-2xl bg-ink px-6 py-3 text-sm font-bold text-white transition hover:bg-ink/90"
+              >
+                Açık Profilimi Gör
+              </button>
+            </div>
+
             {!summary?.profile.is_premium && !currentUser?.is_premium ? (
               <div className="rounded-[2rem] border border-primary/15 bg-primary/5 p-6 shadow-halo backdrop-blur lg:col-span-2">
                 <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">
                   Premium
                 </p>
                 <h3 className="mt-2 text-2xl font-extrabold text-ink">
-                  AI Team Builder ve Verified Talent rozeti için Premium'a geç
+                  YZ Ekip Kurucu ve doğrulanmış yetenek rozeti için Premium'a geç
                 </h3>
                 <p className="mt-2 text-sm leading-6 text-ink/62">
-                  Ödeme altyapımız güncelleniyor. Şimdilik ödeme işlemleri geçici olarak durdurulmuştur. Admin panelinden manuel premium yapabilirsiniz.
+                  Premium hesabını aktifleştirerek YZ Ekip Kurucu, gelişmiş filtreler ve doğrulanmış yetenek başvuru akışına erişebilirsin.
                 </p>
+                {billingFeedback && (
+                  <div className="mt-4 rounded-2xl border border-primary/10 bg-white px-4 py-3 text-sm text-primary">
+                    {billingFeedback}
+                  </div>
+                )}
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <a
+                    href="#premium"
+                    className="rounded-2xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90"
+                  >
+                    Premium Sayfasına Git
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => startPremiumSimulation("monthly")}
+                    className="rounded-2xl border border-primary/20 bg-white px-6 py-3 text-sm font-bold text-primary transition hover:bg-primary/5"
+                  >
+                    Hızlı Aylık Aktivasyon
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="rounded-[2rem] border border-amber-200/50 bg-amber-50/50 p-6 shadow-halo backdrop-blur lg:col-span-2">
                 <p className="text-sm font-bold uppercase tracking-[0.2em] text-amber-600/70">
-                  Verified Talent Başvurusu
+                  Doğrulanmış Yetenek Başvurusu
                 </p>
                 <h3 className="mt-2 text-2xl font-extrabold text-ink">
                   Yeteneklerini doğrula ve öne çık
                 </h3>
                 <p className="mt-2 text-sm leading-6 text-ink/62">
-                  Premium üye olduğun için Verified Talent rozetine başvurabilirsin. Bu rozet seni eşleşmelerde en üste taşır.
+                  Premium üye olduğun için doğrulanmış yetenek rozetine başvurabilirsin. Bu başvuru doğrudan yönetim ekibinin inceleme havuzuna düşer ve onaylandığında profilinde görünür.
                 </p>
                 <form className="mt-6 space-y-4" onSubmit={handleVerifiedSubmit}>
                   <input
@@ -1386,6 +2357,202 @@ function DashboardPage({ route }: { route: Exclude<RouteName, "home" | "login" |
           </section>
         )}
 
+        {route === "app-member" && (
+          <section className="space-y-6">
+            {publicProfileLoading ? (
+              <div className="rounded-[2rem] border border-white/60 bg-white/88 p-8 shadow-halo backdrop-blur">
+                <p className="text-sm text-ink/60">Profil yükleniyor…</p>
+              </div>
+            ) : publicProfile ? (
+              <>
+                <div className="rounded-[2rem] border border-white/60 bg-white/88 p-8 shadow-halo backdrop-blur">
+                  <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="max-w-3xl">
+                      <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">
+                        Üye Profili
+                      </p>
+                      <h2 className="mt-2 text-3xl font-extrabold text-ink">
+                        {publicProfile.full_name}
+                      </h2>
+                      <p className="mt-2 text-base text-ink/62">
+                        {publicProfile.title}
+                        {publicProfile.is_verified_talent ? " · Doğrulanmış Yetenek" : ""}
+                        {publicProfile.is_premium ? " · Premium" : ""}
+                      </p>
+                      <p className="mt-4 text-sm leading-7 text-ink/68">
+                        {publicProfile.bio || "Bu kullanıcı henüz biyografi eklememiş."}
+                      </p>
+                    </div>
+                    <div className="grid min-w-[260px] gap-3 sm:grid-cols-2">
+                      <div className="rounded-2xl bg-[#F7F8FC] p-4">
+                        <p className="text-xs font-bold uppercase tracking-widest text-ink/42">
+                          Ortalama Puan
+                        </p>
+                        <p className="mt-2 text-2xl font-extrabold text-ink">
+                          {publicProfile.average_rating ? `${publicProfile.average_rating}/5` : "-"}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-[#F7F8FC] p-4">
+                        <p className="text-xs font-bold uppercase tracking-widest text-ink/42">
+                          Yorum Sayısı
+                        </p>
+                        <p className="mt-2 text-2xl font-extrabold text-ink">
+                          {publicProfile.reviews_count}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-[#F7F8FC] p-4 sm:col-span-2">
+                        <p className="text-xs font-bold uppercase tracking-widest text-ink/42">
+                          Katılım Tarihi
+                        </p>
+                        <p className="mt-2 text-base font-bold text-ink">
+                          {formatJoinedDate(publicProfile.date_joined)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 grid gap-4 lg:grid-cols-2">
+                    <div className="rounded-2xl bg-[#F7F8FC] p-5">
+                      <p className="text-xs font-bold uppercase tracking-widest text-ink/42">
+                        Yetenekler
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {publicProfile.skills.length ? publicProfile.skills.map((skill) => (
+                          <span key={skill} className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                            {skill}
+                          </span>
+                        )) : <span className="text-sm text-ink/58">Yetenek bilgisi yok.</span>}
+                      </div>
+                    </div>
+                    <div className="rounded-2xl bg-[#F7F8FC] p-5">
+                      <p className="text-xs font-bold uppercase tracking-widest text-ink/42">
+                        İlgi Alanları
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {publicProfile.interests.length ? publicProfile.interests.map((interest) => (
+                          <span key={interest} className="rounded-full bg-success/10 px-3 py-1 text-xs font-semibold text-success">
+                            {interest}
+                          </span>
+                        )) : <span className="text-sm text-ink/58">İlgi alanı bilgisi yok.</span>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+                  <section className="rounded-[2rem] border border-white/60 bg-white/88 p-6 shadow-halo backdrop-blur">
+                    <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">
+                      Son Projeler
+                    </p>
+                    <div className="mt-4 space-y-3">
+                      {publicProfile.recent_projects.length ? publicProfile.recent_projects.map((project) => (
+                        <article key={project.id} className="rounded-2xl border border-ink/8 bg-[#F7F8FC] p-4">
+                          <p className="font-bold text-ink">{project.title}</p>
+                          <p className="mt-2 text-sm leading-6 text-ink/62">{project.summary}</p>
+                        </article>
+                      )) : (
+                        <div className="rounded-2xl border border-dashed border-ink/15 bg-[#F7F8FC] p-4 text-sm text-ink/55">
+                          Görüntülenecek proje yok.
+                        </div>
+                      )}
+                    </div>
+                  </section>
+
+                  <section className="rounded-[2rem] border border-white/60 bg-white/88 p-6 shadow-halo backdrop-blur">
+                    <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">
+                      Yorumlar ve Puanlar
+                    </p>
+                    {publicProfileFeedback && (
+                      <div className="mt-4 rounded-2xl border border-primary/10 bg-primary/5 px-4 py-3 text-sm text-primary">
+                        {publicProfileFeedback}
+                      </div>
+                    )}
+                    <div className="mt-4 space-y-3">
+                      {publicProfile.reviews.length ? publicProfile.reviews.map((review) => (
+                        <article key={review.id} className="rounded-2xl border border-ink/8 bg-[#F7F8FC] p-4">
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <button
+                                type="button"
+                                onClick={() => openPublicProfile(review.reviewer.id)}
+                                className="font-bold text-ink transition hover:text-primary"
+                              >
+                                {review.reviewer.full_name}
+                              </button>
+                              <p className="mt-1 text-xs uppercase tracking-widest text-ink/42">
+                                {review.project.title}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-bold text-amber-500">{renderStars(review.rating)}</p>
+                              <p className="mt-1 text-xs text-ink/42">{formatJoinedDate(review.created_at)}</p>
+                            </div>
+                          </div>
+                          <p className="mt-3 text-sm leading-6 text-ink/68">{review.comment}</p>
+                        </article>
+                      )) : (
+                        <div className="rounded-2xl border border-dashed border-ink/15 bg-[#F7F8FC] p-4 text-sm text-ink/55">
+                          Bu kullanıcı için henüz yorum yok.
+                        </div>
+                      )}
+                    </div>
+
+                    {currentUser && publicProfile.eligible_review_applications.length > 0 && (
+                      <form className="mt-6 space-y-4 rounded-2xl border border-primary/10 bg-primary/5 p-5" onSubmit={handleCreateReview}>
+                        <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/60">
+                          Birlikte Çalışma Yorumu
+                        </p>
+                        <select
+                          value={reviewForm.application_id}
+                          onChange={(e) => setReviewForm((current) => ({ ...current, application_id: e.target.value }))}
+                          className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary/40"
+                          required
+                        >
+                          {publicProfile.eligible_review_applications.map((item) => (
+                            <option key={item.application_id} value={item.application_id}>
+                              {item.project_title}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          value={reviewForm.rating}
+                          onChange={(e) => setReviewForm((current) => ({ ...current, rating: Number(e.target.value) }))}
+                          className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary/40"
+                        >
+                          {[5, 4, 3, 2, 1].map((rating) => (
+                            <option key={rating} value={rating}>
+                              {rating} puan
+                            </option>
+                          ))}
+                        </select>
+                        <textarea
+                          value={reviewForm.comment}
+                          onChange={(e) => setReviewForm((current) => ({ ...current, comment: e.target.value }))}
+                          placeholder="Birlikte çalışma deneyimini kısaca yaz."
+                          className="min-h-28 w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary/40"
+                          required
+                        />
+                        <button
+                          type="submit"
+                          className="rounded-2xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90"
+                        >
+                          Yorumu Kaydet
+                        </button>
+                      </form>
+                    )}
+                  </section>
+                </div>
+              </>
+            ) : (
+              <div className="rounded-[2rem] border border-white/60 bg-white/88 p-8 shadow-halo backdrop-blur">
+                <p className="text-sm text-ink/60">
+                  {publicProfileFeedback || "Profil bulunamadı."}
+                </p>
+              </div>
+            )}
+          </section>
+        )}
+
         {route === "app-ai-builder" && (
           <section className="rounded-[2.25rem] border border-white/60 bg-white/88 p-8 shadow-halo backdrop-blur lg:p-10 relative overflow-hidden">
             <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">
@@ -1405,7 +2572,7 @@ function DashboardPage({ route }: { route: Exclude<RouteName, "home" | "login" |
                 </div>
                 <h3 className="text-2xl font-extrabold text-ink">Premium Özellik</h3>
                 <p className="mt-2 max-w-md text-sm leading-6 text-ink/72">
-                  AI Team Builder ile yeteneklerinize tam uyan takım arkadaşlarını saniyeler içinde bulmak için Premium'a geçin.
+                  YZ Ekip Kurucu ile yeteneklerinize tam uyan takım arkadaşlarını saniyeler içinde bulmak için Premium'a geçin.
                 </p>
                 <a href="#app-profile" className="mt-6 rounded-2xl bg-primary px-8 py-3.5 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90">
                   Premium Avantajlarını İncele
@@ -1473,7 +2640,7 @@ function DashboardPage({ route }: { route: Exclude<RouteName, "home" | "login" |
               Topluluk
             </p>
             <h2 className="mt-2 text-3xl font-extrabold text-ink">
-              Networking & Etkinlikler
+              Ağ Kurma ve Etkinlikler
             </h2>
             <p className="mt-2 max-w-2xl text-base leading-7 text-ink/62">
               Sadece Premium üyelere özel etkinlikler, yatırımcı buluşmaları ve kapalı Discord topluluğu.
@@ -1486,7 +2653,7 @@ function DashboardPage({ route }: { route: Exclude<RouteName, "home" | "login" |
                 </div>
                 <h3 className="text-2xl font-extrabold text-ink">Premium Özellik</h3>
                 <p className="mt-2 max-w-md text-sm leading-6 text-ink/72">
-                  Özel Founder buluşmalarına katılmak ve yatırımcı ağına erişmek için Premium'a geçmelisiniz.
+                  Özel kurucu buluşmalarına katılmak ve yatırımcı ağına erişmek için Premium'a geçmelisiniz.
                 </p>
                 <a href="#app-profile" className="mt-6 rounded-2xl bg-primary px-8 py-3.5 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90">
                   Premium'u Keşfet
@@ -1554,7 +2721,7 @@ function DashboardPage({ route }: { route: Exclude<RouteName, "home" | "login" |
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               <div className="rounded-2xl border border-primary/10 bg-primary/5 p-5">
                 <p className="text-xs font-bold uppercase tracking-widest text-primary/60">
-                  Bekleyen Verified Talent
+                  Bekleyen Doğrulanmış Yetenek
                 </p>
                 <p className="mt-2 text-2xl font-extrabold text-primary">
                   {adminDashboard?.queues.pending_verification_requests ?? 0}
@@ -1676,7 +2843,7 @@ function DashboardPage({ route }: { route: Exclude<RouteName, "home" | "login" |
                           </p>
                         </div>
                         <div className="rounded-2xl bg-white p-4">
-                          <p className="text-xs font-bold uppercase tracking-widest text-ink/42">Verified</p>
+                          <p className="text-xs font-bold uppercase tracking-widest text-ink/42">Doğrulama</p>
                           <p className="mt-2 font-bold text-ink">
                             {selectedAdminUser.is_verified_talent ? "Onaylı" : "Standart"}
                           </p>
@@ -1726,8 +2893,8 @@ function DashboardPage({ route }: { route: Exclude<RouteName, "home" | "login" |
                           className="rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/15"
                         >
                           {selectedAdminUser.is_verified_talent
-                            ? "Verified Rozetini Kaldır"
-                            : "Verified Rozeti Ver"}
+                            ? "Doğrulanmış Rozeti Kaldır"
+                            : "Doğrulanmış Rozeti Ver"}
                         </button>
                         <button
                           type="button"
@@ -1761,7 +2928,10 @@ function DashboardPage({ route }: { route: Exclude<RouteName, "home" | "login" |
                 </div>
 
                 <div className="rounded-2xl border border-ink/8 bg-[#F7F8FC] p-5">
-                  <h3 className="text-lg font-extrabold text-ink">Verified Talent Onayları</h3>
+                  <h3 className="text-lg font-extrabold text-ink">Doğrulanmış Yetenek Onayları</h3>
+                  <p className="mt-2 text-sm leading-6 text-ink/58">
+                    Kullanıcıların gönderdiği doğrulanmış yetenek başvuruları bu yönetim havuzuna düşer. Yönetim ekibi burada inceleyip onay ya da ret kararı verir.
+                  </p>
                   <div className="mt-4 space-y-3">
                     {verificationRequests.length ? (
                       verificationRequests.map((item) => (
@@ -1887,18 +3057,12 @@ export default function App() {
   });
   const [menuOpen, setMenuOpen] = useState(false);
   const [route, setRoute] = useState<RouteName>(getRouteFromHash());
-  const [checkoutFeedback, setCheckoutFeedback] = useState("");
-
-  const startLandingPremiumCheckout = async (plan: "monthly" | "yearly") => {
-    const accessToken = getStoredAccessToken();
-    if (!accessToken) {
-      window.location.hash = "#login";
-      return;
-    }
-
-    setCheckoutFeedback("Ödeme sistemi şu anda güncelleniyor. Lütfen daha sonra tekrar deneyin.");
-  };
-
+  const [premiumFeedback, setPremiumFeedback] = useState("");
+  const [premiumLoading, setPremiumLoading] = useState(false);
+  const [marketingUser, setMarketingUser] = useState<CurrentUser | null>(() => {
+    const stored = localStorage.getItem("foundrly_current_user");
+    return stored ? (JSON.parse(stored) as CurrentUser) : null;
+  });
   useEffect(() => {
     let cancelled = false;
     fetch("/api/health/")
@@ -1931,6 +3095,56 @@ export default function App() {
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [route]);
+
+  const marketingAccessToken = getStoredAccessToken();
+
+  const runPremiumSimulation = async (plan: "monthly" | "yearly") => {
+    if (!marketingAccessToken) {
+      window.location.hash = "#login";
+      return;
+    }
+
+    setPremiumLoading(true);
+    setPremiumFeedback("");
+    try {
+      const response = await fetch("/api/premium/subscription/", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${marketingAccessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ plan }),
+      });
+
+      if (!response.ok) {
+        throw new Error(await parseError(response));
+      }
+
+      const meResponse = await fetch("/api/users/me/", {
+        headers: {
+          Authorization: `Bearer ${marketingAccessToken}`,
+        },
+      });
+
+      if (meResponse.ok) {
+        const me = await meResponse.json();
+        setMarketingUser(me);
+        localStorage.setItem("foundrly_current_user", JSON.stringify(me));
+      }
+
+      setPremiumFeedback("Premium erişimin başarıyla aktif edildi.");
+    } catch (error) {
+      setPremiumFeedback(
+        error instanceof Error ? error.message : "Premium aktivasyonu başlatılamadı.",
+      );
+    } finally {
+      setPremiumLoading(false);
+    }
+  };
+
   const dot =
     health.status === "ready"
       ? "bg-success shadow-[0_0_0_6px_rgba(63,177,112,0.2)]"
@@ -1946,16 +3160,224 @@ export default function App() {
     return <DashboardPage route={route as Exclude<RouteName, "home" | "login" | "register">} />;
   }
 
+  if (route === "premium") {
+    return (
+      <div className="min-h-screen bg-mesh font-sans text-ink antialiased">
+        <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0B1020]/72 backdrop-blur-xl">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
+            <a href="#" className="flex flex-col leading-none">
+              <span className="text-2xl font-extrabold tracking-tight text-white">Foundrly</span>
+              <span className="text-[11px] font-medium tracking-widest text-accent-light/70">
+                FİKİRLERİ EKİPLERE DÖNÜŞTÜR
+              </span>
+            </a>
+            <div className="hidden items-center gap-3 md:flex">
+              <a
+                href={marketingUser ? "#app-home" : "#login"}
+                className="rounded-full border border-white/12 bg-white/6 px-5 py-2 text-sm font-semibold text-white transition hover:border-accent/40 hover:text-accent-light"
+              >
+                {marketingUser ? "Uygulamaya Dön" : "Giriş Yap"}
+              </a>
+              {!marketingUser && (
+                <a
+                  href="#register"
+                  className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white shadow-halo transition hover:bg-primary/90"
+                >
+                  Kayıt Ol
+                </a>
+              )}
+            </div>
+          </div>
+        </header>
+        <PremiumSimulationPage
+          authenticated={Boolean(marketingAccessToken)}
+          currentUser={marketingUser}
+          onStartSimulation={runPremiumSimulation}
+          feedback={premiumLoading ? "Premium erişimin hazırlanıyor…" : premiumFeedback}
+        />
+        <SiteFooter />
+      </div>
+    );
+  }
+
+  if (route === "about") {
+    return (
+      <div className="min-h-screen bg-mesh font-sans text-ink antialiased">
+        <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0B1020]/72 backdrop-blur-xl">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
+            <a href="#" className="flex flex-col leading-none">
+              <span className="text-2xl font-extrabold tracking-tight text-white">Foundrly</span>
+              <span className="text-[11px] font-medium tracking-widest text-accent-light/70">FİKİRLERİ EKİPLERE DÖNÜŞTÜR</span>
+            </a>
+            <a href="#" className="rounded-full border border-white/12 bg-white/6 px-5 py-2 text-sm font-semibold text-white transition hover:border-accent/40 hover:text-accent-light">Ana Sayfa</a>
+          </div>
+        </header>
+        <InfoPage
+          eyebrow="Şirket"
+          title="Foundrly hakkında"
+          lead="Foundrly, proje fikri olan kişileri doğru ekip arkadaşlarıyla bir araya getiren, ürün odaklı ve güven temelli bir ekip kurma platformudur. Üniversite projelerinden startup ekiplerine kadar farklı üretim senaryolarında daha iyi eşleşmeler kurmayı hedefler."
+          sections={[
+            {
+              title: "Misyonumuz",
+              body: "Foundrly'nin misyonu, fikir sahibi kurucuların ve üretici ekip arkadaşlarının birbirini daha hızlı, daha doğru ve daha güvenilir şekilde bulmasını sağlamaktır. Ekip kurma sürecini rastlantısal değil, veriye ve uyuma dayalı bir ürün deneyimine dönüştürür.",
+            },
+            {
+              title: "Yaklaşımımız",
+              body: "Dağınık topluluklar, cevapsız mesajlar ve belirsiz beceri profilleri yerine; proje bazlı keşif, doğrulanabilir profiller, premium görünürlük ve yapay zeka destekli eşleşme ile daha kontrollü bir ekip kurma deneyimi sunuyoruz.",
+            },
+          ]}
+        />
+        <SiteFooter />
+      </div>
+    );
+  }
+
+  if (route === "privacy") {
+    return (
+      <div className="min-h-screen bg-mesh font-sans text-ink antialiased">
+        <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0B1020]/72 backdrop-blur-xl">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
+            <a href="#" className="flex flex-col leading-none">
+              <span className="text-2xl font-extrabold tracking-tight text-white">Foundrly</span>
+              <span className="text-[11px] font-medium tracking-widest text-accent-light/70">FİKİRLERİ EKİPLERE DÖNÜŞTÜR</span>
+            </a>
+            <a href="#" className="rounded-full border border-white/12 bg-white/6 px-5 py-2 text-sm font-semibold text-white transition hover:border-accent/40 hover:text-accent-light">Ana Sayfa</a>
+          </div>
+        </header>
+        <InfoPage
+          eyebrow="Gizlilik"
+          title="Gizlilik politikamız"
+          lead="Foundrly üzerinde paylaşılan profil verileri ve proje içerikleri, platform deneyimini güvenli ve işlevsel şekilde sürdürebilmek için işlenir. Kullanıcı gizliliği ve erişim kontrolü ürün mimarisinin temel parçalarıdır."
+          sections={[
+            {
+              title: "Toplanan bilgiler",
+              body: "Platform üzerinde oluşturulan hesap bilgileri, profil verileri, yetenek alanları, ilgi alanları, proje içerikleri ve başvuru mesajları; ekip eşleşmesi, proje yönetimi ve moderasyon süreçlerini desteklemek amacıyla kullanılır.",
+            },
+            {
+              title: "Koruma ve erişim",
+              body: "Yetkilendirme, rol ayrımı ve moderasyon mekanizmaları ile kullanıcı verilerine kontrollü erişim sağlanır. Kullanıcıya ait özel alanlar yalnızca ürün akışının gerektirdiği yetki seviyelerinde görünür hale gelir.",
+            },
+          ]}
+        />
+        <SiteFooter />
+      </div>
+    );
+  }
+
+  if (route === "careers") {
+    return (
+      <div className="min-h-screen bg-mesh font-sans text-ink antialiased">
+        <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0B1020]/72 backdrop-blur-xl">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
+            <a href="#" className="flex flex-col leading-none">
+              <span className="text-2xl font-extrabold tracking-tight text-white">Foundrly</span>
+              <span className="text-[11px] font-medium tracking-widest text-accent-light/70">FİKİRLERİ EKİPLERE DÖNÜŞTÜR</span>
+            </a>
+            <a href="#" className="rounded-full border border-white/12 bg-white/6 px-5 py-2 text-sm font-semibold text-white transition hover:border-accent/40 hover:text-accent-light">Ana Sayfa</a>
+          </div>
+        </header>
+        <InfoPage
+          eyebrow="Bize Katıl"
+          title="Foundrly ile birlikte büyümek ister misin?"
+          lead="Foundrly, ürün düşüncesi güçlü, topluluk kurmayı önemseyen ve ekip kurma deneyimini daha iyi hale getirmek isteyen insanlarla birlikte büyümeyi hedefler."
+          sections={[
+            {
+              title: "Birlikte çalışmak istediğimiz profiller",
+              body: "Ürün tasarımı, frontend, backend, mobil geliştirme, içerik, growth ve topluluk yönetimi alanlarında katkı sunabilecek; ürün kalitesine ve kullanıcı deneyimine önem veren üretken ekip arkadaşlarıyla çalışmak istiyoruz.",
+            },
+            {
+              title: "Nasıl ulaşılır?",
+              body: "Kendini, deneyimini ve Foundrly ile neden ilgilendiğini anlatan kısa bir tanıtım metnini hello@joinfoundrly.com adresine göndererek ekiple iletişime geçebilirsin.",
+            },
+          ]}
+        />
+        <SiteFooter />
+      </div>
+    );
+  }
+
+  if (route === "faq") {
+    return (
+      <div className="min-h-screen bg-mesh font-sans text-ink antialiased">
+        <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0B1020]/72 backdrop-blur-xl">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
+            <a href="#" className="flex flex-col leading-none">
+              <span className="text-2xl font-extrabold tracking-tight text-white">Foundrly</span>
+              <span className="text-[11px] font-medium tracking-widest text-accent-light/70">FİKİRLERİ EKİPLERE DÖNÜŞTÜR</span>
+            </a>
+            <a href="#" className="rounded-full border border-white/12 bg-white/6 px-5 py-2 text-sm font-semibold text-white transition hover:border-accent/40 hover:text-accent-light">Ana Sayfa</a>
+          </div>
+        </header>
+        <InfoPage
+          eyebrow="Destek"
+          title="Sık sorulan sorular"
+          lead="Foundrly üzerindeki temel kullanıcı akışları, premium özellikler ve verified süreçleri hakkında hızlı cevapları burada bulabilirsin."
+          sections={[
+            {
+              title: "Premium ne sağlar?",
+              body: "Premium üyelik; YZ Ekip Kurucu, gelişmiş ekip filtreleri, doğrulanmış yetenek başvuru akışı ve daha yüksek görünürlük gibi platformun ileri düzey özelliklerine erişim sağlar.",
+            },
+            {
+              title: "Doğrulanmış yetenek nasıl çalışıyor?",
+              body: "Premium kullanıcılar doğrulanmış yetenek başvurusu yapabilir. Başvurular yönetim ekibi tarafından incelenir; onaylanan kullanıcıların profiline doğrulanmış yetenek rozeti eklenir.",
+            },
+            {
+              title: "Kimler proje oluşturabilir?",
+              body: "Platforma kayıt olan tüm kullanıcılar proje oluşturabilir, ekip ihtiyacını tanımlayabilir ve gelen başvuruları yönetebilir. Premium founder hesapları ise daha yüksek görünürlük avantajı elde eder.",
+            },
+          ]}
+        />
+        <SiteFooter />
+      </div>
+    );
+  }
+
+  if (route === "contact") {
+    return (
+      <div className="min-h-screen bg-mesh font-sans text-ink antialiased">
+        <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0B1020]/72 backdrop-blur-xl">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
+            <a href="#" className="flex flex-col leading-none">
+              <span className="text-2xl font-extrabold tracking-tight text-white">Foundrly</span>
+              <span className="text-[11px] font-medium tracking-widest text-accent-light/70">FİKİRLERİ EKİPLERE DÖNÜŞTÜR</span>
+            </a>
+            <a href="#" className="rounded-full border border-white/12 bg-white/6 px-5 py-2 text-sm font-semibold text-white transition hover:border-accent/40 hover:text-accent-light">Ana Sayfa</a>
+          </div>
+        </header>
+        <InfoPage
+          eyebrow="İletişim"
+          title="Foundrly ekibine ulaşın"
+          lead="Ürünle ilgili soru sormak, iş birliği görüşmek ya da platform hakkında geri bildirim paylaşmak istersen Foundrly ekibiyle doğrudan iletişime geçebilirsin."
+          sections={[
+            {
+              title: "Konum",
+              body: "PAÜ Mühendislik Fakültesi, Kınıklı Kampüsü, Pamukkale / Denizli",
+            },
+            {
+              title: "E-posta",
+              body: "Genel iletişim ve iş birliği talepleri için hello@joinfoundrly.com adresinden bize ulaşabilirsiniz.",
+            },
+            {
+              title: "Yanıt süresi",
+              body: "Ürün geri bildirimleri, iş birlikleri ve destek talepleri mümkün olan en kısa sürede değerlendirilir. Özellikle marka ve ürün geliştirme odaklı mesajlar öncelikli olarak ele alınır.",
+            },
+          ]}
+        />
+        <SiteFooter />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-mesh font-sans text-ink antialiased">
-      <header className="sticky top-0 z-50 border-b border-white/40 bg-white/70 backdrop-blur-xl">
+    <div className="min-h-screen bg-mesh bg-noise font-sans text-ink antialiased">
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0B1020]/72 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
           <a href="#" className="flex flex-col leading-none">
-            <span className="text-2xl font-extrabold tracking-tight text-ink">
+            <span className="text-2xl font-extrabold tracking-tight text-white">
               Foundrly
             </span>
-            <span className="text-[11px] font-medium tracking-widest text-primary/70">
-              TURN IDEAS INTO TEAMS
+              <span className="text-[11px] font-medium tracking-widest text-accent-light/70">
+              FİKİRLERİ EKİPLERE DÖNÜŞTÜR
             </span>
           </a>
 
@@ -1964,7 +3386,7 @@ export default function App() {
               <a
                 key={l.href}
                 href={l.href}
-                className="text-sm font-medium text-ink/70 transition hover:text-primary"
+                className="text-sm font-medium text-white/68 transition hover:text-accent-light"
               >
                 {l.label}
               </a>
@@ -1977,7 +3399,7 @@ export default function App() {
               <a
                 key={link.label}
                 href={link.href}
-                className={`rounded-full px-5 py-2 text-sm font-semibold transition hover:-translate-y-0.5 ${link.className}`}
+              className={`rounded-full px-5 py-2 text-sm font-semibold transition hover:-translate-y-0.5 ${link.className}`}
               >
                 {link.label}
               </a>
@@ -1985,7 +3407,7 @@ export default function App() {
           </div>
 
           <button
-            className="rounded-lg p-2 text-ink md:hidden"
+            className="rounded-lg p-2 text-white md:hidden"
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="Menü"
           >
@@ -2007,13 +3429,13 @@ export default function App() {
         </div>
 
         {menuOpen && (
-          <div className="space-y-3 border-t border-white/40 bg-white/90 px-6 py-4 md:hidden">
+          <div className="space-y-3 border-t border-white/10 bg-[#0F162B]/96 px-6 py-4 md:hidden">
             {NAV_LINKS.map((l) => (
               <a
                 key={l.href}
                 href={l.href}
                 onClick={() => setMenuOpen(false)}
-                className="block text-sm font-medium text-ink/80 hover:text-primary"
+                className="block text-sm font-medium text-white/72 hover:text-accent-light"
               >
                 {l.label}
               </a>
@@ -2035,156 +3457,153 @@ export default function App() {
       </header>
 
       <main>
-        <section className="mx-auto grid max-w-7xl gap-12 px-6 pb-20 pt-16 lg:grid-cols-[1.2fr_0.8fr] lg:px-10 lg:pb-28 lg:pt-24">
+        <section id="home" className="mx-auto grid max-w-7xl gap-10 px-6 pb-16 pt-14 lg:grid-cols-[1.08fr_0.92fr] lg:px-10 lg:pb-20 lg:pt-20">
           <div className="space-y-8">
-            <span className="inline-flex items-center gap-2 rounded-full border border-success/30 bg-success/10 px-4 py-1.5 text-sm font-semibold text-success">
+            <span className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-white/6 px-4 py-1.5 text-sm font-semibold text-accent-light">
               <span className="h-1.5 w-1.5 rounded-full bg-success" />
-              Startup · Hackathon · Üniversite Projeleri
+              Girişim · Hackathon · Üniversite Projeleri
             </span>
 
-            <div className="space-y-4">
-              <h1 className="max-w-3xl text-5xl font-extrabold leading-[1.08] tracking-tight lg:text-6xl xl:text-7xl">
-                Fikrin var,{" "}
-                <span className="bg-gradient-to-r from-primary to-[#6B7FD4] bg-clip-text text-transparent">
-                  ekibini
-                </span>{" "}
+            <div className="space-y-5">
+              <h1 className="max-w-3xl text-5xl font-extrabold leading-[0.98] tracking-tight text-white lg:text-6xl xl:text-[5.25rem]">
+                Gerçek projeler,
                 <br className="hidden lg:block" />
-                biz buluyoruz.
+                gerçek ekiplerle
+                <span className="bg-gradient-to-r from-primary to-[#6B7FD4] bg-clip-text text-transparent">
+                  {" "}kurulur.
+                </span>{" "}
               </h1>
-              <p className="max-w-xl text-lg leading-relaxed text-ink/70">
-                Foundrly, proje fikri olan kişilerin beceri odaklı eşleştirme ve{" "}
-                <strong className="text-primary font-semibold">
-                  AI Team Builder
-                </strong>{" "}
-                ile doğru ekip arkadaşlarını çok daha hızlı bulmasını sağlar.
+              <p className="max-w-2xl text-lg leading-8 text-white/70 lg:text-xl">
+                Foundrly; kurucuların, geliştiricilerin, tasarımcıların ve hırslı builder'ların
+                daha güçlü ekipler kurup daha hızlı üretime geçmesini sağlayan canlı bir startup ağıdır.
               </p>
             </div>
 
             <div id="entry" className="flex flex-wrap gap-4">
               <a
                 href="#register"
-                className="rounded-full bg-primary px-7 py-3.5 text-sm font-bold text-white shadow-halo transition hover:-translate-y-0.5 hover:shadow-[0_24px_64px_rgba(71,93,178,0.3)]"
+                className="rounded-full bg-accent px-7 py-3.5 text-sm font-bold text-white shadow-halo transition hover:-translate-y-0.5 hover:shadow-[0_24px_64px_rgba(91,127,255,0.36)]"
               >
-                Kayıt Ol
+                Takımını Kur
+              </a>
+              <a
+                href="#discover"
+                className="rounded-full border border-white/12 bg-white/6 px-7 py-3.5 text-sm font-semibold text-white shadow-sm backdrop-blur transition hover:border-accent/35 hover:text-accent-light"
+              >
+                Takımları Keşfet
               </a>
               <a
                 href="#login"
-                className="rounded-full border border-ink/15 bg-white/80 px-7 py-3.5 text-sm font-semibold text-ink shadow-sm backdrop-blur transition hover:border-primary/30 hover:text-primary"
+                className="rounded-full border border-transparent px-2 py-3 text-sm font-semibold text-white/48 transition hover:text-accent-light"
               >
                 Giriş Yap
-              </a>
-              <a
-                href="#features"
-                className="rounded-full border border-transparent px-2 py-3 text-sm font-semibold text-ink/60 transition hover:text-primary"
-              >
-                Önce özellikleri gör
               </a>
             </div>
 
             <div className="grid gap-4 pt-2 sm:grid-cols-3">
               {[
                 {
-                  v: "Founder",
-                  l: "Fikrini ekip bulma stresine takılmadan yayına çıkar.",
+                  v: "Canlı Ekipler",
+                  l: "Üretime başlamış takımları ve açık rolleri gör.",
                 },
                 {
-                  v: "Builder",
-                  l: "Yeteneklerini doğru projelerle eşleştir, boşa başvurma.",
+                  v: "Başarı Hikayeleri",
+                  l: "Bir araya gelmiş ekiplerin çıktıları ve ilerleyişi.",
                 },
                 {
-                  v: "Verified",
-                  l: "Daha güvenilir profillerle daha hızlı ekip kur.",
+                  v: "Aktif Projeler",
+                  l: "Hackathon, girişim ve kampüs projeleri tek akışta.",
                 },
               ].map((s) => (
                 <div
                   key={s.v}
-                  className="rounded-2xl border border-white/60 bg-white/70 p-4 backdrop-blur"
+                  className="rounded-[1.5rem] border border-white/8 bg-white/5 p-5 shadow-sm backdrop-blur"
                 >
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-primary/60">
-                    Sana Ne Sağlar?
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-accent-light/70">
+                    Öne Çıkan
                   </p>
-                  <p className="mt-1.5 text-base font-bold text-ink">{s.v}</p>
-                  <p className="mt-1.5 text-sm leading-6 text-ink/60">{s.l}</p>
+                  <p className="mt-2 text-lg font-bold text-white">{s.v}</p>
+                  <p className="mt-1.5 text-sm leading-6 text-white/60">{s.l}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="flex flex-col gap-4">
-            <div className="rounded-[2rem] border border-white/60 bg-white/80 p-6 shadow-halo backdrop-blur">
-              <div className="rounded-[1.5rem] bg-ink p-6 text-white">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/50">
-                      Live Status
-                    </p>
-                    <h2 className="mt-1 text-xl font-bold">Backend Monitor</h2>
-                  </div>
-                  <span className={`h-3 w-3 rounded-full ${dot}`} />
-                </div>
-                <p className="mt-4 text-sm text-white/75">{health.message}</p>
-
-                <div className="mt-6 space-y-2 rounded-2xl bg-white/8 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-white/50">
-                    AI Team Builder · Örnek Eşleşme
+          <div className="grid gap-4">
+            <div className="rounded-[2rem] border border-white/10 bg-[#121A2F]/92 p-6 text-white shadow-halo">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.24em] text-white/45">
+                    Bugün Platformda
                   </p>
-                  <div className="mt-3 rounded-xl bg-white px-4 py-3 text-ink">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-primary/60">
-                      High Match · 92%
-                    </p>
-                    <h3 className="mt-1 text-base font-bold">
-                      Frontend Developer
-                    </h3>
-                    <p className="mt-1 text-xs leading-5 text-ink/60">
-                      React + TypeScript deneyimi proje ihtiyacını tam karşılıyor.
-                      Eksik backend alanları ekip içi dağılımla kapanabilir.
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {["React", "TypeScript", "Tailwind"].map((sk) => (
-                        <span
-                          key={sk}
-                          className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary"
-                        >
-                          {sk}
-                        </span>
-                      ))}
-                    </div>
+                  <h2 className="mt-2 text-3xl font-extrabold">Canlı ekip akışı</h2>
+                </div>
+                <span className={`h-3 w-3 rounded-full ${dot}`} />
+              </div>
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                {[
+                  ["26", "aktif proje"],
+                  ["14", "açık ekip rolü"],
+                  ["9", "bugün yeni başvuru"],
+                  ["7", "yeni premium founder"],
+                ].map(([value, label]) => (
+                  <div key={label} className="rounded-2xl border border-white/10 bg-white/8 p-4">
+                    <p className="text-2xl font-extrabold">{value}</p>
+                    <p className="mt-1 text-sm text-white/62">{label}</p>
                   </div>
-                </div>
+                ))}
+              </div>
+            </div>
 
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <a
-                    href="#register"
-                    className="rounded-xl bg-white px-4 py-3 text-center text-sm font-bold text-primary transition hover:bg-white/90"
-                  >
-                    Hesap Oluştur
-                  </a>
-                  <a
-                    href="#pricing"
-                    className="rounded-xl border border-white/15 px-4 py-3 text-center text-sm font-semibold text-white/85 transition hover:bg-white/10"
-                  >
-                    Planları İncele
-                  </a>
+            <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
+              <div className="rounded-[1.75rem] border border-white/8 bg-white/5 p-5 shadow-sm backdrop-blur">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-accent-light/70">
+                  Öne Çıkan Proje
+                </p>
+                <h3 className="mt-3 text-2xl font-extrabold text-white">
+                  Foundrly AI Hackathon Ekibi
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-white/64">
+                  48 saatlik ürün sprinti için ön yüz geliştirici, veri odaklı ürün yöneticisi ve tasarımcı arıyor.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {["React", "YZ", "Hackathon"].map((item) => (
+                    <span key={item} className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                      {item}
+                    </span>
+                  ))}
                 </div>
+              </div>
+
+              <div className="rounded-[1.75rem] border border-white/8 bg-white/5 p-5 shadow-sm backdrop-blur">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-accent-light/70">
+                  Haftanın Hikayesi
+                </p>
+                <h3 className="mt-3 text-xl font-extrabold text-white">
+                  3 farklı şehirden kurulan ekip, ilk MVP'sini 12 günde çıkardı
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-white/64">
+                  Foundrly üzerinden tanışan bir kurucu, bir backend geliştirici ve bir tasarımcı, tek sprintte ilk prototipe ulaştı.
+                </p>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="border-y border-white/40 bg-white/50 backdrop-blur">
+        <section className="border-y border-white/8 bg-white/4 backdrop-blur">
           <div className="mx-auto max-w-7xl px-6 py-16 lg:px-10">
             <div className="mb-10 text-center">
-              <p className="text-sm font-bold uppercase tracking-[0.25em] text-primary/60">
+              <p className="text-sm font-bold uppercase tracking-[0.25em] text-accent-light/70">
                 Problem & Çözüm
               </p>
-              <h2 className="mt-3 text-4xl font-extrabold">Neden Foundrly?</h2>
-              <p className="mx-auto mt-3 max-w-xl text-base text-ink/65">
+              <h2 className="mt-3 text-4xl font-extrabold text-white">Neden Foundrly?</h2>
+              <p className="mx-auto mt-3 max-w-xl text-base text-white/62">
                 Doğru ekip arkadaşını bulmak hâlâ gereğinden zor. Foundrly bunu daha hızlı ve daha güvenilir hale getirir.
               </p>
             </div>
 
             <div className="grid gap-6 lg:grid-cols-2">
-              <div className="rounded-[2rem] border border-red-100 bg-red-50/60 p-8">
+              <div className="rounded-[2rem] border border-white/8 bg-[#171F35]/90 p-8">
                 <p className="mb-5 text-sm font-bold uppercase tracking-widest text-red-400">
                   Mevcut Durum
                 </p>
@@ -2192,21 +3611,21 @@ export default function App() {
                   {PROBLEMS.map((p) => (
                     <li key={p.text} className="flex items-start gap-3">
                       <span className="text-2xl leading-none">{p.icon}</span>
-                      <span className="text-sm leading-6 text-ink/75">{p.text}</span>
+                      <span className="text-sm leading-6 text-white/70">{p.text}</span>
                     </li>
                   ))}
                 </ul>
               </div>
 
-              <div className="rounded-[2rem] border border-success/20 bg-success/8 p-8">
-                <p className="mb-5 text-sm font-bold uppercase tracking-widest text-success">
+              <div className="rounded-[2rem] border border-accent/12 bg-accent/8 p-8">
+                <p className="mb-5 text-sm font-bold uppercase tracking-widest text-mint-light">
                   Foundrly ile
                 </p>
                 <ul className="space-y-4">
                   {SOLUTIONS.map((s) => (
                     <li key={s.text} className="flex items-start gap-3">
                       <span className="text-2xl leading-none">{s.icon}</span>
-                      <span className="text-sm leading-6 text-ink/75">{s.text}</span>
+                      <span className="text-sm leading-6 text-white/72">{s.text}</span>
                     </li>
                   ))}
                 </ul>
@@ -2215,86 +3634,159 @@ export default function App() {
           </div>
         </section>
 
-        <section id="features" className="mx-auto max-w-7xl px-6 py-20 lg:px-10">
+        <section id="discover" className="mx-auto max-w-7xl px-6 py-20 lg:px-10">
           <div className="mb-12 max-w-2xl">
-            <p className="text-sm font-bold uppercase tracking-[0.25em] text-primary/60">
-              Özellikler
+            <p className="text-sm font-bold uppercase tracking-[0.25em] text-accent-light/70">
+              Keşfet
             </p>
-            <h2 className="mt-3 text-4xl font-extrabold">
-              Foundrly tam olarak ne sunar?
+            <h2 className="mt-3 text-4xl font-extrabold text-white">
+              Sitede sadece kayıt olunmuyor, gerçekten geziliyor
             </h2>
-            <p className="mt-3 text-base leading-7 text-ink/65">
-              Sosyal medya grupları ve rastgele bağlantılar yerine beceri odaklı,
-              AI destekli ve şeffaf bir ekip kurma deneyimi.
+            <p className="mt-3 text-base leading-7 text-white/62">
+              İnsanların yalnızca profil açmak için değil, yeni ekipler ve fırsatlar görmek için de geri döneceği canlı bir keşif alanı.
             </p>
           </div>
 
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((f) => (
+            {DISCOVER_GROUPS.map((f) => (
               <article
                 key={f.title}
-                className="group rounded-[1.75rem] border border-white/70 bg-white/85 p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-halo"
+                className="group rounded-[1.75rem] border border-white/8 bg-white/5 p-7 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:border-accent/28 hover:shadow-halo"
               >
-                <div className="flex items-start justify-between">
-                  <span className="text-3xl">{f.icon}</span>
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-bold ${f.badgeColor}`}
-                  >
-                    {f.badge}
-                  </span>
-                </div>
-                <h3 className="mt-4 text-xl font-bold">{f.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-ink/65">{f.description}</p>
+                <h3 className="mt-4 text-xl font-bold text-white">{f.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-white/62">{f.description}</p>
               </article>
             ))}
           </div>
         </section>
 
         <section
-          id="how-it-works"
-          className="border-y border-white/40 bg-gradient-to-br from-primary/5 to-success/5"
+          id="teammates"
+          className="border-y border-white/8 bg-[linear-gradient(180deg,rgba(91,127,255,0.08),rgba(11,16,32,0.02))]"
         >
           <div className="mx-auto max-w-7xl px-6 py-20 lg:px-10">
             <div className="mb-12 text-center">
-              <p className="text-sm font-bold uppercase tracking-[0.25em] text-primary/60">
-                Workflow
+              <p className="text-sm font-bold uppercase tracking-[0.25em] text-accent-light/70">
+                Ekip Arkadaşı Bul
               </p>
-              <h2 className="mt-3 text-4xl font-extrabold">
-                İki dakikada fikirden ekibe
+              <h2 className="mt-3 text-4xl font-extrabold text-white">
+                Gerçekten projeye katılacak insanları filtrele
               </h2>
-              <p className="mx-auto mt-3 max-w-lg text-base text-ink/65">
-                Adım adım rehberli süreç ile hiçbir karmaşıklık olmadan doğru ekibini kur.
+              <p className="mx-auto mt-3 max-w-lg text-base text-white/62">
+                Sadece profil değil, üretim seviyesi de önemlidir. Rol ve deneyim düzeyine göre arama yaparak ekip kurma kalitesini artır.
               </p>
             </div>
 
-            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-              {STEPS.map((s, i) => (
+            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {TEAMMATE_GROUPS.map((s) => (
                 <div
-                  key={s.num}
-                  className="relative rounded-[1.75rem] border border-white/60 bg-white/80 p-7 backdrop-blur"
+                  key={s.role}
+                  className="relative rounded-[1.75rem] border border-white/8 bg-white/5 p-7 backdrop-blur"
                 >
-                  {i < STEPS.length - 1 && (
-                    <div className="absolute right-0 top-1/2 hidden h-px w-5 -translate-y-1/2 translate-x-full border-t border-dashed border-primary/30 lg:block" />
-                  )}
-                  <span className="text-4xl font-black text-primary/15">{s.num}</span>
-                  <h3 className="mt-3 text-lg font-bold">{s.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-ink/60">{s.desc}</p>
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-accent-light/70">
+                    Rol
+                  </p>
+                  <h3 className="mt-3 text-lg font-bold text-white">{s.role}</h3>
+                  <p className="mt-2 text-sm leading-6 text-white/60">{s.levels}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
+        <section id="hub" className="mx-auto max-w-7xl px-6 py-20 lg:px-10">
+          <div className="mb-12 max-w-2xl">
+            <p className="text-sm font-bold uppercase tracking-[0.25em] text-accent-light/70">
+              Girişim Merkezi
+            </p>
+            <h2 className="mt-3 text-4xl font-extrabold text-white">
+              Sadece ekip değil, girişim bilgisi de burada
+            </h2>
+            <p className="mt-3 text-base leading-7 text-white/62">
+              Ürün geliştirme ve startup yolculuğu için pratik içerikler. Bu alan zamanla organik trafik ve düzenli geri dönüş sağlayan içerik motoruna dönüşür.
+            </p>
+          </div>
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {HUB_CONTENT.map((item) => (
+              <article key={item} className="rounded-[1.75rem] border border-white/8 bg-white/5 p-7 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:border-accent/28 hover:shadow-halo">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-accent-light/70">
+                  İçerik Başlığı
+                </p>
+                <h3 className="mt-4 text-xl font-bold text-white">{item}</h3>
+                <p className="mt-2 text-sm leading-6 text-white/62">
+                  Kısa, net ve uygulanabilir içeriklerle ekiplerin daha doğru karar vermesine yardımcı olur.
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section id="events" className="border-y border-white/8 bg-white/4 backdrop-blur">
+          <div className="mx-auto max-w-7xl px-6 py-20 lg:px-10">
+            <div className="mb-12 text-center">
+              <p className="text-sm font-bold uppercase tracking-[0.25em] text-accent-light/70">
+                Etkinlikler
+              </p>
+              <h2 className="mt-3 text-4xl font-extrabold text-white">
+                Platformun canlı kalmasını sağlayan buluşmalar
+              </h2>
+              <p className="mx-auto mt-3 max-w-2xl text-base text-white/62">
+                Yaklaşan hackathonlar, startup yarışmaları ve ağ kurma oturumları ile insanlar sadece çevrim içi değil, ritim içinde bağlı kalır.
+              </p>
+            </div>
+            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {EVENT_CONTENT.map((item) => (
+                <article key={item} className="rounded-[1.75rem] border border-white/8 bg-white/5 p-7 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:border-accent/28 hover:shadow-halo">
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-accent-light/70">
+                    Yakında
+                  </p>
+                  <h3 className="mt-4 text-xl font-bold text-white">{item}</h3>
+                  <p className="mt-2 text-sm leading-6 text-white/62">
+                    Yeni ekiplerle tanışmak, proje ortaklığı kurmak ve ürününü görünür kılmak için etkinlik akışını düzenli takip et.
+                  </p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="community" className="mx-auto max-w-7xl px-6 py-20 lg:px-10">
+          <div className="mb-12 max-w-2xl">
+            <p className="text-sm font-bold uppercase tracking-[0.25em] text-accent-light/70">
+              Topluluk
+            </p>
+            <h2 className="mt-3 text-4xl font-extrabold text-white">
+              İnsanların aidiyet hissedeceği bir marka alanı
+            </h2>
+            <p className="mt-3 text-base leading-7 text-white/62">
+              Başarı hikayeleri, öne çıkan kurucular ve iş birliği örnekleriyle Foundrly sadece araç değil, topluluk hissi veren bir ürün olur.
+            </p>
+          </div>
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {COMMUNITY_CONTENT.map((item) => (
+              <article key={item} className="rounded-[1.75rem] border border-white/8 bg-white/5 p-7 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:border-accent/28 hover:shadow-halo">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-accent-light/70">
+                  Topluluk Akışı
+                </p>
+                <h3 className="mt-4 text-xl font-bold text-white">{item}</h3>
+                <p className="mt-2 text-sm leading-6 text-white/62">
+                  İnsanların geri dönmesini sağlayan, paylaşılabilir ve marka değerini büyüten sürekli görünür alanlar.
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
+
         <section id="pricing" className="mx-auto max-w-7xl px-6 py-20 lg:px-10">
           <div className="mb-12 text-center">
-            <p className="text-sm font-bold uppercase tracking-[0.25em] text-primary/60">
+            <p className="text-sm font-bold uppercase tracking-[0.25em] text-accent-light/70">
               Fiyatlandırma
             </p>
-            <h2 className="mt-3 text-4xl font-extrabold">
-              Free ile başla, Premium ile hızlan
+            <h2 className="mt-3 text-4xl font-extrabold text-white">
+              Ücretsiz başla, Premium ile öne çık
             </h2>
-            <p className="mx-auto mt-3 max-w-lg text-base text-ink/65">
-              Her seviyeden kullanıcı için adil bir model. Yıllık planla %20 tasarruf et.
+            <p className="mx-auto mt-3 max-w-lg text-base text-white/62">
+              İnsanlar özellik değil avantaj satın alır. Premium; görünürlük, güven ve daha kaliteli eşleşme avantajı sağlar.
             </p>
           </div>
 
@@ -2352,13 +3844,12 @@ export default function App() {
                 </ul>
 
                 {plan.name === "Premium" ? (
-                  <button
-                    type="button"
-                    onClick={() => startLandingPremiumCheckout("monthly")}
-                    className={`mt-8 block w-full rounded-2xl py-3 text-center text-sm font-bold transition hover:opacity-90 ${plan.ctaClass}`}
-                  >
-                    {plan.cta}
-                  </button>
+                <a
+                  href="#premium"
+                  className={`mt-8 block rounded-2xl py-3 text-center text-sm font-bold transition hover:opacity-90 ${plan.ctaClass}`}
+                >
+                  {plan.cta}
+                </a>
                 ) : (
                   <a
                     href="#register"
@@ -2370,83 +3861,37 @@ export default function App() {
               </article>
             ))}
           </div>
-          {checkoutFeedback && (
-            <div className="mx-auto mt-6 max-w-xl rounded-2xl border border-primary/10 bg-primary/5 px-4 py-3 text-center text-sm text-primary">
-              {checkoutFeedback}
-            </div>
-          )}
         </section>
 
         <section className="mx-auto max-w-7xl px-6 pb-24 lg:px-10">
-          <div className="overflow-hidden rounded-[2.5rem] bg-primary p-12 text-center text-white shadow-halo lg:p-16">
+          <div className="overflow-hidden rounded-[2.5rem] border border-white/10 bg-[linear-gradient(135deg,#182240_0%,#121A2F_40%,#151E38_100%)] p-12 text-center text-white shadow-halo lg:p-16">
             <p className="text-sm font-bold uppercase tracking-[0.3em] text-white/55">
               Başlamak için bir neden yeter
             </p>
             <h2 className="mx-auto mt-4 max-w-2xl text-4xl font-extrabold lg:text-5xl">
-              Fikrin artık ekibini bekliyor.
+              Bir sonraki büyük fikrin, tek bir bağlantıyla başlayabilir.
             </h2>
             <p className="mx-auto mt-4 max-w-lg text-base text-white/70">
-              Ücretsiz profil oluştur, projenizi paylaş ve AI destekli eşleştirmeyle
-              doğru insanları bul. Hiçbir kurulum, hiçbir ücretli API.
+              Güçlü profiller, aktif ekipler ve doğru insanlarla daha kısa sürede üretime geçmek için Foundrly ekosistemine katıl.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-4">
               <a
                 href="#register"
-                className="rounded-full bg-white px-8 py-3.5 text-sm font-bold text-primary shadow-lg transition hover:-translate-y-0.5"
+                className="rounded-full bg-accent px-8 py-3.5 text-sm font-bold text-white shadow-lg transition hover:-translate-y-0.5"
               >
-                Hemen Başla — Ücretsiz
+                Foundrly'ye Katıl
               </a>
               <a
-                href="#features"
+                href="#premium"
                 className="rounded-full border border-white/25 px-8 py-3.5 text-sm font-semibold text-white/90 transition hover:bg-white/10"
               >
-                Özellikleri İncele
+                Premium'u İncele
               </a>
             </div>
           </div>
         </section>
       </main>
-
-      <footer className="border-t border-ink/8 bg-ink text-white">
-        <div className="mx-auto max-w-7xl px-6 py-10 lg:px-10">
-          <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
-            <div>
-              <p className="text-lg font-extrabold">Foundrly</p>
-              <p className="mt-0.5 text-xs tracking-widest text-white/40">
-                TURN IDEAS INTO TEAMS
-              </p>
-            </div>
-            <div className="flex gap-6 text-sm text-white/50">
-              {NAV_LINKS.map((l) => (
-                <a
-                  key={l.href}
-                  href={l.href}
-                  className="transition hover:text-white"
-                >
-                  {l.label}
-                </a>
-              ))}
-            </div>
-            <div className="flex items-center gap-2 text-sm text-white/40">
-              <span
-                className={`h-1.5 w-1.5 rounded-full ${
-                  health.status === "ready" ? "bg-success" : "bg-white/30"
-                }`}
-              />
-              <span>
-                {health.status === "ready"
-                  ? "API Online"
-                  : health.status === "error"
-                    ? "API Offline"
-                    : "Checking…"}
-              </span>
-            </div>
-          </div>
-          <p className="mt-8 text-xs text-white/25">
-            © 2026 Foundrly · joinfoundrly.com · Nurseli Demir
-          </p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

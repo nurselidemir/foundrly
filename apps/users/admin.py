@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from apps.users.models import PremiumSubscription, User, VerificationRequest
+from apps.users.models import PremiumSubscription, User, UserReview, VerificationRequest
 
 
 @admin.register(User)
@@ -41,3 +41,9 @@ class VerificationRequestAdmin(admin.ModelAdmin):
     list_display = ("user", "requested_title", "status", "created_at", "reviewed_at")
     list_filter = ("status",)
     search_fields = ("user__email", "requested_title")
+
+
+@admin.register(UserReview)
+class UserReviewAdmin(admin.ModelAdmin):
+    list_display = ("reviewer", "reviewee", "application", "rating", "created_at")
+    search_fields = ("reviewer__email", "reviewee__email", "application__project__title")

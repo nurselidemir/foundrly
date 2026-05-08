@@ -21,6 +21,7 @@ docker compose up --build
 | 🌐 Web Landing | http://localhost:3000 |
 | 🔐 Giriş Yap | http://localhost:3000/#login |
 | 📝 Kayıt Ol | http://localhost:3000/#register |
+| ⭐ Premium Simülasyonu | http://localhost:3000/#premium |
 | 🔧 Django Admin | http://localhost:8000/admin/ |
 | 🚀 API Health | http://localhost:8000/api/health/ |
 | 📖 DRF Browser | http://localhost:8000/api/ |
@@ -47,6 +48,9 @@ Frontend tarafında şu akışlar hazırdır:
 - Landing page (`/`)
 - Giriş yap sayfası (`/#login`)
 - Kayıt ol sayfası (`/#register`)
+- Premium simülasyon sayfası (`/#premium`)
+- Kurumsal içerik sayfaları (`/#about`, `/#privacy`, `/#careers`, `/#faq`, `/#contact`)
+- Herkese açık üye profili (`/#app-member-<id>`)
 - Backend health durumunu landing üzerinden izleme
 
 Kayıt ol ekranı doğrudan `POST /api/auth/register/` endpointine bağlıdır.  
@@ -68,6 +72,9 @@ POST  /api/auth/token/refresh/
 GET   /api/users/
 GET   /api/users/me/
 PATCH /api/users/me/
+GET   /api/users/<id>/
+GET   /api/users/<id>/reviews/
+POST  /api/users/<id>/reviews/
 ```
 
 ### Projeler
@@ -97,8 +104,6 @@ GET /api/dashboard/recommended-projects/   ← Premium
 ```
 GET  /api/premium/subscription/
 POST /api/premium/subscription/
-POST /api/billing/create-checkout-session/
-POST /api/billing/webhook/
 GET  /api/verification-requests/
 POST /api/verification-requests/
 PATCH /api/verification-requests/<id>/review/

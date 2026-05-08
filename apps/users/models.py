@@ -112,3 +112,37 @@ class VerificationRequest(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user.email} - {self.status}"
+
+
+class UserReview(models.Model):
+    reviewer = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="written_reviews",
+    )
+    reviewee = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="received_reviews",
+    )
+    application = models.ForeignKey(
+        "projects.TeamApplication",
+        on_delete=models.CASCADE,
+        related_name="user_reviews",
+    )
+    rating = models.PositiveSmallIntegerField()
+    comment = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["application", "reviewer"],
+                name="unique_application_reviewer_review",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.reviewer.email} -> {self.reviewee.email} ({self.rating})"

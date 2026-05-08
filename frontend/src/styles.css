@@ -6,14 +6,22 @@
   :root {
     color: #1b2d49;
     font-family: Inter, system-ui, sans-serif;
+    --color-primary: 71 93 178;
+    --color-success: 63 177 112;
+    --color-ink: 27 45 73;
   }
 
   body {
     margin: 0;
     min-width: 320px;
-    background: #f5f3ea;
+    background:
+      radial-gradient(circle at top, rgba(91, 127, 255, 0.18), transparent 24%),
+      radial-gradient(circle at 20% 20%, rgba(57, 217, 138, 0.08), transparent 18%),
+      linear-gradient(180deg, #0b1020 0%, #0f162b 48%, #121a2f 100%);
+    color: #f8fbff;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
   }
 
   * {
@@ -23,6 +31,244 @@
   html {
     scroll-behavior: smooth;
   }
+
+  ::selection {
+    background: rgba(91, 127, 255, 0.28);
+    color: #f8fbff;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(91, 127, 255, 0.28);
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(91, 127, 255, 0.46);
+  }
+}
+
+@layer components {
+  /* Glass Card */
+  .glass-card {
+    background: rgba(18, 26, 47, 0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.24);
+  }
+
+  .glass-card-strong {
+    background: rgba(18, 26, 47, 0.88);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
+  }
+
+  /* Dark Glass */
+  .glass-dark {
+    background: rgba(27, 45, 73, 0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  /* Gradient Text */
+  .gradient-text {
+    background: linear-gradient(135deg, #475DB2 0%, #6B7FD4 50%, #3FB170 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .gradient-text-hero {
+    background: linear-gradient(135deg, #475DB2 0%, #6B7FD4 40%, #8A9CDB 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Animated Gradient Background */
+  .animated-gradient-bg {
+    background: linear-gradient(
+      135deg,
+      #475DB2 0%,
+      #5D73CD 25%,
+      #3FB170 50%,
+      #5D73CD 75%,
+      #475DB2 100%
+    );
+    background-size: 400% 400%;
+    animation: gradientX 8s ease infinite;
+  }
+
+  /* Shine Effect on Cards */
+  .shine-effect {
+    position: relative;
+    overflow: hidden;
+  }
+  .shine-effect::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      135deg,
+      transparent 40%,
+      rgba(255, 255, 255, 0.12) 50%,
+      transparent 60%
+    );
+    transform: translateX(-100%) rotate(0deg);
+    transition: transform 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  .shine-effect:hover::before {
+    transform: translateX(100%) rotate(0deg);
+  }
+
+  /* Glow Border */
+  .glow-border {
+    position: relative;
+  }
+  .glow-border::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(71, 93, 178, 0.4), rgba(63, 177, 112, 0.3));
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+  .glow-border:hover::after {
+    opacity: 1;
+  }
+
+  /* Gradient Orb */
+  .gradient-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  /* Credit Card */
+  .credit-card-container {
+    perspective: 1200px;
+  }
+  .credit-card {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    aspect-ratio: 1.586;
+    transition: transform 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+    transform-style: preserve-3d;
+  }
+  .credit-card.flipped {
+    transform: rotateY(180deg);
+  }
+  .credit-card-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    border-radius: 1.25rem;
+    padding: 1.75rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .credit-card-back {
+    transform: rotateY(180deg);
+  }
+
+  /* Number Counter Animation */
+  .number-counter {
+    display: inline-block;
+    transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  /* Scroll Reveal */
+  .reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s cubic-bezier(0.23, 1, 0.32, 1),
+                transform 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+  .reveal-delay-3 { transition-delay: 0.3s; }
+  .reveal-delay-4 { transition-delay: 0.4s; }
+  .reveal-delay-5 { transition-delay: 0.5s; }
+
+  /* Premium Badge Shimmer */
+  .badge-shimmer {
+    background: linear-gradient(
+      90deg,
+      #475DB2 0%,
+      #6B7FD4 25%,
+      #8A9CDB 50%,
+      #6B7FD4 75%,
+      #475DB2 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2.5s ease-in-out infinite;
+  }
+
+  /* Input Focus Glow */
+  input:focus, textarea:focus, select:focus {
+    box-shadow: 0 0 0 3px rgba(71, 93, 178, 0.12);
+  }
+
+  /* Button Hover Lift */
+  .btn-lift {
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  .btn-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(71, 93, 178, 0.25);
+  }
+  .btn-lift:active {
+    transform: translateY(0);
+  }
+
+  /* Dot Grid Pattern */
+  .dot-grid {
+    background-image: radial-gradient(rgba(71, 93, 178, 0.08) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  .bg-mesh {
+    background:
+      radial-gradient(circle at top, rgba(91, 127, 255, 0.18), transparent 26%),
+      radial-gradient(circle at 20% 20%, rgba(57, 217, 138, 0.08), transparent 18%),
+      radial-gradient(circle at 80% 10%, rgba(91, 127, 255, 0.12), transparent 22%),
+      linear-gradient(180deg, #0b1020 0%, #0f162b 48%, #121a2f 100%);
+  }
+
+  .bg-noise {
+    position: relative;
+  }
+  .bg-noise::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.2;
+    background-image: radial-gradient(rgba(255,255,255,0.14) 0.8px, transparent 0.8px);
+    background-size: 28px 28px;
+  }
 }
 
 @layer utilities {
@@ -31,5 +277,8 @@
   }
   .bg-success\/8 {
     background-color: rgba(63, 177, 112, 0.08);
+  }
+  .text-balance {
+    text-wrap: balance;
   }
 }

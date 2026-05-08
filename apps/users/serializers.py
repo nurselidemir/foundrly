@@ -1,7 +1,8 @@
+from django.db.models import Avg, Q
 from django.utils import timezone
 from rest_framework import serializers
 
-from apps.users.models import PremiumSubscription, User, VerificationRequest
+from apps.users.models import PremiumSubscription, User, UserReview, VerificationRequest
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -28,6 +29,121 @@ class UserSerializer(serializers.ModelSerializer):
             "is_staff",
             "is_superuser",
             "date_joined",
+        ]
+
+
+class PublicUserReviewSerializer(serializers.ModelSerializer):
+    reviewer = serializers.SerializerMethodField()
+    project = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserReview
+        fields = [
+            "id",
+            "reviewer",
+            "project",
+            "rating",
+            "comment",
+            "created_at",
+        ]
+
+    def get_reviewer(self, obj):
+        return {
+            "id": obj.reviewer.id,
+            "full_name": obj.reviewer.full_name,
+            "title": obj.reviewer.title,
+            "is_verified_talent": obj.reviewer.is_verified_talent,
+        }
+
+    def get_project(self, obj):
+        return {
+            "id": obj.application.project_id,
+            "title": obj.application.project.title,
+        }
+
+
+class PublicUserProfileSerializer(serializers.ModelSerializer):
+    average_rating = serializers.SerializerMethodField()
+    reviews_count = serializers.SerializerMethodField()
+    reviews = serializers.SerializerMethodField()
+    recent_projects = serializers.SerializerMethodField()
+    eligible_review_applications = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "full_name",
+            "title",
+            "bio",
+            "skills",
+            "interests",
+            "is_verified_talent",
+            "is_premium",
+            "date_joined",
+            "average_rating",
+            "reviews_count",
+            "reviews",
+            "recent_projects",
+            "eligible_review_applications",
+        ]
+
+    def get_average_rating(self, obj):
+        value = obj.received_reviews.aggregate(avg=Avg("rating"))["avg"]
+        return round(value, 1) if value is not None else None
+
+    def get_reviews_count(self, obj):
+        return obj.received_reviews.count()
+
+    def get_reviews(self, obj):
+        reviews = (
+            obj.received_reviews.select_related(
+                "reviewer",
+                "application__project",
+            ).all()[:10]
+        )
+        return PublicUserReviewSerializer(reviews, many=True).data
+
+    def get_recent_projects(self, obj):
+        projects = obj.projects.order_by("-created_at")[:3]
+        return [
+            {
+                "id": project.id,
+                "title": project.title,
+                "summary": project.summary,
+                "created_at": project.created_at,
+            }
+            for project in projects
+        ]
+
+    def get_eligible_review_applications(self, obj):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated or request.user.id == obj.id:
+            return []
+
+        from apps.projects.models import TeamApplication
+
+        applications = (
+            TeamApplication.objects.select_related("project", "project__owner", "applicant")
+            .filter(status="accepted")
+            .filter(
+                (
+                    Q(project__owner=request.user, applicant=obj)
+                    | Q(project__owner=obj, applicant=request.user)
+                )
+            )
+        )
+        applications = applications.exclude(
+            user_reviews__reviewer=request.user
+        )
+        return [
+            {
+                "application_id": application.id,
+                "project_id": application.project_id,
+                "project_title": application.project.title,
+                "counterpart_role": obj.title,
+            }
+            for application in applications.distinct()[:10]
         ]
 
 
@@ -288,3 +404,69 @@ class AdminVerificationRequestSerializer(serializers.ModelSerializer):
             "title": obj.user.title,
             "is_verified_talent": obj.user.is_verified_talent,
         }
+
+
+class UserReviewCreateSerializer(serializers.ModelSerializer):
+    application_id = serializers.IntegerField(write_only=True)
+
+    class Meta:
+        model = UserReview
+        fields = [
+            "id",
+            "application_id",
+            "rating",
+            "comment",
+            "created_at",
+        ]
+        read_only_fields = ["id", "created_at"]
+
+    def validate_rating(self, value):
+        if value < 1 or value > 5:
+            raise serializers.ValidationError("Puan 1 ile 5 arasinda olmali.")
+        return value
+
+    def validate(self, attrs):
+        request = self.context["request"]
+        profile_user = self.context["profile_user"]
+        application_id = attrs["application_id"]
+
+        from apps.projects.models import TeamApplication
+
+        try:
+            application = TeamApplication.objects.select_related("project__owner", "applicant").get(
+                pk=application_id,
+                status="accepted",
+            )
+        except TeamApplication.DoesNotExist as exc:
+            raise serializers.ValidationError("Gecerli bir accepted proje kaydi bulunamadi.") from exc
+
+        if request.user.id == profile_user.id:
+            raise serializers.ValidationError("Kullanici kendisine yorum birakamaz.")
+
+        valid_pair = {
+            application.project.owner_id,
+            application.applicant_id,
+        } == {request.user.id, profile_user.id}
+
+        if not valid_pair:
+            raise serializers.ValidationError(
+                "Yorum birakmak icin bu kullanici ile kabul edilmis ayni projede yer alman gerekiyor."
+            )
+
+        if UserReview.objects.filter(application=application, reviewer=request.user).exists():
+            raise serializers.ValidationError("Bu proje icin bu kullaniciya zaten yorum biraktin.")
+
+        attrs["application"] = application
+        return attrs
+
+    def create(self, validated_data):
+        request = self.context["request"]
+        profile_user = self.context["profile_user"]
+        application = validated_data.pop("application")
+        validated_data.pop("application_id", None)
+        return UserReview.objects.create(
+            reviewer=request.user,
+            reviewee=profile_user,
+            application=application,
+            **validated_data,
+        )
