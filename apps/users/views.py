@@ -11,7 +11,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.users.models import VerificationRequest, User
+from apps.users.models import VerificationRequest, User, MentorRequest, FriendRequest
 from apps.users.serializers import (
     AdminUserDetailSerializer,
     AdminUserModerationSerializer,
@@ -26,6 +26,9 @@ from apps.users.serializers import (
     UserReviewCreateSerializer,
     VerificationRequestSerializer,
     VerificationReviewSerializer,
+    MentorSerializer,
+    MentorRequestSerializer,
+    FriendRequestSerializer,
 )
 
 
@@ -88,12 +91,107 @@ class UserListView(generics.ListAPIView):
         return queryset
 
 
+class MentorListView(generics.ListAPIView):
+    queryset = User.objects.filter(is_mentor=True)
+    serializer_class = MentorSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class MentorRequestListCreateView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = MentorRequestSerializer
+
+    def get_queryset(self):
+        return MentorRequest.objects.filter(user=self.request.user)
+
+
+class FriendRequestListCreateView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = FriendRequestSerializer
+
+    def get_queryset(self):
+        return FriendRequest.objects.filter(
+            Q(sender=self.request.user) | Q(receiver=self.request.user)
+        )
+
+    def perform_create(self, serializer):
+        serializer.save(sender=self.request.user)
+
+
+class FriendRequestUpdateView(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = FriendRequestSerializer
+    queryset = FriendRequest.objects.all()
+
+    def get_object(self):
+        obj = super().get_object()
+        if obj.receiver_id != self.request.user.id:
+            raise PermissionDenied("Sadece alici istegi guncelleyebilir.")
+        return obj
+
+
+class MentorMyRequestsView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = MentorRequestSerializer
+
+    def get_queryset(self):
+        if not self.request.user.is_mentor:
+            raise PermissionDenied("Sadece mentorlar bu alana erisebilir.")
+        return MentorRequest.objects.filter(mentor=self.request.user)
+
+
+class MentorRequestStatusUpdateView(generics.UpdateAPIView):
+    queryset = MentorRequest.objects.all()
+    serializer_class = MentorRequestSerializer
+    permission_classes = [IsAuthenticated]
+    http_method_names = ["patch"]
+
+    def get_object(self):
+        obj = super().get_object()
+        if obj.mentor_id != self.request.user.id:
+            raise PermissionDenied("Sadece talebin atandigi mentor durum guncellemesi yapabilir.")
+        return obj
+
+    def perform_update(self, serializer):
+        old_status = self.get_object().status
+        instance = serializer.save()
+        
+        # If status changed to accepted, mentor might have provided an offered_price
+        # (Usually handled via serializer's partial update)
+
+        # If status changed to completed, give money to mentor
+        if old_status != "completed" and instance.status == "completed":
+            mentor = instance.mentor
+            # Use price_at_request if it was a pre-paid/credit thing, 
+            # otherwise use offered_price
+            base_price = instance.offered_price if instance.price_at_request == -1 else instance.price_at_request
+            earned = base_price * (1 - instance.commission_rate)
+            mentor.mentor_balance += earned
+            mentor.save(update_fields=["mentor_balance"])
+
+
 class CurrentUserView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
         return self.request.user
+
+
+class ProfilePictureUploadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if "profile_picture" not in request.FILES:
+            return Response({"detail": "Resim dosyasi bulunamadi."}, status=400)
+        
+        user = request.user
+        user.profile_picture = request.FILES["profile_picture"]
+        user.save()
+        
+        # We need to return the FULL URL for the frontend to show it immediately
+        # Usually Django Serializer does this if Request context is provided
+        return Response(UserSerializer(user, context={'request': request}).data)
 
 
 class PublicUserProfileView(generics.RetrieveAPIView):
@@ -238,8 +336,8 @@ class AdminUserListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        if not self.request.user.is_superuser:
-            raise PermissionDenied("Bu alan sadece superuser kullanicilar icindir.")
+        if not self.request.user.is_staff:
+            raise PermissionDenied("Bu alan sadece admin kullanicilar icindir.")
 
         queryset = super().get_queryset()
         search = self.request.query_params.get("search")
@@ -288,6 +386,19 @@ class AdminUserModerationView(generics.UpdateAPIView):
             raise PermissionDenied("Kendi hesabinizi silemezsiniz.")
         user.delete()
         return Response(status=204)
+
+
+class AdminUserCreateView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = RegisterSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        if not self.request.user.is_staff:
+            raise PermissionDenied("Sadece adminler yeni kullanici/mentor olusturabilir.")
+        user = serializer.save()
+        # If admin specified is_mentor in some way, or we just want to allow editing after create
+        return user
 
 
 class AdminVerificationRequestListView(generics.ListAPIView):

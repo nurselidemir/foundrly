@@ -2,7 +2,14 @@ from django.db.models import Avg, Q
 from django.utils import timezone
 from rest_framework import serializers
 
-from apps.users.models import PremiumSubscription, User, UserReview, VerificationRequest
+from apps.users.models import (
+    FriendRequest,
+    MentorRequest,
+    PremiumSubscription,
+    User,
+    UserReview,
+    VerificationRequest,
+)
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -16,8 +23,13 @@ class UserSerializer(serializers.ModelSerializer):
             "bio",
             "skills",
             "interests",
+            "profile_picture",
             "is_verified_talent",
             "is_premium",
+            "is_mentor",
+            "mentor_credits",
+            "mentor_price",
+            "mentor_balance",
             "is_staff",
             "is_superuser",
             "date_joined",
@@ -78,6 +90,7 @@ class PublicUserProfileSerializer(serializers.ModelSerializer):
             "bio",
             "skills",
             "interests",
+            "profile_picture",
             "is_verified_talent",
             "is_premium",
             "date_joined",
@@ -200,7 +213,8 @@ class PremiumSubscribeSerializer(serializers.Serializer):
         )
 
         user.is_premium = True
-        user.save(update_fields=["is_premium"])
+        user.mentor_credits = 3
+        user.save(update_fields=["is_premium", "mentor_credits"])
         return subscription
 
 
@@ -370,12 +384,12 @@ class AdminUserDetailSerializer(serializers.ModelSerializer):
 class AdminUserModerationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["is_active", "is_verified_talent", "is_premium"]
+        fields = ["is_active", "is_verified_talent", "is_premium", "is_mentor", "mentor_price"]
 
     def validate(self, attrs):
         request = self.context["request"]
-        if not request.user.is_superuser:
-            raise serializers.ValidationError("Bu islem sadece superuser tarafindan yapilabilir.")
+        if not request.user.is_staff:
+            raise serializers.ValidationError("Bu islem sadece admin kullanicilar icindir.")
         return attrs
 
 
@@ -470,3 +484,71 @@ class UserReviewCreateSerializer(serializers.ModelSerializer):
             application=application,
             **validated_data,
         )
+
+
+class MentorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "full_name", "title", "bio", "skills", "profile_picture", "is_mentor", "mentor_price"]
+
+
+class MentorRequestSerializer(serializers.ModelSerializer):
+    mentor_details = MentorSerializer(source="mentor", read_only=True)
+    user_details = MentorSerializer(source="user", read_only=True)
+
+    class Meta:
+        model = MentorRequest
+        fields = [
+            "id",
+            "mentor",
+            "mentor_details",
+            "user",
+            "user_details",
+            "message",
+            "status",
+            "price_at_request",
+            "offered_price",
+            "commission_rate",
+            "created_at",
+        ]
+        read_only_fields = ["id", "user", "price_at_request", "commission_rate", "created_at"]
+
+    def validate(self, attrs):
+        user = self.context["request"].user
+        if not user.is_premium:
+            raise serializers.ValidationError("Mentor destegi sadece premium kullanicilar icindir.")
+
+        mentor = attrs["mentor"]
+        if not mentor.is_mentor:
+            raise serializers.ValidationError("Secilen kullanici bir mentor degildir.")
+
+        # Price is now offered by the mentor later, so we just check credits if they want a free session
+        # but even if they don't have credits, they can request, and the mentor will offer a price.
+        return attrs
+
+    def create(self, validated_data):
+        user = self.context["request"].user
+        # We'll use price_at_request=0 to indicate it's an offer-based request initially
+        # If user had credits, we'll mark it as 0 (free)
+        price = -1 # -1 means "Waiting for offer"
+        if user.mentor_credits > 0:
+            user.mentor_credits -= 1
+            user.save(update_fields=["mentor_credits"])
+            price = 0 # 0 means "Free session used"
+
+        return MentorRequest.objects.create(
+            user=user, 
+            price_at_request=price,
+            commission_rate=0.20,
+            **validated_data
+        )
+
+
+class FriendRequestSerializer(serializers.ModelSerializer):
+    sender_name = serializers.CharField(source="sender.full_name", read_only=True)
+    receiver_name = serializers.CharField(source="receiver.full_name", read_only=True)
+
+    class Meta:
+        model = FriendRequest
+        fields = ["id", "sender", "sender_name", "receiver", "receiver_name", "status", "created_at"]
+        read_only_fields = ["id", "sender", "status", "created_at"]

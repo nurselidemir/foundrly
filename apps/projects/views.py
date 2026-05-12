@@ -150,11 +150,19 @@ class TeamApplicationStatusUpdateView(generics.UpdateAPIView):
     http_method_names = ["patch"]
 
 
+from apps.users.models import FriendRequest
+from apps.users.serializers import FriendRequestSerializer
+...
 class DashboardSummaryView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
+        
+        from django.db.models import Q
+        friend_requests = FriendRequest.objects.filter(
+            Q(sender=user) | Q(receiver=user)
+        )
 
         owned_projects = Project.objects.filter(owner=user)
         sent_applications = TeamApplication.objects.filter(applicant=user)
@@ -167,6 +175,7 @@ class DashboardSummaryView(APIView):
 
         data = {
             "profile": UserSummarySerializer(user).data,
+            "friend_requests": FriendRequestSerializer(friend_requests, many=True).data,
             "metrics": {
                 "owned_projects_count": owned_projects.count(),
                 "received_applications_count": received_applications.count(),

@@ -36,8 +36,13 @@ class User(AbstractUser):
     bio = models.TextField(blank=True)
     skills = models.JSONField(default=list, blank=True)
     interests = models.JSONField(default=list, blank=True)
+    profile_picture = models.ImageField(upload_to="profiles/", blank=True, null=True)
     is_verified_talent = models.BooleanField(default=False)
     is_premium = models.BooleanField(default=False)
+    is_mentor = models.BooleanField(default=False)
+    mentor_credits = models.IntegerField(default=0)
+    mentor_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    mentor_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
@@ -114,6 +119,31 @@ class VerificationRequest(models.Model):
         return f"{self.user.email} - {self.status}"
 
 
+class MentorRequest(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="mentor_requests")
+    mentor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="mentor_sessions")
+    message = models.TextField()
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ("pending", "Pending"),
+            ("accepted", "Accepted"),
+            ("completed", "Completed"),
+        ],
+        default="pending",
+    )
+    price_at_request = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    offered_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    commission_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0.20)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.user.email} -> {self.mentor.email}"
+
+
 class UserReview(models.Model):
     reviewer = models.ForeignKey(
         User,
@@ -146,3 +176,27 @@ class UserReview(models.Model):
 
     def __str__(self) -> str:
         return f"{self.reviewer.email} -> {self.reviewee.email} ({self.rating})"
+
+
+class FriendRequest(models.Model):
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_friend_requests")
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="received_friend_requests")
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ("pending", "Pending"),
+            ("accepted", "Accepted"),
+            ("rejected", "Rejected"),
+        ],
+        default="pending",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["sender", "receiver"], name="unique_friend_request")
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.sender.email} -> {self.receiver.email} ({self.status})"

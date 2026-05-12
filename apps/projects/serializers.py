@@ -8,8 +8,10 @@ class UserSummarySerializer(serializers.Serializer):
     email = serializers.EmailField(read_only=True)
     full_name = serializers.CharField(read_only=True)
     title = serializers.CharField(read_only=True)
+    profile_picture = serializers.ImageField(read_only=True)
     is_verified_talent = serializers.BooleanField(read_only=True)
     is_premium = serializers.BooleanField(read_only=True)
+    is_mentor = serializers.BooleanField(read_only=True)
     is_staff = serializers.BooleanField(read_only=True)
     is_superuser = serializers.BooleanField(read_only=True)
 
@@ -133,6 +135,7 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 class DashboardSummarySerializer(serializers.Serializer):
     profile = UserSummarySerializer()
+    friend_requests = serializers.ListField(child=serializers.DictField(), required=False)
     metrics = serializers.DictField()
     recent_projects = ProjectListSerializer(many=True)
     recent_received_applications = TeamApplicationSerializer(many=True)
