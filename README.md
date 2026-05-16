@@ -21,7 +21,7 @@ docker compose up --build
 | 🌐 Web Landing | http://localhost:3000 |
 | 🔐 Giriş Yap | http://localhost:3000/#login |
 | 📝 Kayıt Ol | http://localhost:3000/#register |
-| ⭐ Premium Simülasyonu | http://localhost:3000/#premium |
+| ⭐ Premium | http://localhost:3000/#premium |
 | 🔧 Django Admin | http://localhost:8000/admin/ |
 | 🚀 API Health | http://localhost:8000/api/health/ |
 | 📖 DRF Browser | http://localhost:8000/api/ |
@@ -55,6 +55,32 @@ Frontend tarafında şu akışlar hazırdır:
 
 Kayıt ol ekranı doğrudan `POST /api/auth/register/` endpointine bağlıdır.  
 Giriş yap ekranı `POST /api/auth/token/` ile JWT alır ve ardından `GET /api/users/me/` çağrısı yapar.
+
+---
+
+## Demo Verisi
+
+Hocaya sunum yapmadan once asagidaki komutla ornek hesaplari, projeleri, basvurulari, mesajlasma senaryosunu ve verified kuyrugunu hazirlayabilirsin:
+
+```bash
+docker compose exec web python manage.py seed_demo_data
+```
+
+Hazir gelen hesaplar:
+
+- Admin: `nurselidemiir@gmail.com` / `Nurseli1`
+- Founder: `founder@joinfoundrly.com` / `Founder123!`
+- Builder: `builder@joinfoundrly.com` / `Builder123!`
+- Designer: `designer@joinfoundrly.com` / `Designer123!`
+- Mentor: `mentor@joinfoundrly.com` / `Mentor123!`
+
+Kisa demo akisi:
+
+1. Founder hesabi ile giris yapip aktif proje ve gelen basvurulari goster.
+2. Builder hesabi ile public profil, premium ve AI onerilerini goster.
+3. Mesajlar ekraninda accepted ekip mesajlasmasini goster.
+4. Public profilde yorum ve puan alanlarini goster.
+5. Admin hesabi ile `Yonetim` ekranindan pending verified basvurusunu onayla veya reddet.
 
 ---
 

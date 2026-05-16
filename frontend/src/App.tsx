@@ -200,6 +200,7 @@ type AdminUser = {
   email: string;
   full_name: string;
   title: string;
+  is_mentor: boolean;
   is_staff: boolean;
   is_superuser: boolean;
 };
@@ -1963,14 +1964,14 @@ function DashboardPage({
       <main className="mx-auto max-w-7xl px-6 py-10 lg:px-10">
         {route === "app-home" && (
           <div className="space-y-6">
-            <section className="rounded-[2.25rem] border border-ink/10 bg-white p-8 text-ink shadow-sm lg:p-10">
-              <p className="text-sm font-bold uppercase tracking-[0.24em] text-ink/50">
+            <section className="app-panel-strong rounded-[2.25rem] p-8 text-ink lg:p-10">
+              <p className="app-section-eyebrow text-sm font-bold uppercase tracking-[0.24em]">
                 Anasayfa
               </p>
               <h1 className="mt-4 text-4xl font-extrabold leading-tight lg:text-5xl">
                 {summary?.profile.full_name || currentUser?.full_name || "Hoş geldin"}
               </h1>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-ink/70">
+              <p className="app-section-copy mt-4 max-w-2xl text-base">
                 {summary?.profile.title || currentUser?.title || "Kullanıcı"} · {loadingLabel}
               </p>
 
@@ -1985,7 +1986,7 @@ function DashboardPage({
                 ].map(([label, value]) => (
                   <div
                     key={String(label)}
-                    className="rounded-2xl border border-ink/10 bg-[#F7F8FC] p-5"
+                    className="app-kpi-card rounded-2xl p-5"
                   >
                     <p className="text-xs font-bold uppercase tracking-widest text-ink/60">
                       {label}
@@ -2064,7 +2065,7 @@ function DashboardPage({
             )}
 
             {isPremium && recommendedProjects.length > 0 && (
-              <section className="rounded-[2.25rem] border border-primary/20 bg-primary/5 p-6 shadow-halo backdrop-blur xl:p-8">
+              <section className="app-panel rounded-[2.25rem] border-primary/20 bg-primary/5 p-6 xl:p-8">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/80">
@@ -2080,7 +2081,7 @@ function DashboardPage({
                   {recommendedProjects.map((match) => (
                     <article
                       key={match.project.id}
-                      className="rounded-2xl border border-primary/20 bg-white p-5 shadow-sm transition hover:border-primary/40"
+                      className="app-kpi-card rounded-2xl border-primary/20 p-5 transition hover:border-primary/40"
                     >
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
@@ -2110,7 +2111,7 @@ function DashboardPage({
             )}
 
             <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-              <div className="rounded-[2rem] border border-white/60 bg-white/88 p-6 shadow-halo backdrop-blur">
+              <div className="app-panel rounded-[2rem] p-6">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">
@@ -2124,7 +2125,7 @@ function DashboardPage({
                     value={projectSearch}
                     onChange={(e) => setProjectSearch(e.target.value)}
                     placeholder="Proje ara"
-                    className="w-full rounded-2xl border border-ink/10 bg-[#F7F8FC] px-4 py-3 text-sm outline-none transition focus:border-primary/40 sm:max-w-xs"
+                    className="app-input sm:max-w-xs"
                   />
                 </div>
 
@@ -2146,7 +2147,7 @@ function DashboardPage({
                       return (
                         <article
                           key={project.id}
-                          className="rounded-2xl border border-ink/8 bg-[#F7F8FC] p-5"
+                          className="app-subpanel rounded-2xl p-5"
                         >
                           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                             <div>
@@ -2176,7 +2177,7 @@ function DashboardPage({
                                   value={applicationMessage}
                                   onChange={(e) => setApplicationMessage(e.target.value)}
                                   placeholder="Projeye neden uygun olduğunu kısa yaz."
-                                  className="min-h-24 w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary/40"
+                                  className="app-input min-h-24 bg-white"
                                 />
                               )}
                               <div className="flex flex-wrap gap-3">
@@ -2219,8 +2220,8 @@ function DashboardPage({
               </div>
 
               <div className="space-y-6">
-                <section className="rounded-[2rem] border border-white/60 bg-white/88 p-6 shadow-halo backdrop-blur">
-                  <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">
+                <section className="app-panel rounded-[2rem] p-6">
+                  <p className="app-section-eyebrow text-sm font-bold uppercase tracking-[0.2em]">
                     Gelen Başvurular
                   </p>
                   <div className="mt-4 space-y-3">
@@ -2228,7 +2229,7 @@ function DashboardPage({
                       receivedApplications.slice(0, 5).map((application) => (
                         <article
                           key={application.id}
-                          className="rounded-2xl border border-ink/8 bg-[#F7F8FC] p-4"
+                          className="app-subpanel rounded-2xl p-4"
                         >
                           <button
                             type="button"
@@ -2269,8 +2270,8 @@ function DashboardPage({
                   </div>
                 </section>
 
-                <section className="rounded-[2rem] border border-white/60 bg-white/88 p-6 shadow-halo backdrop-blur">
-                  <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">
+                <section className="app-panel rounded-[2rem] p-6">
+                  <p className="app-section-eyebrow text-sm font-bold uppercase tracking-[0.2em]">
                     Son Başvuruların
                   </p>
                   <div className="mt-4 space-y-3">
@@ -2278,7 +2279,7 @@ function DashboardPage({
                       sentApplications.slice(0, 5).map((application) => (
                         <article
                           key={application.id}
-                          className="rounded-2xl border border-ink/8 bg-[#F7F8FC] p-4"
+                          className="app-subpanel rounded-2xl p-4"
                         >
                           <p className="text-sm font-bold text-ink">
                             Proje #{application.project}
@@ -2302,8 +2303,8 @@ function DashboardPage({
         )}
 
         {route === "app-create" && (
-          <section className="rounded-[2.25rem] border border-white/60 bg-white/88 p-8 shadow-halo backdrop-blur lg:p-10">
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">
+          <section className="app-panel rounded-[2.25rem] p-8 lg:p-10">
+            <p className="app-section-eyebrow text-sm font-bold uppercase tracking-[0.2em]">
               Proje Oluştur
             </p>
             <h2 className="mt-2 text-3xl font-extrabold">Yeni proje başlat</h2>
@@ -2329,7 +2330,7 @@ function DashboardPage({
                         }))
                       }
                       placeholder={String(placeholder)}
-                      className="min-h-28 w-full rounded-2xl border border-ink/10 bg-[#F7F8FC] px-4 py-3 text-sm outline-none transition focus:border-primary/40 focus:bg-white"
+                      className="app-input min-h-28"
                       required
                     />
                   ) : (
@@ -2342,7 +2343,7 @@ function DashboardPage({
                         }))
                       }
                       placeholder={String(placeholder)}
-                      className="w-full rounded-2xl border border-ink/10 bg-[#F7F8FC] px-4 py-3 text-sm outline-none transition focus:border-primary/40 focus:bg-white"
+                      className="app-input"
                       required
                     />
                   )}
@@ -2367,8 +2368,8 @@ function DashboardPage({
 
         {route === "app-messages" && (
           <section className="grid gap-6 lg:grid-cols-[0.4fr_0.6fr]">
-            <div className="rounded-[2.25rem] border border-white/60 bg-white/88 p-6 shadow-halo backdrop-blur">
-              <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">
+            <div className="app-panel rounded-[2.25rem] p-6">
+              <p className="app-section-eyebrow text-sm font-bold uppercase tracking-[0.2em]">
                 Mesajlar
               </p>
               <div className="mt-5 space-y-3">
@@ -2419,7 +2420,7 @@ function DashboardPage({
               </div>
             </div>
 
-            <div className="rounded-[2.25rem] border border-white/60 bg-white/88 p-6 shadow-halo backdrop-blur">
+            <div className="app-panel rounded-[2.25rem] p-6">
               {selectedThread ? (
                 <>
                   <div className="border-b border-ink/8 pb-4">
@@ -2468,7 +2469,7 @@ function DashboardPage({
                       value={messageDraft}
                       onChange={(e) => setMessageDraft(e.target.value)}
                       placeholder="Mesajını yaz..."
-                      className="min-h-28 w-full rounded-2xl border border-ink/10 bg-[#F7F8FC] px-4 py-3 text-sm outline-none transition focus:border-primary/40 focus:bg-white"
+                      className="app-input min-h-28"
                     />
                     {messageError && (
                       <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-500">
@@ -2494,7 +2495,7 @@ function DashboardPage({
 
         {route === "app-profile" && (
           <section className="grid gap-6">
-            <div className="rounded-[2.5rem] border border-ink/10 bg-white p-8 shadow-sm lg:p-10 flex flex-col md:flex-row items-center gap-8">
+            <div className="app-panel-strong rounded-[2.5rem] p-8 lg:p-10 flex flex-col md:flex-row items-center gap-8">
               <div className="relative group">
                 <div className="h-32 w-32 rounded-full border-4 border-primary/20 overflow-hidden bg-ink/5 flex items-center justify-center">
                   {(summary?.profile.profile_picture || currentUser?.profile_picture) ? (
@@ -2541,7 +2542,7 @@ function DashboardPage({
               ].map(([label, value]) => (
                 <div
                   key={String(label)}
-                  className="rounded-[2rem] border border-white/60 bg-white/88 p-6 shadow-sm backdrop-blur"
+                  className="app-panel rounded-[2rem] p-6"
                 >
                   <p className="text-xs font-bold uppercase tracking-widest text-ink/42">
                     {label}
@@ -2551,7 +2552,7 @@ function DashboardPage({
               ))}
             </div>
 
-            <div className="rounded-[2rem] border border-white/60 bg-white/88 p-6 shadow-halo backdrop-blur lg:col-span-2">
+            <div className="app-panel rounded-[2rem] p-6 lg:col-span-2">
               <p className="text-xs font-bold uppercase tracking-widest text-ink/42">
                 Herkese Açık Profil
               </p>
@@ -3032,13 +3033,16 @@ function DashboardPage({
         )}
 
         {route === "app-admin" && isAdmin && (
-          <section className="rounded-[2.25rem] border border-white/60 bg-white/88 p-8 shadow-halo backdrop-blur lg:p-10">
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">
+          <section className="app-panel rounded-[2.25rem] p-8 lg:p-10">
+            <p className="app-section-eyebrow text-sm font-bold uppercase tracking-[0.2em]">
               Yönetim
             </p>
             <h2 className="mt-2 text-3xl font-extrabold">
               Ürün sağlığı, moderasyon ve denetim
             </h2>
+            <p className="app-section-copy mt-3 max-w-3xl text-sm">
+              Moderasyon, verified talent onaylari, premium durumu ve ekip akislari bu panelden tek yerden yonetilir. Demo verileriyle birlikte urun sagligini ve topluluk guvenini burada izleyebilirsin.
+            </p>
 
             <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {[
@@ -3051,7 +3055,7 @@ function DashboardPage({
               ].map(([label, value]) => (
                 <article
                   key={String(label)}
-                  className="rounded-2xl border border-ink/8 bg-[#F7F8FC] p-5"
+                  className="app-kpi-card rounded-2xl p-5"
                 >
                   <p className="text-xs font-bold uppercase tracking-widest text-ink/42">
                     {label}
@@ -3070,7 +3074,7 @@ function DashboardPage({
                   {adminDashboard?.queues.pending_verification_requests ?? 0}
                 </p>
               </div>
-              <div className="rounded-2xl border border-ink/8 bg-[#F7F8FC] p-5">
+              <div className="app-kpi-card rounded-2xl p-5">
                 <p className="text-xs font-bold uppercase tracking-widest text-ink/42">
                   Bekleyen Başvurular
                 </p>
@@ -3085,7 +3089,7 @@ function DashboardPage({
                 value={adminSearch}
                 onChange={(e) => setAdminSearch(e.target.value)}
                 placeholder="Ad soyad ile kullanıcı ara"
-                className="w-full rounded-2xl border border-ink/10 bg-[#F7F8FC] px-4 py-3 text-sm outline-none transition focus:border-primary/40 focus:bg-white"
+                className="app-input"
               />
               <button
                 type="button"
@@ -3107,10 +3111,7 @@ function DashboardPage({
                 <h3 className="text-lg font-extrabold text-ink">Kullanıcı Yönetimi</h3>
                 <div className="mt-4 space-y-4">
                   {adminUsers.map((user) => (
-                    <article
-                      key={user.id}
-                      className="rounded-2xl border border-ink/8 bg-[#F7F8FC] p-5"
-                    >
+                    <article key={user.id} className="app-subpanel rounded-2xl p-5">
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                         <div>
                           <p className="text-lg font-bold text-ink">{user.full_name}</p>
@@ -3170,7 +3171,7 @@ function DashboardPage({
               </div>
 
               <div className="space-y-8">
-                <div className="rounded-2xl border border-ink/8 bg-[#F7F8FC] p-5">
+                <div className="app-subpanel rounded-2xl p-5">
                   <h3 className="text-lg font-extrabold text-ink">Kullanıcı Detayı</h3>
                   {selectedAdminUser ? (
                     <div className="mt-4 space-y-5">
@@ -3304,7 +3305,7 @@ function DashboardPage({
                   )}
                 </div>
 
-                <div className="rounded-2xl border border-ink/8 bg-[#F7F8FC] p-5">
+                <div className="app-subpanel rounded-2xl p-5">
                   <h3 className="text-lg font-extrabold text-ink">Doğrulanmış Yetenek Onayları</h3>
                   <p className="mt-2 text-sm leading-6 text-ink/58">
                     Kullanıcıların gönderdiği doğrulanmış yetenek başvuruları bu yönetim havuzuna düşer. Yönetim ekibi burada inceleyip onay ya da ret kararı verir.
@@ -3342,7 +3343,7 @@ function DashboardPage({
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-ink/8 bg-[#F7F8FC] p-5">
+                <div className="app-subpanel rounded-2xl p-5">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <h3 className="text-lg font-extrabold text-ink">Proje & Ekip Yönetimi</h3>
                     <div className="flex w-full gap-3 sm:w-auto">
@@ -3350,7 +3351,7 @@ function DashboardPage({
                         value={adminProjectSearch}
                         onChange={(e) => setAdminProjectSearch(e.target.value)}
                         placeholder="Proje veya founder ara"
-                        className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary/40"
+                        className="app-input bg-white"
                       />
                       <button
                         type="button"
@@ -3583,7 +3584,7 @@ export default function App() {
     );
   }
 
-  if (route === "about") {
+  if ((route as RouteName) === "about") {
     return (
       <div className="min-h-screen bg-mesh font-sans text-ink antialiased">
         <header className="sticky top-0 z-50 border-b border-white/40 bg-white/70 backdrop-blur-xl">
@@ -3615,7 +3616,7 @@ export default function App() {
     );
   }
 
-  if (route === "privacy") {
+  if ((route as RouteName) === "privacy") {
     return (
       <div className="min-h-screen bg-mesh font-sans text-ink antialiased">
         <header className="sticky top-0 z-50 border-b border-white/40 bg-white/70 backdrop-blur-xl">
@@ -3647,7 +3648,7 @@ export default function App() {
     );
   }
 
-  if (route === "careers") {
+  if ((route as RouteName) === "careers") {
     return (
       <div className="min-h-screen bg-mesh font-sans text-ink antialiased">
         <header className="sticky top-0 z-50 border-b border-white/40 bg-white/70 backdrop-blur-xl">
@@ -3679,7 +3680,7 @@ export default function App() {
     );
   }
 
-  if (route === "faq") {
+  if ((route as RouteName) === "faq") {
     return (
       <div className="min-h-screen bg-mesh font-sans text-ink antialiased">
         <header className="sticky top-0 z-50 border-b border-white/40 bg-white/70 backdrop-blur-xl">
@@ -3715,7 +3716,7 @@ export default function App() {
     );
   }
 
-  if (route === "contact") {
+  if ((route as RouteName) === "contact") {
     return (
       <div className="min-h-screen bg-mesh font-sans text-ink antialiased">
         <header className="sticky top-0 z-50 border-b border-white/40 bg-white/70 backdrop-blur-xl">

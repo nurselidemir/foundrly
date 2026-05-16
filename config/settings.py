@@ -10,7 +10,11 @@ load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.getenv("SECRET_KEY", "change-me")
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
-ALLOWED_HOSTS = [host.strip() for host in os.getenv("ALLOWED_HOSTS", "").split(",") if host.strip()]
+default_allowed_hosts = ["localhost", "127.0.0.1", "0.0.0.0", "web", "frontend"]
+env_allowed_hosts = [
+    host.strip() for host in os.getenv("ALLOWED_HOSTS", "").split(",") if host.strip()
+]
+ALLOWED_HOSTS = list(dict.fromkeys(default_allowed_hosts + env_allowed_hosts))
 
 INSTALLED_APPS = [
     "django.contrib.admin",
