@@ -4,6 +4,11 @@ import Foundation
 final class AppShellViewModel: ObservableObject {
     @Published var summary: DashboardSummary?
     @Published var projects: [ProjectCard] = []
+    @Published var recommendedProjects: [RecommendedProjectMatch] = []
+    @Published var aiMatches: [CandidateMatch] = []
+    @Published var receivedApplications: [TeamApplication] = []
+    @Published var mentors: [MentorSummary] = []
+    @Published var mentorRequests: [MentorRequestSummary] = []
     @Published var threads: [MessageThread] = []
     @Published var selectedThread: ThreadDetail?
     @Published var selectedPublicProfile: PublicProfile?
@@ -22,13 +27,26 @@ final class AppShellViewModel: ObservableObject {
             async let summaryTask = service.loadSummary(token: token)
             async let projectsTask = service.loadProjects(token: token)
             async let threadsTask = service.loadThreads(token: token)
+            async let receivedTask = service.loadReceivedApplications(token: token)
 
-            let (summary, projects, threads) = try await (summaryTask, projectsTask, threadsTask)
+            let (summary, projects, threads, receivedApplications) = try await (summaryTask, projectsTask, threadsTask, receivedTask)
             self.summary = summary
             self.projects = projects
             self.threads = threads
+            self.receivedApplications = receivedApplications
             if let first = threads.first {
                 self.selectedThread = try await service.loadThreadDetail(token: token, applicationId: first.application_id)
+            }
+            self.mentors = (try? await service.loadMentors(token: token)) ?? []
+            if summary.profile.is_mentor == true {
+                self.mentorRequests = (try? await service.loadMentorPanelRequests(token: token)) ?? []
+            } else {
+                self.mentorRequests = []
+            }
+            if summary.profile.is_premium {
+                self.recommendedProjects = (try? await service.loadRecommendedProjects(token: token)) ?? []
+            } else {
+                self.recommendedProjects = []
             }
             session.currentUser = summary.profile
             feedbackMessage = ""
@@ -129,6 +147,49 @@ final class AppShellViewModel: ObservableObject {
                 )
             )
             feedbackMessage = "Doğrulanmış yetenek başvurun iletildi."
+        } catch {
+            feedbackMessage = error.localizedDescription
+        }
+    }
+
+    func runAIMatching(session: AppSession, projectId: Int) async {
+        guard let token = session.accessToken else { return }
+        do {
+            aiMatches = try await service.loadProjectMatches(token: token, projectId: projectId)
+            feedbackMessage = ""
+        } catch {
+            feedbackMessage = error.localizedDescription
+        }
+    }
+
+    func updateApplicationStatus(session: AppSession, applicationId: Int, status: String) async {
+        guard let token = session.accessToken else { return }
+        do {
+            try await service.updateApplicationStatus(token: token, applicationId: applicationId, status: status)
+            await load(session: session)
+            feedbackMessage = status == "accepted" ? "Başvuru kabul edildi." : "Başvuru reddedildi."
+        } catch {
+            feedbackMessage = error.localizedDescription
+        }
+    }
+
+    func requestMentor(session: AppSession, mentorId: Int, message: String) async {
+        guard let token = session.accessToken else { return }
+        do {
+            try await service.createMentorRequest(token: token, mentorId: mentorId, message: message)
+            feedbackMessage = "Mentörlük talebin iletildi."
+            await load(session: session)
+        } catch {
+            feedbackMessage = error.localizedDescription
+        }
+    }
+
+    func updateMentorRequest(session: AppSession, requestId: Int, status: String, offeredPrice: Double? = nil) async {
+        guard let token = session.accessToken else { return }
+        do {
+            try await service.updateMentorRequestStatus(token: token, requestId: requestId, status: status, offeredPrice: offeredPrice)
+            feedbackMessage = status == "accepted" ? "Mentör talebi onaylandı." : status == "completed" ? "Görüşme tamamlandı." : "Mentör talebi güncellendi."
+            await load(session: session)
         } catch {
             feedbackMessage = error.localizedDescription
         }

@@ -21,6 +21,21 @@ struct AppShellView: View {
                     Label("Mesajlar", systemImage: "message.fill")
                 }
 
+            AIBuilderView(viewModel: viewModel)
+                .tabItem {
+                    Label("AI", systemImage: "sparkles")
+                }
+
+            MentorsView(viewModel: viewModel)
+                .tabItem {
+                    Label("Mentörler", systemImage: "person.3.fill")
+                }
+
+            CommunityView()
+                .tabItem {
+                    Label("Topluluk", systemImage: "bubble.left.and.bubble.right.fill")
+                }
+
             ProfileView(viewModel: viewModel)
                 .tabItem {
                     Label("Profilim", systemImage: "person.crop.circle.fill")

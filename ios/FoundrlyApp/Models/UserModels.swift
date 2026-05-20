@@ -11,6 +11,9 @@ struct CurrentUser: Codable, Identifiable {
     let is_verified_talent: Bool
     let is_premium: Bool
     let is_mentor: Bool?
+    let mentor_credits: Int?
+    let mentor_price: Double?
+    let mentor_balance: Double?
     let is_staff: Bool?
     let is_superuser: Bool?
     let date_joined: String
@@ -97,4 +100,39 @@ struct PremiumSubscriptionResponse: Codable {
 
 struct PremiumSubscriptionRequest: Encodable {
     let plan: String
+}
+
+struct MentorSummary: Codable, Identifiable {
+    let id: Int
+    let full_name: String
+    let title: String
+    let bio: String
+    let skills: [String]
+    let profile_picture: String?
+    let is_mentor: Bool
+    let mentor_price: Double
+}
+
+struct MentorRequestPayload: Encodable {
+    let mentor: Int
+    let message: String
+}
+
+struct MentorRequestSummary: Codable, Identifiable {
+    let id: Int
+    let mentor: Int?
+    let mentor_details: MentorSummary?
+    let user: Int?
+    let user_details: MentorSummary?
+    let message: String
+    let status: String
+    let price_at_request: Double
+    let offered_price: Double
+    let commission_rate: Double
+    let created_at: String
+}
+
+struct MentorStatusPayload: Encodable {
+    let status: String
+    let offered_price: Double?
 }

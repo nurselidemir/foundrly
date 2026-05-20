@@ -73,6 +73,85 @@ struct HomeView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                     }
                     .foundrlyCard()
+
+                    if !viewModel.receivedApplications.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Gelen Başvurular")
+                                .font(.title2.bold())
+
+                            ForEach(viewModel.receivedApplications.prefix(4)) { application in
+                                VStack(alignment: .leading, spacing: 10) {
+                                    NavigationLink {
+                                        PublicProfileView(viewModel: viewModel, userId: application.applicant.id)
+                                    } label: {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(application.applicant.full_name)
+                                                .font(.headline)
+                                                .foregroundStyle(.white)
+                                            Text(application.applicant.title)
+                                                .font(.subheadline)
+                                                .foregroundStyle(FoundrlyTheme.textSecondary)
+                                        }
+                                    }
+
+                                    Text(application.message)
+                                        .foregroundStyle(FoundrlyTheme.textSecondary)
+
+                                    if application.status == "pending" {
+                                        HStack {
+                                            Button("Kabul Et") {
+                                                Task {
+                                                    await viewModel.updateApplicationStatus(
+                                                        session: session,
+                                                        applicationId: application.id,
+                                                        status: "accepted"
+                                                    )
+                                                }
+                                            }
+                                            .fontWeight(.bold)
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 10)
+                                            .background(FoundrlyTheme.accent)
+                                            .foregroundStyle(.black)
+                                            .clipShape(Capsule())
+
+                                            Button("Reddet") {
+                                                Task {
+                                                    await viewModel.updateApplicationStatus(
+                                                        session: session,
+                                                        applicationId: application.id,
+                                                        status: "rejected"
+                                                    )
+                                                }
+                                            }
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 10)
+                                            .background(FoundrlyTheme.surfaceRaised)
+                                            .clipShape(Capsule())
+                                        }
+                                    } else {
+                                        Text(application.status == "accepted" ? "Kabul edildi" : "Reddedildi")
+                                            .font(.caption.bold())
+                                            .foregroundStyle(application.status == "accepted" ? FoundrlyTheme.accent : .red.opacity(0.85))
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding()
+                                .background(FoundrlyTheme.surfaceRaised)
+                                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .foundrlyCard()
+                    }
+
+                    if !viewModel.feedbackMessage.isEmpty {
+                        Text(viewModel.feedbackMessage)
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(FoundrlyTheme.accent)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .foundrlyCard()
+                    }
                 }
                 .padding(20)
             }

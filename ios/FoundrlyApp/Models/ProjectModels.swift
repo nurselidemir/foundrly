@@ -45,6 +45,28 @@ struct TeamApplication: Codable, Identifiable {
     let created_at: String
 }
 
+struct RecommendedProjectMatch: Codable, Identifiable {
+    var id: Int { project.id }
+    let project: ProjectCard
+    let score: Double
+    let match_label: String
+    let recommended_role: String?
+    let ai_summary: String
+    let matched_skills: [String]
+    let missing_skills: [String]
+}
+
+struct CandidateMatch: Codable, Identifiable {
+    var id: Int { user.id }
+    let user: PublicUserSummary
+    let score: Double
+    let match_label: String
+    let recommended_role: String?
+    let ai_summary: String
+    let matched_skills: [String]
+    let missing_skills: [String]
+}
+
 struct CreateProjectRequest: Encodable {
     let title: String
     let summary: String
