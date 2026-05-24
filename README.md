@@ -2,85 +2,86 @@
 
 > **Turn ideas into teams.**
 
-Foundrly is an AI-powered team formation platform built for founders, developers, designers, mentors, and startup enthusiasts.
-It helps people build teams for startups, hackathons, university initiatives, and side projects by combining profile data, project intent, collaboration signals, and AI matching.
+Foundrly; kurucuların, geliştiricilerin, tasarımcıların, mentörlerin ve startup meraklılarının startup, hackathon, üniversite projesi ve yan proje ekipleri kurmasını kolaylaştıran AI destekli bir ekip oluşturma platformudur.
 
-This repository currently includes:
-- A Django + DRF backend
-- A React + TypeScript + Tailwind frontend
-- Dockerized local development setup
-- Premium, verified talent, mentoring, messaging, project applications, and AI matching flows
-- A redesigned premium landing experience and upgraded product surfaces inside the web app
+Platform; profil verileri, proje hedefi, ilgi alanları, iş birliği sinyalleri ve AI matching mantığını bir araya getirerek doğru insanları daha hızlı bulmayı hedefler.
 
----
-
-## Product Overview
-
-Foundrly is designed around one core idea:
-
-**help serious builders find the right people faster.**
-
-The platform matches people based on:
-- technical skills
-- interests
-- project goals
-- collaboration history
-- profile quality and trust signals
-
-Primary product flows currently implemented:
-- authentication and registration
-- public and private profile flows
-- project creation and project discovery
-- project applications
-- messaging between matched collaborators
-- premium subscription simulation
-- verified talent request flow
-- mentor marketplace and mentor requests
-- admin moderation panel
-- AI-powered match recommendations
+Bu repository şu anda şunları içerir:
+- Django + DRF backend
+- React + TypeScript + Tailwind frontend
+- Docker ile çalışan local geliştirme ortamı
+- Premium, verified talent, mentörlük, mesajlaşma, proje başvurusu ve AI matching akışları
+- Premium/futuristic bir landing page ve geliştirilmiş uygulama içi web deneyimi
 
 ---
 
-## Current Status
+## Ürün Özeti
 
-The project is beyond a simple landing page demo.
+Foundrly’nin ana amacı şudur:
 
-Current web experience includes:
-- premium futuristic marketing landing
-- public discovery pages
-- community and teammate discovery pages
-- authenticated dashboard
-- project management flows
-- AI team builder flow
-- profile and public profile flows
-- mentoring flows
-- admin/moderation flows
+**ciddi üreticilerin doğru insanları daha hızlı bulmasını sağlamak.**
 
-The frontend was recently upgraded with:
-- a premium dark-mode marketing site
-- improved discovery and community visuals
-- onboarding signal capture in the dashboard
-- richer profile presentation
-- more polished AI match result cards
+Platform eşleşmeleri şu sinyallere göre destekler:
+- teknik yetenekler
+- ilgi alanları
+- proje hedefleri
+- iş birliği geçmişi
+- profil kalitesi ve güven sinyalleri
+
+Şu anda mevcut ana ürün akışları:
+- kayıt olma ve giriş yapma
+- private ve public profil akışları
+- proje oluşturma ve proje keşfi
+- projelere başvuru
+- eşleşen kullanıcılar arası mesajlaşma
+- premium abonelik simülasyonu
+- verified talent başvuru akışı
+- mentör listeleme ve mentör talebi
+- admin / moderasyon paneli
+- AI destekli takım önerileri
 
 ---
 
-## Tech Stack
+## Güncel Durum
 
-| Layer | Technology |
+Proje artık sadece basit bir landing page demosu değil.
+
+Web tarafında şu alanlar mevcut:
+- premium/futuristic marketing landing
+- public discovery sayfaları
+- community ve teammate keşif sayfaları
+- giriş yapılmış kullanıcı dashboard’u
+- proje yönetimi akışları
+- AI Team Builder akışı
+- profil ve public profil sayfaları
+- mentörlük akışları
+- admin / moderasyon akışları
+
+Yakın zamanda geliştirilen başlıca alanlar:
+- premium dark-mode landing deneyimi
+- gelişmiş discovery ve community tasarımı
+- dashboard içinde onboarding signal katmanı
+- daha güçlü profil sunumu
+- daha rafine AI eşleşme sonuç kartları
+
+---
+
+## Teknoloji Yığını
+
+| Katman | Teknoloji |
 |---|---|
 | Backend | Django 5 + Django REST Framework |
-| Database | PostgreSQL 16 |
-| Auth | JWT with `djangorestframework-simplejwt` |
-| AI Matching | TF-IDF + cosine similarity + rule-based scoring |
+| Veritabanı | PostgreSQL 16 |
+| Kimlik Doğrulama | `djangorestframework-simplejwt` ile JWT |
+| AI Matching | TF-IDF + cosine similarity + kural tabanlı skor mantığı |
 | Frontend | React 18 + TypeScript + Tailwind CSS + Vite |
 | Motion | Framer Motion |
-| App Server | Gunicorn |
-| Containers | Docker + Docker Compose |
+| Uygulama Sunucusu | Gunicorn |
+| Konteyner | Docker + Docker Compose |
 
 ---
 
-## Repository Structure
+## Proje Yapısı
 
 ```text
 foundrly-backend/
@@ -108,46 +109,46 @@ foundrly-backend/
 └── requirements.txt
 ```
 
-Important directories:
-- `apps/users/` → user model, auth, premium, verified talent, reviews, mentoring
-- `apps/projects/` → projects, applications, messages, matching services
-- `frontend/src/` → React app, public pages, dashboard flows
-- `frontend/src/components/marketing/` → marketing landing components
-- `ios/FoundrlyApp/` → SwiftUI source files for the iOS concept app
+Önemli klasörler:
+- `apps/users/` → user modeli, auth, premium, verified talent, review, mentörlük
+- `apps/projects/` → projeler, başvurular, mesajlaşma, matching servisleri
+- `frontend/src/` → React uygulaması, public sayfalar, dashboard akışları
+- `frontend/src/components/marketing/` → marketing landing component’leri
+- `ios/FoundrlyApp/` → SwiftUI tabanlı iOS konsept uygulama kaynakları
 
 ---
 
-## Quick Start
+## Hızlı Başlangıç
 
-### 1. Prepare environment
+### 1. Ortam dosyasını hazırla
 
 ```bash
 cp .env.example .env
 ```
 
-### 2. Start the database
+### 2. Veritabanını başlat
 
 ```bash
 docker compose up -d db
 ```
 
-### 3. Start backend
+### 3. Backend’i başlat
 
 ```bash
 docker compose up -d web
 ```
 
-When `web` starts, it automatically runs:
+`web` servisi açılırken otomatik olarak şunları çalıştırır:
 - `python manage.py migrate`
 - `python manage.py collectstatic --noinput`
 
-### 4. Start frontend
+### 4. Frontend’i başlat
 
 ```bash
 docker compose up -d frontend
 ```
 
-### 5. Optional: seed demo data
+### 5. İstersen demo veriyi yükle
 
 ```bash
 docker compose exec web python manage.py seed_demo_data
@@ -155,13 +156,13 @@ docker compose exec web python manage.py seed_demo_data
 
 ---
 
-## Service URLs
+## Servis Adresleri
 
-| Service | URL |
+| Servis | Adres |
 |---|---|
-| Web App | http://localhost:3000 |
-| Login | http://localhost:3000/#login |
-| Register | http://localhost:3000/#register |
+| Web Uygulaması | http://localhost:3000 |
+| Giriş Yap | http://localhost:3000/#login |
+| Kayıt Ol | http://localhost:3000/#register |
 | Premium | http://localhost:3000/#premium |
 | Django Admin | http://localhost:8000/admin/ |
 | API Root | http://localhost:8000/api/ |
@@ -170,20 +171,20 @@ docker compose exec web python manage.py seed_demo_data
 
 ---
 
-## Docker Setup
+## Docker Kurulumu
 
-This project uses three main services:
+Bu proje üç temel servis kullanır:
 - `db` → PostgreSQL
 - `web` → Django backend
 - `frontend` → React frontend
 
-### Docker Compose summary
+### Docker Compose özeti
 
-- Backend runs on `8000`
-- Frontend runs on `3000`
-- PostgreSQL is exposed as `5433 -> 5432`
+- Backend `8000` portunda çalışır
+- Frontend `3000` portunda çalışır
+- PostgreSQL `5433 -> 5432` olarak dışarı açılır
 
-### Useful commands
+### Yararlı komutlar
 
 ```bash
 docker compose ps
@@ -192,7 +193,7 @@ docker compose logs frontend
 docker compose logs db
 ```
 
-Full startup from scratch:
+Sıfırdan tüm sistemi ayağa kaldırmak için:
 
 ```bash
 docker compose up --build
@@ -200,11 +201,11 @@ docker compose up --build
 
 ---
 
-## Local Database Access
+## Veritabanına Dışarıdan Bağlanma
 
-If you want to connect with DBeaver or another DB client:
+DBeaver veya başka bir DB istemcisi ile bağlanmak istersen:
 
-### PostgreSQL connection settings
+### PostgreSQL bağlantı bilgileri
 
 - Host: `localhost`
 - Port: `5433`
@@ -218,20 +219,19 @@ JDBC URL:
 jdbc:postgresql://localhost:5433/foundrly
 ```
 
-If you see `connection refused`, it usually means the `db` container is not running yet.
+Eğer `connection refused` hatası alırsan, genelde `db` container’ı henüz ayağa kalkmamış demektir.
 
 ---
 
-## Demo Accounts
+## Demo Hesapları
 
-After running demo seed data:
+Demo veri yüklendikten sonra:
 
 ```bash
 docker compose exec web python manage.py seed_demo_data
 ```
 
-You can use these accounts:
-
+Aşağıdaki hesapları kullanabilirsin:
 - Admin: `nurselidemiir@gmail.com` / `Nurseli1`
 - Founder: `founder@joinfoundrly.com` / `Founder123!`
 - Builder: `builder@joinfoundrly.com` / `Builder123!`
@@ -240,39 +240,39 @@ You can use these accounts:
 
 ---
 
-## Suggested Demo Flow
+## Önerilen Demo Akışı
 
-A practical presentation flow:
+Sunum için pratik bir akış:
 
-1. Open the landing page and show the premium marketing experience.
-2. Log in with the founder account.
-3. Show dashboard KPIs, onboarding signal, and open project opportunities.
-4. Open the AI Team Builder and run a match analysis.
-5. Show the public profile and collaboration review area.
-6. Show messages and accepted collaboration flow.
-7. Switch to admin and show moderation / verified talent review.
+1. Landing page’i aç ve premium marketing deneyimini göster.
+2. Founder hesabıyla giriş yap.
+3. Dashboard KPI’larını, onboarding signal alanını ve açık projeleri göster.
+4. AI Team Builder’ı aç ve eşleşme analizi çalıştır.
+5. Public profil ve collaboration review alanını göster.
+6. Mesajlar ekranında accepted iş birliği akışını göster.
+7. Admin hesabına geçip moderasyon / verified talent inceleme akışını göster.
 
 ---
 
-## Frontend Experience
+## Frontend Deneyimi
 
-### Public routes
+### Public route’lar
 
 - `/#` → premium landing page
-- `/#discover` → premium project discovery experience
+- `/#discover` → premium proje keşif deneyimi
 - `/#teammates` → teammate showcase
-- `/#community` → community feed experience
-- `/#mentors` → public mentors list
-- `/#login` → login screen
-- `/#register` → registration screen
-- `/#premium` → premium experience page
+- `/#community` → community feed deneyimi
+- `/#mentors` → public mentör listesi
+- `/#login` → giriş ekranı
+- `/#register` → kayıt ekranı
+- `/#premium` → premium deneyim sayfası
 - `/#about`
 - `/#privacy`
 - `/#careers`
 - `/#faq`
 - `/#contact`
 
-### App routes
+### Uygulama içi route’lar
 
 - `/#app-home`
 - `/#app-create`
@@ -285,83 +285,83 @@ A practical presentation flow:
 - `/#app-admin`
 - `/#app-member-<id>`
 
-### Recently improved UX areas
+### Yakın zamanda iyileştirilen UX alanları
 
 - premium marketing landing
-- premium discovery and teammate presentation
-- founder dashboard hero / onboarding layer
-- richer profile and public profile design
-- improved AI match result presentation
-- stronger startup-product visual language across app surfaces
+- gelişmiş discovery ve teammate sunumu
+- founder dashboard hero / onboarding katmanı
+- daha güçlü profil ve public profil görünümü
+- daha açıklayıcı AI match sonuçları
+- uygulama içinde daha güçlü startup-product görsel dili
 
 ---
 
-## Backend Features
+## Backend Özellikleri
 
 ### Authentication
 - register
 - login with JWT
-- refresh token support
+- refresh token
 - current user endpoint
 
-### Profiles
-- current user profile
-- public user profiles
-- profile picture upload
-- verified talent flag
-- premium flag
-- mentor status
-- collaboration reviews
+### Profiller
+- current user profili
+- public user profilleri
+- profil fotoğrafı yükleme
+- verified talent rozeti
+- premium durumu
+- mentör durumu
+- collaboration review sistemi
 
-### Projects
-- create project
-- list projects
-- update/delete own project
-- discover public projects
-- premium project visibility signals
+### Projeler
+- proje oluşturma
+- proje listeleme
+- kendi projesini güncelleme / silme
+- public proje keşfi
+- premium görünürlük sinyalleri
 
-### Applications
-- apply to project
-- prevent duplicate applications
-- review received applications
-- accept/reject applications
+### Başvurular
+- projeye başvurma
+- duplicate başvuru engeli
+- gelen başvuruları görüntüleme
+- kabul / red akışı
 
-### Messaging
-- thread list
-- thread detail
-- send messages inside application threads
+### Mesajlaşma
+- thread listesi
+- thread detayı
+- application thread içinden mesaj gönderme
 
-### Mentors
-- mentor listing
-- mentor request flow
-- mentor request management
-- mentor pricing
+### Mentörlük
+- mentör listeleme
+- mentör talep akışı
+- mentör talep yönetimi
+- mentör fiyatlandırması
 
 ### Premium
-- premium subscription simulation
-- premium-only features and filters
+- premium abonelik simülasyonu
+- premium-only özellikler ve filtreler
 
-### Admin / Moderation
-- user search
-- role updates
-- premium moderation
-- verified talent moderation
-- project moderation
-- user deletion
+### Admin / Moderasyon
+- kullanıcı arama
+- rol güncelleme
+- premium moderasyonu
+- verified talent moderasyonu
+- proje moderasyonu
+- kullanıcı silme
 
 ---
 
 ## AI Team Builder
 
-The AI layer does not require a paid external AI API.
+AI katmanı ücretli bir dış AI API zorunluluğu olmadan çalışır.
 
-Current matching combines:
-- TF-IDF based semantic analysis
+Şu anki matching mantığı şunları birleştirir:
+- TF-IDF tabanlı anlamsal analiz
 - cosine similarity
-- role and skills logic
-- recommendation summaries
+- rol ve skill mantığı
+- öneri özetleri
 
-### AI outputs include
+### AI çıktıları
 - `score`
 - `match_label`
 - `recommended_role`
@@ -369,13 +369,13 @@ Current matching combines:
 - `matched_skills`
 - `missing_skills`
 
-### Main AI endpoints
+### Temel AI endpoint’leri
 - `GET /api/dashboard/recommended-projects/`
 - `GET /api/projects/<id>/matches/`
 
 ---
 
-## API Reference
+## API Referansı
 
 ### Auth
 ```text
@@ -438,7 +438,7 @@ POST  /api/verification-requests/
 PATCH /api/verification-requests/<id>/review/
 ```
 
-### Mentors
+### Mentörlük
 ```text
 GET   /api/mentors/
 POST  /api/mentors/requests/
@@ -466,7 +466,7 @@ GET /api/health/
 
 ---
 
-## Filter Examples
+## Filtre Örnekleri
 
 ```text
 /api/projects/?mine=true
@@ -486,41 +486,41 @@ GET /api/health/
 
 ---
 
-## Authorization Rules
+## Yetki Kuralları
 
-Current important permission rules:
-- only project owner can update/delete a project
-- only project owner can change application status
-- users cannot apply to their own project
-- users cannot apply twice to the same project
-- premium-only filters are protected
-- AI matching endpoints are premium-only
-- some project detail fields are restricted to project owner and accepted collaborators
-- admin moderation endpoints require elevated roles
+Önemli permission kuralları:
+- yalnızca proje sahibi proje güncelleyebilir / silebilir
+- yalnızca proje sahibi başvuru durumunu değiştirebilir
+- kullanıcı kendi projesine başvuramaz
+- aynı projeye ikinci kez başvurulamaz
+- premium-only filtreler korumalıdır
+- AI matching endpoint’leri premium-only’dir
+- bazı proje detay alanları yalnızca proje sahibi ve accepted collaborator’lara açıktır
+- admin moderasyon endpoint’leri yüksek yetki ister
 
 ---
 
-## Frontend Development
+## Frontend Geliştirme
 
-### Install frontend dependencies locally
+### Frontend dependency kurulumu
 
 ```bash
 npm --prefix frontend install
 ```
 
-### Run frontend locally
+### Frontend local çalıştırma
 
 ```bash
 npm --prefix frontend run dev
 ```
 
-### Build frontend
+### Frontend build alma
 
 ```bash
 npm --prefix frontend run build
 ```
 
-Current frontend includes:
+Frontend tarafında şu teknolojiler kullanılır:
 - React
 - TypeScript
 - Tailwind CSS
@@ -529,11 +529,11 @@ Current frontend includes:
 
 ---
 
-## iOS Status
+## iOS Durumu
 
-`ios/FoundrlyApp/` contains SwiftUI source files for the iOS concept app.
+`ios/FoundrlyApp/` altında SwiftUI tabanlı iOS konsept uygulama kaynakları bulunur.
 
-Included screens and flows:
+Hazır ekranlar ve akışlar:
 - auth
 - home
 - discover
@@ -543,31 +543,31 @@ Included screens and flows:
 - AI builder
 - community
 
-Important note:
-- there is no ready `.xcodeproj` file in this repository
-- to run it, create a new iOS App in Xcode and add these Swift files manually
+Önemli not:
+- bu repository içinde hazır `.xcodeproj` dosyası yok
+- çalıştırmak için Xcode’da yeni bir iOS App oluşturup Swift dosyalarını manuel eklemek gerekir
 
-So the iOS side is source-ready, but not yet packaged as a fully runnable Xcode project.
+Yani iOS tarafı kaynak olarak hazırdır ama tam paketlenmiş, tek tıkla açılan bir Xcode projesi halinde değildir.
 
 ---
 
-## Assets and Delivery Notes
+## Asset ve Teslim Notları
 
-Included delivery assets:
-- `logo/` files
+Repository içinde bulunan teslim materyalleri:
+- `logo/` dosyaları
 - `frontend/public/logo.png`
 - `frontend/public/favicon.png`
-- `mentörler/` story visuals
+- `mentörler/` story görselleri
 
-Repository notes:
-- `proje.md` contains the project summary / delivery-oriented notes
-- some delivery screenshots like domain purchase evidence may still need to be added manually if required for submission
+Ek notlar:
+- `proje.md` teslim / proje özeti odaklı notları içerir
+- domain satın alımı gibi bazı dış teslim ekran görüntüleri gerekiyorsa manuel olarak ayrıca eklenmelidir
 
 ---
 
-## Verification Checklist
+## Doğrulama Checklist’i
 
-To verify the full stack quickly:
+Stack’i hızlı doğrulamak için:
 
 ```bash
 docker compose ps
@@ -576,23 +576,23 @@ docker compose exec web python manage.py seed_demo_data
 npm --prefix frontend run build
 ```
 
-Check manually:
+Elle kontrol edilecek ana adresler:
 - `http://localhost:3000`
 - `http://localhost:8000/admin/`
 - `http://localhost:8000/api/health/`
 
 ---
 
-## Notes
+## Notlar
 
-- The project is designed for demoability as well as coursework delivery.
-- Premium and billing flows are simulated product flows, not a live Stripe integration.
-- AI matching is local and deterministic enough for demo use.
-- Docker is the recommended development path for backend + frontend + database together.
+- Proje hem demo sunumuna hem ders teslimine uygun olacak şekilde kurgulanmıştır.
+- Premium ve billing akışları canlı Stripe entegrasyonu değil, ürün akışı simülasyonudur.
+- AI matching local ve demo için yeterince deterministik çalışır.
+- Backend + frontend + database’i birlikte çalıştırmak için önerilen yol Docker’dır.
 
 ---
 
-## License / Credits
+## Lisans / Kredi
 
 © 2026 Foundrly  
 Nurseli Demir (22253042)
