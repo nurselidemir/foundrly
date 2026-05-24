@@ -39,7 +39,7 @@
 > 📸 **Ekran Görüntüsü:** Domain müsaitlik kontrolünün ekran görüntüsünü buraya ekleyin veya ayrı dosya olarak teslim edin.
 ### Domain Kontrol Ekranı
 
-![Domain kontrolü](godaddy.png)
+> Not: `godaddy.png` dosyasi su an repoda bulunmuyor. Teslimden once domain kontrol ekran goruntusu bu klasore eklenmelidir.
 
 ---
 
@@ -179,6 +179,7 @@ Bu özellik sayesinde kullanıcılar ekip arkadaşı seçerken yalnızca profil 
 | **Story 9** | Nasıl Başlarım? (CTA) | `Kullanıcıların Foundrly platformuna nasıl katılabileceği ve mobil uygulama üzerinden hesap oluşturabileceği gösterilmiştir.` |
 | **Story 10** | Lansman / Son Çağrı | `Kullanıcıları uygulamayı indirmeye davet eden “Download Foundrly and start building today” mesajı ve QR/App Store yönlendirmesi gösterilmiştir.` |
 
+> Story görselleri repo içinde `mentörler/1.png` - `mentörler/10.png` olarak bulunmaktadır.
 
 
 ---
@@ -204,19 +205,20 @@ Bu özellik sayesinde kullanıcılar ekip arkadaşı seçerken yalnızca profil 
 - [x] Favicon (32x32 px)  
   *Görüntüle: [favicon.png](./logo/favicon.png)*
 
+> Logo dosyalari repo icinde `logo/` klasorunde teslim edilmektedir. Web kullanimindaki kopyalar ayrica `frontend/public/` altindadir.
+
 ---
 
 ## 9. 📲 Platform Desteği
 
 | Platform | Planlanan | Teknoloji | Açıklama |
 |----------|-----------|-----------|----------|
-| **Web Uygulaması** | `Evet (Landing Only)` | `React` | `Web versiyonu temel olarak ürün tanıtımı, özellikler, pricing ve uygulama indirme yönlendirmesi için kullanılacaktır. Responsive tasarım ile mobil uyumlu olacak ancak ana kullanım mobil uygulama üzerinden yapılacaktır.` |
-| **iOS Uygulaması** | `Evet` | `Swift / SwiftUI` | `Foundrly’nin ana platformu iOS olacaktır. Kullanıcılar App Store üzerinden uygulamayı indirerek hesap oluşturabilecek, co-founder keşfi, mentor bağlantısı ve mesajlaşma özelliklerini kullanabilecektir.` |
+| **Web Uygulaması** | `Evet (Landing + Demo App Akışları)` | `React` | `Web versiyonu ürün tanıtımı, pricing, kayıt/giriş ve demo amaçlı uygulama akışlarını içermektedir. Responsive tasarım ile mobil uyumludur; ana kullanım odağı yine mobil uygulamadır.` |
+| **iOS Uygulaması** | `Evet` | `SwiftUI` | `iOS tarafında Foundrly'nin SwiftUI kaynak dosyalari hazirdir. Giris, kayit, kesfet, mesajlar, premium, mentor ve profil akislari bulunur; Xcode proje paketi olusturularak calistirilabilir.` |
 | **Android Uygulaması** | `Hayır` | `-` | `İlk aşamada planlanmıyor.` | 
 | **Tablet Desteği** | `Hayır` | `-` | `İlk aşamada planlanmıyor.` | 
 
 ---
-
 
 
 

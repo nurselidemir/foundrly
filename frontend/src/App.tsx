@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import FoundrlyLanding from "./components/marketing/FoundrlyLanding";
 
 type HealthState = { status: "loading" | "ready" | "error"; message: string };
 type RouteName =
@@ -592,14 +593,17 @@ const PLANS = [
 
 function getRouteFromHash(): RouteName {
   if (typeof window === "undefined") return "home";
-  if (window.location.hash.startsWith("#app-member-")) {
+  const [hashPath] = window.location.hash.split("?");
+  if (hashPath.startsWith("#app-member-")) {
     return "app-member";
   }
-  switch (window.location.hash) {
+  switch (hashPath) {
     case "#mentors":
       return "mentors";
     case "#discover":
       return "discover";
+    case "#pricing":
+      return "home";
     case "#teammates":
       return "teammates";
     case "#hub":
@@ -654,6 +658,13 @@ function getPublicProfileIdFromHash() {
   return match ? Number(match[1]) : null;
 }
 
+function getHashSearchParam(key: string) {
+  if (typeof window === "undefined") return "";
+  const [, queryString = ""] = window.location.hash.split("?");
+  const params = new URLSearchParams(queryString);
+  return params.get(key)?.trim() ?? "";
+}
+
 function getStoredAccessToken() {
   return localStorage.getItem("foundrly_access_token");
 }
@@ -696,129 +707,190 @@ function PremiumSimulationPage({
   feedback?: string;
 }) {
   const alreadyPremium = Boolean(currentUser?.is_premium);
+  const benefitCards = [
+    {
+      title: "Curated Matching",
+      body: "Kurucu profili, rol ihtiyacı ve proje yoğunluğunu birlikte okuyarak daha kaliteli aday listeleri üretir.",
+    },
+    {
+      title: "Founder Signal",
+      body: "Doğrulanmış profil, daha yüksek görünürlük ve premium rozet ile güven hissini ilk bakışta artırır.",
+    },
+    {
+      title: "Velocity Layer",
+      body: "Doğru insanlara daha hızlı ulaşarak proje başlangıç süresini ciddi biçimde kısaltır.",
+    },
+  ];
+  const premiumStats = [
+    { label: "Daha hızlı aday bulma", value: "3x" },
+    { label: "Öne çıkan proje görünürlüğü", value: "+68%" },
+    { label: "Verified güven sinyali", value: "24/7" },
+  ];
 
   return (
-    <main className="mx-auto max-w-7xl px-6 py-16 lg:px-10 lg:py-20">
-      <section className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-        <div className="space-y-6">
-          <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/8 px-4 py-1.5 text-sm font-semibold text-primary">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-            Premium Deneyimi
-          </span>
-          <div className="space-y-4">
-            <h1 className="max-w-3xl text-5xl font-extrabold leading-[1.08] tracking-tight lg:text-6xl">
-              Daha fazla görünürlük, daha iyi eşleşme,
-              <span className="bg-gradient-to-r from-primary to-[#6B7FD4] bg-clip-text text-transparent">
-                {" "}daha güçlü ekipler.
+    <main className="mx-auto max-w-7xl px-6 py-14 lg:px-10 lg:py-20">
+      <section className="premium-stroke overflow-hidden rounded-[2.5rem] bg-aurora px-6 py-8 lg:px-10 lg:py-10">
+        <div className="grid gap-10 lg:grid-cols-[1.08fr_0.92fr] lg:items-start">
+          <div className="space-y-8">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/70 px-4 py-2 text-xs font-bold uppercase tracking-[0.28em] text-primary">
+                <span className="h-2 w-2 rounded-full bg-aurum shadow-[0_0_0_4px_rgba(215,181,109,0.18)]" />
+                Premium Membership
               </span>
-            </h1>
-            <p className="max-w-2xl text-lg leading-8 text-ink/68">
-              Foundrly Premium ile YZ Ekip Kurucu, doğrulanmış yetenek başvurusu, gelişmiş filtreleme ve proje görünürlük artışı gibi ürünün en güçlü akışlarına erişebilirsin.
-            </p>
+              <span className="rounded-full bg-ink px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-white/78">
+                Builder prestige layer
+              </span>
+            </div>
+
+            <div className="space-y-5">
+              <p className="max-w-xl text-sm font-semibold uppercase tracking-[0.3em] text-ink/45">
+                Founders who move faster build stronger
+              </p>
+              <h1 className="max-w-4xl font-display text-5xl leading-[0.96] tracking-tight text-ink lg:text-7xl">
+                Ekip kurmayı
+                <span className="block text-primary">premium bir avantaja</span>
+                dönüştür.
+              </h1>
+              <p className="max-w-2xl text-lg leading-8 text-ink/72 lg:text-xl">
+                Foundrly Premium; daha yüksek görünürlük, daha güçlü güven sinyali ve yapay zeka destekli eşleşme katmanı ile iyi fikirleri daha hızlı doğru insanlarla buluşturur.
+              </p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              {premiumStats.map((stat) => (
+                <div key={stat.label} className="premium-panel rounded-[1.75rem] p-5">
+                  <p className="text-3xl font-black tracking-tight text-ink">{stat.value}</p>
+                  <p className="mt-2 text-sm leading-6 text-ink/68">{stat.label}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              {benefitCards.map((card) => (
+                <article key={card.title} className="rounded-[1.75rem] border border-white/65 bg-white/72 p-5 shadow-[0_16px_45px_rgba(27,45,73,0.07)] backdrop-blur">
+                  <p className="text-xs font-bold uppercase tracking-[0.24em] text-primary/60">
+                    {card.title}
+                  </p>
+                  <p className="mt-3 text-sm leading-7 text-ink/70">{card.body}</p>
+                </article>
+              ))}
+            </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            {[
-              "YZ Ekip Kurucu ile daha isabetli aday önerileri",
-              "Doğrulanmış yetenek başvurusu ile daha güçlü profil",
-              "Öne çıkan proje kartları ile daha fazla başvuru",
-              "Gelişmiş arama ve ekip filtreleri",
-            ].map((item) => (
-              <div
-                key={item}
-                className="rounded-2xl border border-white/60 bg-white/80 p-4 text-sm leading-6 text-ink/68 shadow-sm backdrop-blur"
-              >
-                {item}
-              </div>
-            ))}
-          </div>
-        </div>
+          <div className="premium-dark-panel relative overflow-hidden rounded-[2.35rem] p-7 text-white lg:p-8">
+            <div className="absolute inset-x-10 top-0 h-px bg-white/25" />
+            <div className="absolute -right-16 top-10 h-36 w-36 rounded-full bg-white/10 blur-3xl" />
+            <div className="absolute -left-12 bottom-8 h-28 w-28 rounded-full bg-aurum/20 blur-3xl" />
 
-        <div className="rounded-[2.25rem] border border-ink/10 bg-white p-8 shadow-sm lg:p-10">
-          <div className="rounded-[1.75rem] border border-primary/20 bg-primary/5 p-6 text-ink">
-            <p className="text-sm font-bold uppercase tracking-[0.22em] text-primary/70">
-              Premium Aktivasyon
-            </p>
-            <h2 className="mt-3 text-3xl font-extrabold text-ink">
-              {alreadyPremium ? "Premium aktif" : "Premium'a yükselt"}
-            </h2>
-            <p className="mt-3 text-sm leading-7 text-ink/70">
-              Premium plan ile YZ Ekip Kurucu, doğrulanmış yetenek başvurusu, gelişmiş filtreleme ve daha yüksek görünürlük gibi ürünün en güçlü özelliklerine anında erişebilirsin.
-            </p>
-
-            {feedback && (
-              <div className="mt-5 rounded-2xl border border-success/20 bg-success/10 px-4 py-3 text-sm text-success">
-                {feedback}
-              </div>
-            )}
-
-            {!authenticated ? (
-              <div className="mt-6 space-y-3">
-                <a
-                  href="#register"
-                  className="block rounded-2xl bg-primary px-5 py-3 text-center text-sm font-bold text-white shadow-halo transition hover:bg-primary/90"
-                >
-                  Hesap Oluştur
-                </a>
-                <a
-                  href="#login"
-                  className="block rounded-2xl border border-ink/10 bg-white px-5 py-3 text-center text-sm font-semibold text-ink transition hover:border-primary/40 hover:text-primary"
-                >
-                  Giriş Yap
-                </a>
-              </div>
-            ) : alreadyPremium ? (
-              <div className="mt-6 space-y-3">
-                <div className="rounded-2xl border border-ink/10 bg-white px-4 py-4 text-sm text-ink/80">
-                  Hesabın şu anda premium özelliklere erişebiliyor. Şimdi YZ Ekip Kurucu ve Ağ Kurma alanlarını deneyebilirsin.
+            <div className="relative">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.28em] text-white/55">
+                    Premium Access
+                  </p>
+                  <h2 className="mt-3 text-3xl font-black tracking-tight">
+                    {alreadyPremium ? "Üyeliğin aktif" : "Builder planını aç"}
+                  </h2>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/70">
+                  $5 / ay
+                </div>
+              </div>
+
+              <p className="mt-5 max-w-md text-sm leading-7 text-white/72">
+                Premium ile YZ Ekip Kurucu, verified başvurusu, gelişmiş filtreleme, görünürlük artışı ve daha hızlı takım kurma akışları tek planda birleşir.
+              </p>
+
+              <div className="mt-6 space-y-3 rounded-[1.6rem] border border-white/12 bg-white/7 p-5">
+                {[
+                  "AI Team Builder ile aday kalitesini yükselt",
+                  "Premium founder görünürlüğü ile daha iyi başvuru al",
+                  "Verified Talent başvurusu ile güven sinyalini güçlendir",
+                ].map((item) => (
+                  <div key={item} className="flex items-start gap-3 text-sm text-white/78">
+                    <span className="mt-1 h-2.5 w-2.5 rounded-full bg-aurum" />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+
+              {feedback && (
+                <div className="mt-5 rounded-2xl border border-success/20 bg-success/12 px-4 py-3 text-sm text-white">
+                  {feedback}
+                </div>
+              )}
+
+              {!authenticated ? (
+                <div className="mt-7 grid gap-3 sm:grid-cols-2">
                   <a
-                    href="#app-ai-builder"
-                    className="rounded-2xl bg-primary px-5 py-3 text-center text-sm font-bold text-white shadow-halo transition hover:bg-primary/90"
+                    href="#register"
+                    className="rounded-2xl bg-white px-5 py-3 text-center text-sm font-bold text-ink transition hover:bg-white/90"
                   >
-                    YZ Ekip Kurucu'ya Git
+                    Hesap Oluştur
                   </a>
                   <a
-                    href="#app-profile"
-                    className="rounded-2xl border border-ink/10 bg-white px-5 py-3 text-center text-sm font-semibold text-ink transition hover:border-primary/40 hover:text-primary"
+                    href="#login"
+                    className="rounded-2xl border border-white/16 bg-white/8 px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/12"
                   >
-                    Profilime Dön
+                    Giriş Yap
                   </a>
                 </div>
-              </div>
-            ) : (
-              <div className="mt-6 space-y-4">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={() => onStartSimulation?.("monthly")}
-                    className="rounded-2xl bg-primary px-5 py-4 text-left text-white shadow-halo transition hover:bg-primary/90"
-                  >
-                    <span className="block text-xs font-bold uppercase tracking-widest text-white/70">
-                      Aylık
-                    </span>
-                    <span className="mt-1 block text-2xl font-extrabold">$5</span>
-                    <span className="mt-1 block text-sm font-medium text-white/80">
-                      Anında premium erişimini aç
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onStartSimulation?.("yearly")}
-                    className="rounded-2xl border border-ink/10 bg-white px-5 py-4 text-left text-ink transition hover:border-primary/40"
-                  >
-                    <span className="block text-xs font-bold uppercase tracking-widest text-ink/60">
-                      Yıllık
-                    </span>
-                    <span className="mt-1 block text-2xl font-extrabold">$48</span>
-                    <span className="mt-1 block text-sm font-medium text-ink/70">
-                      Yıllık premium erişim
-                    </span>
-                  </button>
+              ) : alreadyPremium ? (
+                <div className="mt-7 space-y-4">
+                  <div className="rounded-[1.4rem] border border-white/12 bg-white/8 px-4 py-4 text-sm leading-7 text-white/78">
+                    Hesabın şu anda premium özelliklere erişebiliyor. Şimdi eşleşme zekasını, networking akışlarını ve verified profil avantajlarını kullanabilirsin.
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <a
+                      href="#app-ai-builder"
+                      className="rounded-2xl bg-white px-5 py-3 text-center text-sm font-bold text-ink transition hover:bg-white/90"
+                    >
+                      YZ Ekip Kurucu
+                    </a>
+                    <a
+                      href="#app-profile"
+                      className="rounded-2xl border border-white/16 bg-white/8 px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/12"
+                    >
+                      Profilime Dön
+                    </a>
+                  </div>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="mt-7 space-y-4">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => onStartSimulation?.("monthly")}
+                      className="rounded-[1.6rem] bg-white px-5 py-5 text-left text-ink transition hover:-translate-y-0.5 hover:bg-white/92"
+                    >
+                      <span className="block text-xs font-bold uppercase tracking-[0.22em] text-primary/60">
+                        Aylık erişim
+                      </span>
+                      <span className="mt-2 block text-3xl font-black">$5</span>
+                      <span className="mt-2 block text-sm leading-6 text-ink/65">
+                        Premium katmanı anında aç ve görünürlük farkını hisset.
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onStartSimulation?.("yearly")}
+                      className="rounded-[1.6rem] border border-white/16 bg-white/8 px-5 py-5 text-left text-white transition hover:-translate-y-0.5 hover:bg-white/12"
+                    >
+                      <span className="block text-xs font-bold uppercase tracking-[0.22em] text-white/55">
+                        Yıllık erişim
+                      </span>
+                      <span className="mt-2 block text-3xl font-black">$48</span>
+                      <span className="mt-2 block text-sm leading-6 text-white/68">
+                        En iyi fiyatla tüm premium akışlara kesintisiz eriş.
+                      </span>
+                    </button>
+                  </div>
+                  <p className="text-xs uppercase tracking-[0.24em] text-white/42">
+                    Demo aktivasyonu anında hesabına işlenir.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -863,24 +935,46 @@ function InfoPage({
 
 function SiteFooter() {
   return (
-    <footer className="relative overflow-hidden border-t border-ink/5 bg-sand text-ink mt-20">
+    <footer className="relative overflow-hidden border-t border-white/10 bg-[#040916] text-white">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_0%,rgba(71,93,178,0.22),transparent_30%),radial-gradient(circle_at_85%_10%,rgba(63,177,112,0.12),transparent_26%)]" />
       <div className="relative mx-auto max-w-7xl px-6 py-16 lg:px-10">
-        <div className="grid gap-12 lg:grid-cols-[1.35fr_0.7fr_0.7fr_1fr]">
+        <div className="grid gap-12 lg:grid-cols-[1.4fr_0.8fr_0.8fr_1fr]">
           <div className="max-w-md">
-            <p className="text-3xl font-extrabold text-primary">Foundrly</p>
-            <p className="mt-2 text-xs font-semibold uppercase tracking-[0.3em] text-ink/60">
-              Fikirleri Ekiplere Dönüştür
+            <p className="text-3xl font-extrabold tracking-tight text-white">Foundrly</p>
+            <p className="mt-3 text-xs font-semibold uppercase tracking-[0.34em] text-white/42">
+              Turn ideas into teams.
             </p>
-            <p className="mt-6 text-base leading-8 text-ink/70">
-              Foundrly, proje fikri olan kişilerin doğru ekip arkadaşlarını daha hızlı ve daha güvenilir şekilde bulmasını sağlayan bir ekip kurma platformudur.
+            <p className="mt-6 text-base leading-8 text-slate-300">
+              The premium startup network for founders and builders who want sharper matching, stronger trust and faster execution.
             </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              {["X", "LinkedIn", "GitHub", "Discord"].map((item) => (
+                <a
+                  key={item}
+                  href="#"
+                  className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-white/72 transition hover:border-white/20 hover:bg-white/10"
+                >
+                  {item}
+                </a>
+              ))}
+            </div>
           </div>
 
           <div>
-            <h3 className="text-2xl font-extrabold text-ink">Şirket</h3>
-            <div className="mt-6 space-y-4 text-base text-ink/70">
+            <h3 className="text-lg font-bold text-white">Product</h3>
+            <div className="mt-5 space-y-4 text-sm text-slate-300">
+              <a href="#premium" className="block transition hover:text-white">Premium</a>
+              <a href="#discover" className="block transition hover:text-white">Discover</a>
+              <a href="#community" className="block transition hover:text-white">Community</a>
+              <a href="#mentors" className="block transition hover:text-white">Mentors</a>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-bold text-white">Company</h3>
+            <div className="mt-5 space-y-4 text-sm text-slate-300">
               {FOOTER_COMPANY_LINKS.map((item) => (
-                <a key={item.href} href={item.href} className="block transition hover:text-primary">
+                <a key={item.href} href={item.href} className="block transition hover:text-white">
                   {item.label}
                 </a>
               ))}
@@ -888,36 +982,20 @@ function SiteFooter() {
           </div>
 
           <div>
-            <h3 className="text-2xl font-extrabold text-ink">Destek</h3>
-            <div className="mt-6 space-y-4 text-base text-ink/70">
-              {FOOTER_SUPPORT_LINKS.map((item) => (
-                <a key={item.href} href={item.href} className="block transition hover:text-primary">
-                  {item.label}
-                </a>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-2xl font-extrabold text-ink">İletişim Bilgileri</h3>
-            <div className="mt-6 space-y-5 text-base leading-8 text-ink/70">
-              <p>
-                <span className="font-semibold text-ink">Konum:</span>{" "}
-                PAÜ Mühendislik Fakültesi, Kınıklı Kampüsü, Pamukkale / Denizli
-              </p>
-              <p>
-                <span className="font-semibold text-ink">E-posta:</span>{" "}
-                <a href="mailto:hello@joinfoundrly.com" className="transition hover:text-primary">
-                  hello@joinfoundrly.com
-                </a>
-              </p>
+            <h3 className="text-lg font-bold text-white">Contact</h3>
+            <div className="mt-5 space-y-4 text-sm leading-7 text-slate-300">
+              <p>PAÜ Mühendislik Fakültesi, Pamukkale / Denizli</p>
+              <a href="mailto:hello@joinfoundrly.com" className="block transition hover:text-white">
+                hello@joinfoundrly.com
+              </a>
+              <p>joinfoundrly.com</p>
             </div>
           </div>
         </div>
 
-        <div className="mt-14 flex flex-col gap-3 border-t border-ink/10 pt-6 text-sm text-ink/40 md:flex-row md:items-center md:justify-between">
-          <p>© 2026 Foundrly. Tüm hakları saklıdır.</p>
-          <p className="text-ink/55">joinfoundrly.com</p>
+        <div className="mt-12 flex flex-col gap-3 border-t border-white/10 pt-6 text-sm text-white/42 md:flex-row md:items-center md:justify-between">
+          <p>© 2026 Foundrly. All rights reserved.</p>
+          <p>Built for ambitious teams.</p>
         </div>
       </div>
     </footer>
@@ -3752,16 +3830,24 @@ export default function App() {
     );
   }
 
+  const isHomeRoute = route === "home";
+
   return (
-    <div className="min-h-screen bg-mesh bg-noise font-sans text-ink antialiased">
-      <header className="sticky top-0 z-50 border-b border-white/40 bg-white/70 backdrop-blur-xl">
+    <div className="min-h-screen bg-[#050B18] font-sans text-white antialiased">
+      <header
+        className={`sticky top-0 z-50 border-b backdrop-blur-xl ${
+          isHomeRoute
+            ? "border-white/10 bg-[#050B18]/72"
+            : "border-white/40 bg-white/70 text-ink"
+        }`}
+      >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
           <a href="#" className="flex flex-col leading-none">
-            <span className="text-2xl font-extrabold tracking-tight text-ink">
+            <span className={`text-2xl font-extrabold tracking-tight ${isHomeRoute ? "text-white" : "text-ink"}`}>
               Foundrly
             </span>
-              <span className="text-[11px] font-medium tracking-widest text-primary/70">
-              FİKİRLERİ EKİPLERE DÖNÜŞTÜR
+              <span className={`text-[11px] font-medium tracking-widest ${isHomeRoute ? "text-white/46" : "text-primary/70"}`}>
+              TURN IDEAS INTO TEAMS
             </span>
           </a>
 
@@ -3770,7 +3856,7 @@ export default function App() {
               <a
                 key={l.href}
                 href={l.href}
-                className="text-sm font-medium text-ink/70 transition hover:text-primary"
+                className={`text-sm font-medium transition ${isHomeRoute ? "text-white/68 hover:text-white" : "text-ink/70 hover:text-primary"}`}
               >
                 {l.label}
               </a>
@@ -3783,7 +3869,13 @@ export default function App() {
               <a
                 key={link.label}
                 href={link.href}
-              className={`rounded-full px-5 py-2 text-sm font-semibold transition hover:-translate-y-0.5 ${link.className}`}
+              className={`rounded-full px-5 py-2 text-sm font-semibold transition hover:-translate-y-0.5 ${
+                isHomeRoute && link.label === "Giriş Yap"
+                  ? "border border-white/12 bg-white/6 text-white hover:border-white/22 hover:bg-white/10"
+                  : isHomeRoute && link.label === "Takımını Kur"
+                    ? "bg-[linear-gradient(135deg,#5b73db_0%,#475DB2_45%,#3FB170_100%)] text-white shadow-[0_16px_45px_rgba(71,93,178,0.42)]"
+                    : link.className
+              }`}
               >
                 {link.label}
               </a>
@@ -3840,7 +3932,7 @@ export default function App() {
         )}
       </header>
 
-      <main className="bg-white text-ink">
+      <main className={isHomeRoute ? "bg-[#050B18]" : "bg-white text-ink"}>
         {route === "home" && <LandingHomeView />}
         {route === "mentors" && <PublicMentorsView mentors={publicMentors} />}
         {route === "discover" && <DiscoverView />}
@@ -3855,135 +3947,41 @@ export default function App() {
 }
 
 function LandingHomeView({ onSearchUser }: { onSearchUser?: (query: string) => void }) {
-  const [searchQuery, setSearchQuery] = useState("");
-  return (
-    <>
-      <section className="mx-auto grid max-w-7xl gap-10 px-6 pb-16 pt-14 lg:grid-cols-[1.08fr_0.92fr] lg:px-10 lg:pb-20 lg:pt-20">
-        <div className="space-y-8">
-          <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-white/40 px-4 py-1.5 text-sm font-semibold text-primary">
-            <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
-            Girişim · Hackathon · Üniversite Projeleri
-          </span>
-
-          <div className="space-y-5">
-            <h1 className="max-w-3xl text-5xl font-extrabold leading-[0.98] tracking-tight text-ink lg:text-6xl xl:text-[5.25rem]">
-              Gerçek projeler,
-              <br className="hidden lg:block" />
-              gerçek ekiplerle
-              <span className="text-primary"> kurulur.</span>
-            </h1>
-            <p className="max-w-2xl text-lg leading-8 text-ink/70 lg:text-xl">
-              Foundrly; hırslı builder'ların daha güçlü ekipler kurmasını sağlayan bir startup ağıdır.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-4 max-w-md">
-             <div className="relative group">
-                <input 
-                  type="text" 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Yetenek veya kurucu ara..." 
-                  className="w-full rounded-2xl border border-ink/10 bg-white/80 px-6 py-4 pr-12 text-sm outline-none transition focus:border-primary focus:bg-white shadow-sm"
-                />
-                <button 
-                  onClick={() => {
-                    if (searchQuery.trim()) {
-                       window.location.hash = `#discover?search=${searchQuery}`;
-                    }
-                  }}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-primary font-bold"
-                >
-                  Ara
-                </button>
-             </div>
-             <div className="flex flex-wrap gap-4">
-                <a
-                  href="#register"
-                  className="rounded-full bg-primary px-7 py-3.5 text-sm font-bold text-white shadow-halo transition hover:-translate-y-0.5"
-                >
-                  Takımını Kur
-                </a>
-                <a
-                  href="#mentors"
-                  className="rounded-full border border-ink/15 bg-white/60 px-7 py-3.5 text-sm font-semibold text-ink shadow-sm backdrop-blur transition hover:border-primary/35 hover:text-primary"
-                >
-                  Mentörleri Gör
-                </a>
-              </div>
-          </div>
-
-          <div className="grid gap-4 pt-2 sm:grid-cols-3">
-            {[
-              { v: "Canlı Ekipler", l: "Üretime başlamış takımları gör." },
-              { v: "Yapay Zeka", l: "TF-IDF ile akıllı eşleşme motoru." },
-              { v: "Aktif Ağ", l: "Hackathon ve kampüs projeleri." },
-            ].map((s) => (
-              <div
-                key={s.v}
-                className="rounded-[1.5rem] border border-white/60 bg-white/50 p-5 shadow-sm backdrop-blur"
-              >
-                <p className="text-[11px] font-bold uppercase tracking-widest text-primary/70">
-                  Öne Çıkan
-                </p>
-                <p className="mt-2 text-lg font-bold text-ink">{s.v}</p>
-                <p className="mt-1.5 text-sm leading-6 text-ink/60">{s.l}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid gap-4">
-          <div className="rounded-[2rem] border border-white/60 bg-white/80 p-6 text-ink shadow-halo backdrop-blur flex flex-col justify-center text-center">
-            <div className="text-6xl mb-4">🚀</div>
-            <h2 className="text-3xl font-extrabold text-ink">Foundrly'e Hoş Geldin</h2>
-            <p className="mt-2 text-sm text-ink/60 max-w-xs mx-auto">Doğru insanları bul, ekibini kur ve inşa etmeye hemen başla.</p>
-            <div className="mt-6 flex justify-center gap-3">
-               <div className="h-2 w-2 rounded-full bg-success"></div>
-               <div className="h-2 w-2 rounded-full bg-primary"></div>
-               <div className="h-2 w-2 rounded-full bg-secondary"></div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="features" className="border-y border-white/40 bg-white/20 backdrop-blur">
-        <div className="mx-auto max-w-7xl px-6 py-20 lg:px-10 text-center">
-           <h2 className="text-3xl font-extrabold text-ink">Neden Foundrly?</h2>
-           <p className="mt-4 text-ink/60 max-w-2xl mx-auto text-lg">Doğru ekip arkadaşını bulmak hâlâ gereğinden zor. Foundrly bunu daha hızlı ve daha güvenilir hale getirir.</p>
-           
-           <div className="mt-12 grid gap-8 md:grid-cols-3">
-              {[
-                { title: "Gerçek Ekipler", desc: "Sadece profil değil, üretim kalitesini baz alan akıllı yetenek araması." },
-                { title: "Yapay Zeka Uyum", desc: "TF-IDF motoru ile beceri ve proje ihtiyaçlarını karşılaştırarak en iyi ekip üyelerini bulun." },
-                { title: "Doğrulanmış Rozet", desc: "Öncelikli başvuru ve artırılmış görünürlük ile takım arkadaşı arayışını hızlandırın." }
-              ].map(f => (
-                <div key={f.title} className="rounded-[2rem] border border-white/60 bg-white/80 p-8 shadow-sm text-left">
-                  <h3 className="text-xl font-bold text-ink">{f.title}</h3>
-                  <p className="mt-3 text-ink/70 leading-relaxed">{f.desc}</p>
-                </div>
-              ))}
-           </div>
-        </div>
-      </section>
-    </>
-  );
+  return <FoundrlyLanding onSearchUser={onSearchUser} />;
 }
 
 function DiscoverView() {
+  const searchTerm = getHashSearchParam("search").toLocaleLowerCase("tr-TR");
+  const projects = [
+    { title: "AI Eğitim Asistanı", role: "Frontend (React) Aranıyor", stack: "React, FastAPI, Tailwind" },
+    { title: "Kripto Veri Analizi", role: "Data Scientist Aranıyor", stack: "Python, Pandas, SQL" },
+    { title: "Sürdürülebilir Tarım IoT", role: "Mobil Geliştirici", stack: "Flutter, Firebase, IoT" },
+    { title: "Lojistik Rota Optimizasyonu", role: "Backend Developer", stack: "Node.js, PostgreSQL, Redis" },
+  ];
+  const filteredProjects = searchTerm
+    ? projects.filter((project) =>
+        [project.title, project.role, project.stack]
+          .join(" ")
+          .toLocaleLowerCase("tr-TR")
+          .includes(searchTerm)
+      )
+    : projects;
+
   return (
     <section className="mx-auto max-w-7xl px-6 py-16 lg:px-10">
       <div className="mb-10 border-b border-ink/10 pb-6">
         <h1 className="text-3xl font-extrabold text-ink">Keşfet</h1>
-        <p className="mt-2 text-ink/60">Açık pozisyonları olan ve ekibini büyütmek isteyen projelere göz at.</p>
+        <p className="mt-2 text-ink/60">
+          Açık pozisyonları olan ve ekibini büyütmek isteyen projelere göz at.
+        </p>
+        {searchTerm && (
+          <div className="mt-4 inline-flex rounded-full border border-primary/18 bg-primary/6 px-4 py-2 text-sm font-semibold text-primary">
+            Arama sonucu: {searchTerm}
+          </div>
+        )}
       </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {[
-          { title: "AI Eğitim Asistanı", role: "Frontend (React) Aranıyor", stack: "React, FastAPI, Tailwind" },
-          { title: "Kripto Veri Analizi", role: "Data Scientist Aranıyor", stack: "Python, Pandas, SQL" },
-          { title: "Sürdürülebilir Tarım IoT", role: "Mobil Geliştirici", stack: "Flutter, Firebase, IoT" },
-          { title: "Lojistik Rota Optimizasyonu", role: "Backend Developer", stack: "Node.js, PostgreSQL, Redis" },
-        ].map((p, i) => (
+        {filteredProjects.map((p, i) => (
           <div key={i} className="rounded-2xl border border-ink/10 bg-white p-6 shadow-sm hover:border-primary/40 transition cursor-pointer">
             <h3 className="text-lg font-bold text-ink">{p.title}</h3>
             <span className="mt-2 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">{p.role}</span>
@@ -3991,6 +3989,11 @@ function DiscoverView() {
           </div>
         ))}
       </div>
+      {filteredProjects.length === 0 && (
+        <div className="mt-8 rounded-[1.75rem] border border-ink/10 bg-white p-8 text-center text-ink/62 shadow-sm">
+          Bu aramaya uygun proje bulunamadı. Farklı bir rol, teknoloji ya da anahtar kelime dene.
+        </div>
+      )}
     </section>
   );
 }

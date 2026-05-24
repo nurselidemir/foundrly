@@ -58,6 +58,14 @@ Giriş yap ekranı `POST /api/auth/token/` ile JWT alır ve ardından `GET /api/
 
 ---
 
+## iOS Durumu
+
+`ios/FoundrlyApp/` altında SwiftUI kaynak dosyalari hazirdir. Giris, kayit, kesfet, mesajlar, premium, mentor, topluluk ve profil akislari bulunur.
+
+Bu repo icinde hazir bir `.xcodeproj` dosyasi yoktur. Teslim veya demo asamasinda Xcode'da yeni bir iOS App projesi olusturup bu Swift dosyalarini projeye ekleyerek calistirabilirsin.
+
+---
+
 ## Demo Verisi
 
 Hocaya sunum yapmadan once asagidaki komutla ornek hesaplari, projeleri, basvurulari, mesajlasma senaryosunu ve verified kuyrugunu hazirlayabilirsin:
