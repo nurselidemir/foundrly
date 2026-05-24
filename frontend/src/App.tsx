@@ -1387,10 +1387,22 @@ function DashboardPage({
     rating: 5,
     comment: "",
   });
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [onboardingRole, setOnboardingRole] = useState("Founder");
+  const [onboardingSkills, setOnboardingSkills] = useState<string[]>(["React", "AI"]);
+  const [onboardingGoal, setOnboardingGoal] = useState("Build a startup team");
 
   const accessToken = getStoredAccessToken();
   const storedUser = localStorage.getItem("foundrly_current_user");
   const currentUser = storedUser ? (JSON.parse(storedUser) as CurrentUser) : null;
+  const effectiveProfile = summary?.profile || currentUser;
+  const profileStrength = [
+    effectiveProfile?.title,
+    effectiveProfile?.bio,
+    effectiveProfile?.skills?.length,
+    effectiveProfile?.interests?.length,
+  ].filter(Boolean).length;
+  const onboardingNeeded = Boolean(effectiveProfile && profileStrength < 4);
   const authHeaders = accessToken
     ? {
         Authorization: `Bearer ${accessToken}`,
@@ -1614,6 +1626,12 @@ function DashboardPage({
     }
   }, [route, publicProfileId]);
 
+  useEffect(() => {
+    if (route === "app-home" && onboardingNeeded) {
+      setOnboardingOpen(true);
+    }
+  }, [route, onboardingNeeded]);
+
   const handleMentorRequest = async (mentorId: number, message: string) => {
     if (!authHeaders) return;
     setMentorFeedback("");
@@ -1698,6 +1716,34 @@ function DashboardPage({
         loadDashboard();
       }
     } catch (e) {}
+  };
+
+  const completeOnboarding = () => {
+    const baseProfile = summary?.profile || currentUser;
+    if (!baseProfile) return;
+    const title =
+      baseProfile.title && baseProfile.title.trim().length
+        ? baseProfile.title
+        : onboardingRole === "Explorer"
+          ? "Startup Explorer"
+          : onboardingRole;
+    const bio =
+      baseProfile.bio && baseProfile.bio.trim().length
+        ? baseProfile.bio
+        : `${onboardingGoal} around ${onboardingSkills.join(", ")}.`;
+    const nextProfile = {
+      ...baseProfile,
+      title,
+      bio,
+      skills: Array.from(new Set([...(baseProfile.skills || []), ...onboardingSkills])),
+      interests: Array.from(new Set([...(baseProfile.interests || []), onboardingGoal])),
+    };
+
+    if (summary) {
+      setSummary({ ...summary, profile: nextProfile });
+    }
+    localStorage.setItem("foundrly_current_user", JSON.stringify(nextProfile));
+    setOnboardingOpen(false);
   };
 
   const logout = () => {
@@ -2042,64 +2088,161 @@ function DashboardPage({
       <main className="mx-auto max-w-7xl px-6 py-10 lg:px-10">
         {route === "app-home" && (
           <div className="space-y-6">
-            <section className="app-panel-strong rounded-[2.25rem] p-8 text-ink lg:p-10">
-              <p className="app-section-eyebrow text-sm font-bold uppercase tracking-[0.24em]">
-                Anasayfa
-              </p>
-              <h1 className="mt-4 text-4xl font-extrabold leading-tight lg:text-5xl">
-                {summary?.profile.full_name || currentUser?.full_name || "Hoş geldin"}
-              </h1>
-              <p className="app-section-copy mt-4 max-w-2xl text-base">
-                {summary?.profile.title || currentUser?.title || "Kullanıcı"} · {loadingLabel}
-              </p>
-
-              <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {[
-                  ["Projelerim", summary?.metrics.owned_projects_count ?? 0],
-                  ["Gelen Başvurular", summary?.metrics.received_applications_count ?? 0],
-                  ["Bekleyenler", summary?.metrics.pending_received_applications_count ?? 0],
-                  ["Kabul Edilenler", summary?.metrics.accepted_received_applications_count ?? 0],
-                  ["Gönderdiğim", summary?.metrics.sent_applications_count ?? 0],
-                  ["Katıldığım Ekip", summary?.metrics.accepted_memberships_count ?? 0],
-                ].map(([label, value]) => (
-                  <div
-                    key={String(label)}
-                    className="app-kpi-card rounded-2xl p-5"
-                  >
-                    <p className="text-xs font-bold uppercase tracking-widest text-ink/60">
-                      {label}
+            {onboardingOpen && (
+              <section className="relative overflow-hidden rounded-[2.5rem] border border-primary/20 bg-[radial-gradient(circle_at_top_left,rgba(71,93,178,0.28),transparent_30%),linear-gradient(180deg,#0A1223,#0B1529)] p-8 text-white shadow-[0_30px_120px_rgba(0,0,0,0.35)] lg:p-10">
+                <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white/10 to-transparent" />
+                <div className="relative flex flex-col gap-8 xl:flex-row xl:items-start xl:justify-between">
+                  <div className="max-w-2xl">
+                    <p className="text-xs font-bold uppercase tracking-[0.28em] text-white/52">Onboarding</p>
+                    <h2 className="mt-4 text-4xl font-extrabold tracking-tight">Shape your founder signal in under a minute.</h2>
+                    <p className="mt-4 text-base leading-8 text-slate-300">
+                      We use this to sharpen discovery, improve AI match quality and help the right collaborators find you faster.
                     </p>
-                    <p className="mt-2 text-3xl font-extrabold">{value}</p>
                   </div>
-                ))}
+                  <button
+                    type="button"
+                    onClick={() => setOnboardingOpen(false)}
+                    className="rounded-full border border-white/12 px-4 py-2 text-sm font-semibold text-white/70 transition hover:bg-white/10"
+                  >
+                    Dismiss for now
+                  </button>
+                </div>
+                <div className="relative mt-8 grid gap-6 xl:grid-cols-[1fr_0.9fr]">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {ONBOARDING_TRACKS.map((track) => (
+                      <button
+                        key={track.key}
+                        type="button"
+                        onClick={() => setOnboardingRole(track.key)}
+                        className={`rounded-[1.75rem] border p-5 text-left transition ${
+                          onboardingRole === track.key
+                            ? "border-white/24 bg-white/12"
+                            : "border-white/10 bg-white/6 hover:border-white/18 hover:bg-white/8"
+                        }`}
+                      >
+                        <p className="text-lg font-bold text-white">{track.title}</p>
+                        <p className="mt-2 text-sm leading-7 text-slate-300">{track.body}</p>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="rounded-[2rem] border border-white/10 bg-white/6 p-6 backdrop-blur">
+                    <p className="text-xs font-bold uppercase tracking-[0.24em] text-white/45">Signal inputs</p>
+                    <div className="mt-5">
+                      <p className="text-sm font-semibold text-white">Top skills</p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {ONBOARDING_SKILLS.map((skill) => {
+                          const active = onboardingSkills.includes(skill);
+                          return (
+                            <button
+                              key={skill}
+                              type="button"
+                              onClick={() =>
+                                setOnboardingSkills((current) =>
+                                  current.includes(skill)
+                                    ? current.filter((item) => item !== skill)
+                                    : [...current.slice(-2), skill]
+                                )
+                              }
+                              className={`rounded-full px-3 py-2 text-xs font-bold transition ${
+                                active ? "bg-white text-[#091222]" : "border border-white/10 bg-black/20 text-white/72"
+                              }`}
+                            >
+                              {skill}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div className="mt-6">
+                      <p className="text-sm font-semibold text-white">Primary goal</p>
+                      <div className="mt-3 grid gap-2">
+                        {ONBOARDING_GOALS.map((goal) => (
+                          <button
+                            key={goal}
+                            type="button"
+                            onClick={() => setOnboardingGoal(goal)}
+                            className={`rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${
+                              onboardingGoal === goal
+                                ? "border-success/30 bg-success/12 text-white"
+                                : "border-white/10 bg-black/20 text-white/72 hover:border-white/20"
+                            }`}
+                          >
+                            {goal}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={completeOnboarding}
+                      className="mt-6 w-full rounded-2xl bg-[linear-gradient(135deg,#5b73db_0%,#475DB2_45%,#3FB170_100%)] px-6 py-3 text-sm font-bold text-white shadow-[0_16px_45px_rgba(71,93,178,0.36)] transition hover:scale-[1.01]"
+                    >
+                      Save onboarding signal
+                    </button>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            <section className="relative overflow-hidden rounded-[2.5rem] border border-white/60 bg-white/88 p-8 shadow-halo backdrop-blur lg:p-10">
+              <div className="absolute inset-x-0 top-0 h-28 bg-[radial-gradient(circle_at_top_left,rgba(71,93,178,0.18),transparent_46%),radial-gradient(circle_at_80%_0%,rgba(63,177,112,0.1),transparent_28%)]" />
+              <div className="relative grid gap-8 xl:grid-cols-[1.1fr_0.9fr]">
+                <div>
+                  <p className="app-section-eyebrow text-sm font-bold uppercase tracking-[0.24em]">Founder cockpit</p>
+                  <h1 className="mt-4 text-4xl font-extrabold leading-tight lg:text-5xl">
+                    {summary?.profile.full_name || currentUser?.full_name || "Hoş geldin"}
+                  </h1>
+                  <p className="app-section-copy mt-4 max-w-2xl text-base">
+                    {summary?.profile.title || currentUser?.title || "Kullanıcı"} · {loadingLabel}
+                  </p>
+                  <div className="mt-6 flex flex-wrap gap-3">
+                    <span className="rounded-full border border-primary/15 bg-primary/6 px-4 py-2 text-sm font-semibold text-primary">
+                      Profile strength: {Math.min(100, profileStrength * 25)}%
+                    </span>
+                    <span className="rounded-full border border-success/15 bg-success/8 px-4 py-2 text-sm font-semibold text-success">
+                      {(summary?.metrics.accepted_memberships_count ?? 0) + (summary?.metrics.accepted_received_applications_count ?? 0)} active collaborations
+                    </span>
+                  </div>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {[
+                    ["Projelerim", summary?.metrics.owned_projects_count ?? 0],
+                    ["Gelen Başvurular", summary?.metrics.received_applications_count ?? 0],
+                    ["Bekleyenler", summary?.metrics.pending_received_applications_count ?? 0],
+                    ["Kabul Edilenler", summary?.metrics.accepted_received_applications_count ?? 0],
+                    ["Gönderdiğim", summary?.metrics.sent_applications_count ?? 0],
+                    ["Katıldığım Ekip", summary?.metrics.accepted_memberships_count ?? 0],
+                  ].map(([label, value]) => (
+                    <div key={String(label)} className="app-kpi-card rounded-2xl p-5">
+                      <p className="text-xs font-bold uppercase tracking-widest text-ink/60">{label}</p>
+                      <p className="mt-2 text-3xl font-extrabold">{value}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </section>
 
-            {summary?.friend_requests && summary.friend_requests.filter(r => r.status === 'pending' && r.receiver === currentUser?.id).length > 0 && (
+            {summary?.friend_requests && summary.friend_requests.filter((r) => r.status === "pending" && r.receiver === currentUser?.id).length > 0 && (
               <section className="rounded-[2.25rem] border border-secondary/20 bg-secondary/5 p-8 shadow-sm lg:p-10">
                 <p className="text-sm font-bold uppercase tracking-[0.2em] text-secondary">Ağ İstekleri</p>
                 <div className="mt-6 space-y-3">
-                  {summary.friend_requests.filter(r => r.status === 'pending' && r.receiver === currentUser?.id).map(req => (
-                    <div key={req.id} className="flex items-center justify-between bg-white p-4 rounded-2xl border border-secondary/10 shadow-sm">
-                      <div>
-                        <p className="text-sm font-bold text-ink">{req.sender_name} <span className="text-ink/40 font-normal">seninle ağ kurmak istiyor.</span></p>
+                  {summary.friend_requests
+                    .filter((r) => r.status === "pending" && r.receiver === currentUser?.id)
+                    .map((req) => (
+                      <div key={req.id} className="flex items-center justify-between rounded-2xl border border-secondary/10 bg-white p-4 shadow-sm">
+                        <div>
+                          <p className="text-sm font-bold text-ink">{req.sender_name} <span className="font-normal text-ink/40">seninle ağ kurmak istiyor.</span></p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={() => handleUpdateFriendRequest(req.id, "accepted")} className="rounded-xl bg-primary px-4 py-1.5 text-xs font-bold text-white shadow-halo transition hover:bg-primary/90">
+                            Kabul Et
+                          </button>
+                          <button onClick={() => handleUpdateFriendRequest(req.id, "rejected")} className="rounded-xl bg-ink/5 px-4 py-1.5 text-xs font-bold text-ink transition hover:bg-ink/10">
+                            Reddet
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        <button 
-                          onClick={() => handleUpdateFriendRequest(req.id, 'accepted')}
-                          className="bg-primary text-white px-4 py-1.5 rounded-xl text-xs font-bold shadow-halo transition hover:bg-primary/90"
-                        >
-                          Kabul Et
-                        </button>
-                        <button 
-                          onClick={() => handleUpdateFriendRequest(req.id, 'rejected')}
-                          className="bg-ink/5 text-ink px-4 py-1.5 rounded-xl text-xs font-bold transition hover:bg-ink/10"
-                        >
-                          Reddet
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </section>
             )}
@@ -2114,29 +2257,15 @@ function DashboardPage({
               <section className="rounded-[2rem] border border-primary/20 bg-gradient-to-r from-primary to-[#5D73CD] p-6 text-white shadow-halo">
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                   <div className="max-w-2xl">
-                    <p className="text-sm font-bold uppercase tracking-[0.22em] text-white/72">
-                      Premium Açık Değil
-                    </p>
-                    <h2 className="mt-2 text-2xl font-extrabold">
-                      YZ Ekip Kurucu ve doğrulanmış yetenek akışları için premium'u aktive et
-                    </h2>
+                    <p className="text-sm font-bold uppercase tracking-[0.22em] text-white/72">Premium Açık Değil</p>
+                    <h2 className="mt-2 text-2xl font-extrabold">YZ Ekip Kurucu ve doğrulanmış yetenek akışları için premium'u aktive et</h2>
                     <p className="mt-2 text-sm leading-7 text-white/78">
                       Bu hesap şu anda standart planda. Premium sayfasına geçerek gelişmiş ekip filtrelerini, görünürlük artışını ve premium founder deneyimini anında açabilirsin.
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-3">
-                    <a
-                      href="#premium"
-                      className="rounded-2xl bg-white px-6 py-3 text-sm font-bold text-primary transition hover:bg-white/90"
-                    >
-                      Premium Sayfasını Aç
-                    </a>
-                    <a
-                      href="#app-profile"
-                      className="rounded-2xl border border-white/15 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
-                    >
-                      Profilimi Gör
-                    </a>
+                    <a href="#premium" className="rounded-2xl bg-white px-6 py-3 text-sm font-bold text-primary transition hover:bg-white/90">Premium Sayfasını Aç</a>
+                    <a href="#app-profile" className="rounded-2xl border border-white/15 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10">Profilimi Gör</a>
                   </div>
                 </div>
               </section>
@@ -2146,40 +2275,24 @@ function DashboardPage({
               <section className="app-panel rounded-[2.25rem] border-primary/20 bg-primary/5 p-6 xl:p-8">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/80">
-                      AI Takım Kurucu
-                    </p>
-                    <h2 className="mt-1 text-2xl font-extrabold text-ink">
-                      Size Özel AI Önerileri
-                    </h2>
+                    <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/80">AI Takım Kurucu</p>
+                    <h2 className="mt-1 text-2xl font-extrabold text-ink">Size Özel AI Önerileri</h2>
                   </div>
                 </div>
-                
                 <div className="mt-5 grid gap-4 lg:grid-cols-2">
                   {recommendedProjects.map((match) => (
-                    <article
-                      key={match.project.id}
-                      className="app-kpi-card rounded-2xl border-primary/20 p-5 transition hover:border-primary/40"
-                    >
+                    <article key={match.project.id} className="app-kpi-card rounded-2xl border-primary/20 p-5 transition hover:border-primary/40">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
                           <p className="text-lg font-bold text-ink">{match.project.title}</p>
-                          <button
-                            type="button"
-                            onClick={() => openPublicProfile(match.project.owner.id)}
-                            className="mt-1 text-left text-sm text-ink/58 transition hover:text-primary"
-                          >
+                          <button type="button" onClick={() => openPublicProfile(match.project.owner.id)} className="mt-1 text-left text-sm text-ink/58 transition hover:text-primary">
                             {match.project.owner.full_name} · {match.project.owner.title}
                           </button>
                         </div>
-                        <span className="rounded-full bg-success/10 px-3 py-1 text-xs font-bold text-success whitespace-nowrap">
-                          %{Math.round(match.score)} Uyum
-                        </span>
+                        <span className="rounded-full bg-success/10 px-3 py-1 text-xs font-bold text-success whitespace-nowrap">%{Math.round(match.score)} Uyum</span>
                       </div>
-                      
-                      <p className="mt-3 text-xs text-ink/50 leading-relaxed">{match.ai_summary}</p>
-                      
-                      <p className="mt-3 text-xs text-ink/40 uppercase tracking-widest truncate" title={match.matched_skills.join(", ")}>
+                      <p className="mt-3 text-xs leading-relaxed text-ink/50">{match.ai_summary}</p>
+                      <p className="mt-3 text-xs uppercase tracking-widest text-ink/40 truncate" title={match.matched_skills.join(", ")}>
                         Eşleşenler: {match.matched_skills.join(", ") || "-"}
                       </p>
                     </article>
@@ -2192,19 +2305,10 @@ function DashboardPage({
               <div className="app-panel rounded-[2rem] p-6">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">
-                      Aktif Projeler
-                    </p>
-                    <h2 className="mt-1 text-2xl font-extrabold text-ink">
-                      Başvurabileceğin projeler
-                    </h2>
+                    <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">Aktif Projeler</p>
+                    <h2 className="mt-1 text-2xl font-extrabold text-ink">Başvurabileceğin projeler</h2>
                   </div>
-                  <input
-                    value={projectSearch}
-                    onChange={(e) => setProjectSearch(e.target.value)}
-                    placeholder="Proje ara"
-                    className="app-input sm:max-w-xs"
-                  />
+                  <input value={projectSearch} onChange={(e) => setProjectSearch(e.target.value)} placeholder="Proje ara" className="app-input sm:max-w-xs" />
                 </div>
 
                 <div className="mt-5 space-y-4">
@@ -2218,75 +2322,35 @@ function DashboardPage({
                     })
                     .slice(0, 6)
                     .map((project) => {
-                      const alreadyApplied = sentApplications.some(
-                        (application) => application.project === project.id,
-                      );
-
+                      const alreadyApplied = sentApplications.some((application) => application.project === project.id);
                       return (
-                        <article
-                          key={project.id}
-                          className="app-subpanel rounded-2xl p-5"
-                        >
+                        <article key={project.id} className="app-subpanel rounded-2xl p-5">
                           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                             <div>
                               <p className="text-lg font-bold text-ink">{project.title}</p>
-                              <button
-                                type="button"
-                                onClick={() => openPublicProfile(project.owner.id)}
-                                className="mt-1 text-left text-sm text-ink/58 transition hover:text-primary"
-                              >
+                              <button type="button" onClick={() => openPublicProfile(project.owner.id)} className="mt-1 text-left text-sm text-ink/58 transition hover:text-primary">
                                 {project.owner.full_name} · {project.owner.title}
                               </button>
                               <p className="mt-3 text-sm leading-6 text-ink/68">{project.summary}</p>
                             </div>
-                            <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
-                              {project.is_premium_highlighted ? "Premium" : "Açık"}
-                            </span>
+                            <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">{project.is_premium_highlighted ? "Premium" : "Açık"}</span>
                           </div>
 
                           {alreadyApplied ? (
-                            <div className="mt-4 rounded-2xl border border-success/20 bg-success/8 px-4 py-3 text-sm text-success">
-                              Bu projeye zaten başvurdun.
-                            </div>
+                            <div className="mt-4 rounded-2xl border border-success/20 bg-success/8 px-4 py-3 text-sm text-success">Bu projeye zaten başvurdun.</div>
                           ) : (
                             <div className="mt-4 space-y-3">
                               {selectedProjectId === project.id && (
-                                <textarea
-                                  value={applicationMessage}
-                                  onChange={(e) => setApplicationMessage(e.target.value)}
-                                  placeholder="Projeye neden uygun olduğunu kısa yaz."
-                                  className="app-input min-h-24 bg-white"
-                                />
+                                <textarea value={applicationMessage} onChange={(e) => setApplicationMessage(e.target.value)} placeholder="Projeye neden uygun olduğunu kısa yaz." className="app-input min-h-24 bg-white" />
                               )}
                               <div className="flex flex-wrap gap-3">
                                 {selectedProjectId === project.id ? (
                                   <>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleApplicationSubmit(project.id)}
-                                      className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white transition hover:bg-primary/90"
-                                    >
-                                      Başvuruyu Gönder
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setSelectedProjectId(null);
-                                        setApplicationMessage("");
-                                      }}
-                                      className="rounded-full border border-ink/10 bg-white px-5 py-2 text-sm font-semibold text-ink transition hover:border-primary/25 hover:text-primary"
-                                    >
-                                      Vazgeç
-                                    </button>
+                                    <button type="button" onClick={() => handleApplicationSubmit(project.id)} className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white transition hover:bg-primary/90">Başvuruyu Gönder</button>
+                                    <button type="button" onClick={() => { setSelectedProjectId(null); setApplicationMessage(""); }} className="rounded-full border border-ink/10 bg-white px-5 py-2 text-sm font-semibold text-ink transition hover:border-primary/25 hover:text-primary">Vazgeç</button>
                                   </>
                                 ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => setSelectedProjectId(project.id)}
-                                    className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white transition hover:bg-primary/90"
-                                  >
-                                    Başvur
-                                  </button>
+                                  <button type="button" onClick={() => setSelectedProjectId(project.id)} className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white transition hover:bg-primary/90">Başvur</button>
                                 )}
                               </div>
                             </div>
@@ -2299,80 +2363,42 @@ function DashboardPage({
 
               <div className="space-y-6">
                 <section className="app-panel rounded-[2rem] p-6">
-                  <p className="app-section-eyebrow text-sm font-bold uppercase tracking-[0.2em]">
-                    Gelen Başvurular
-                  </p>
+                  <p className="app-section-eyebrow text-sm font-bold uppercase tracking-[0.2em]">Gelen Başvurular</p>
                   <div className="mt-4 space-y-3">
                     {receivedApplications.length ? (
                       receivedApplications.slice(0, 5).map((application) => (
-                        <article
-                          key={application.id}
-                          className="app-subpanel rounded-2xl p-4"
-                        >
-                          <button
-                            type="button"
-                            onClick={() => openPublicProfile(application.applicant.id)}
-                            className="font-bold text-ink transition hover:text-primary"
-                          >
-                            {application.applicant.full_name}
-                          </button>
+                        <article key={application.id} className="app-subpanel rounded-2xl p-4">
+                          <button type="button" onClick={() => openPublicProfile(application.applicant.id)} className="font-bold text-ink transition hover:text-primary">{application.applicant.full_name}</button>
                           <p className="mt-1 text-sm text-ink/58">{application.message}</p>
-                          <p className="mt-2 text-xs font-bold uppercase tracking-widest text-ink/42">
-                            {application.status}
-                          </p>
+                          <p className="mt-2 text-xs font-bold uppercase tracking-widest text-ink/42">{application.status}</p>
                           {application.status === "pending" && (
                             <div className="mt-4 flex gap-3">
-                              <button
-                                type="button"
-                                onClick={() => handleApplicationStatus(application.id, "accepted")}
-                                className="rounded-full bg-success px-4 py-2 text-sm font-semibold text-white transition hover:bg-success/90"
-                              >
-                                Kabul Et
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleApplicationStatus(application.id, "rejected")}
-                                className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-500 transition hover:bg-red-100"
-                              >
-                                Reddet
-                              </button>
+                              <button type="button" onClick={() => handleApplicationStatus(application.id, "accepted")} className="rounded-full bg-success px-4 py-2 text-sm font-semibold text-white transition hover:bg-success/90">Kabul Et</button>
+                              <button type="button" onClick={() => handleApplicationStatus(application.id, "rejected")} className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-500 transition hover:bg-red-100">Reddet</button>
                             </div>
                           )}
                         </article>
                       ))
                     ) : (
-                      <div className="rounded-2xl border border-dashed border-ink/15 bg-[#F7F8FC] p-4 text-sm text-ink/55">
-                        Henüz gelen başvuru yok.
-                      </div>
+                      <div className="rounded-2xl border border-dashed border-ink/15 bg-[#F7F8FC] p-4 text-sm text-ink/55">Henüz gelen başvuru yok.</div>
                     )}
                   </div>
                 </section>
 
                 <section className="app-panel rounded-[2rem] p-6">
-                  <p className="app-section-eyebrow text-sm font-bold uppercase tracking-[0.2em]">
-                    Son Başvuruların
-                  </p>
-                  <div className="mt-4 space-y-3">
-                    {sentApplications.length ? (
-                      sentApplications.slice(0, 5).map((application) => (
-                        <article
-                          key={application.id}
-                          className="app-subpanel rounded-2xl p-4"
-                        >
-                          <p className="text-sm font-bold text-ink">
-                            Proje #{application.project}
-                          </p>
-                          <p className="mt-1 text-sm text-ink/58">{application.message}</p>
-                          <p className="mt-2 text-xs font-bold uppercase tracking-widest text-primary/55">
-                            {application.status}
-                          </p>
-                        </article>
-                      ))
-                    ) : (
-                      <div className="rounded-2xl border border-dashed border-ink/15 bg-[#F7F8FC] p-4 text-sm text-ink/55">
-                        Henüz gönderilmiş başvuru yok.
+                  <p className="app-section-eyebrow text-sm font-bold uppercase tracking-[0.2em]">Momentum board</p>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    {[
+                      ["Open conversations", threads.length],
+                      ["Mentor credits", summary?.profile.mentor_credits ?? currentUser?.mentor_credits ?? 0],
+                      ["Sent applications", sentApplications.length],
+                      ["Premium visibility", isPremium ? "On" : "Off"],
+                    ].map(([label, value]) => (
+                      <div key={String(label)} className="rounded-2xl bg-[#F7F8FC] p-4">
+                        <p className="text-xs font-bold uppercase tracking-widest text-ink/42">{label}</p>
+                        <p className="mt-2 text-xl font-extrabold text-ink">{value}</p>
                       </div>
-                    )}
+                    ))}
                   </div>
                 </section>
               </div>
@@ -2573,156 +2599,104 @@ function DashboardPage({
 
         {route === "app-profile" && (
           <section className="grid gap-6">
-            <div className="app-panel-strong rounded-[2.5rem] p-8 lg:p-10 flex flex-col md:flex-row items-center gap-8">
-              <div className="relative group">
-                <div className="h-32 w-32 rounded-full border-4 border-primary/20 overflow-hidden bg-ink/5 flex items-center justify-center">
-                  {(summary?.profile.profile_picture || currentUser?.profile_picture) ? (
-                    <img 
-                      src={summary?.profile.profile_picture || currentUser?.profile_picture || ""} 
-                      alt="Profil" 
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-4xl font-bold text-ink/20">{(summary?.profile.full_name || currentUser?.full_name || "?").charAt(0)}</span>
-                  )}
+            <div className="relative overflow-hidden rounded-[2.5rem] border border-white/60 bg-white/88 p-8 shadow-halo backdrop-blur lg:p-10">
+              <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top_left,rgba(71,93,178,0.18),transparent_42%),radial-gradient(circle_at_75%_0%,rgba(63,177,112,0.1),transparent_28%)]" />
+              <div className="relative flex flex-col gap-8 md:flex-row md:items-center">
+                <div className="relative group">
+                  <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-4 border-primary/20 bg-ink/5">
+                    {(summary?.profile.profile_picture || currentUser?.profile_picture) ? (
+                      <img src={summary?.profile.profile_picture || currentUser?.profile_picture || ""} alt="Profil" className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-4xl font-bold text-ink/20">{(summary?.profile.full_name || currentUser?.full_name || "?").charAt(0)}</span>
+                    )}
+                  </div>
+                  <label className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-ink/40 opacity-0 transition group-hover:opacity-100">
+                    <span className="text-xs font-bold text-white">Değiştir</span>
+                    <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleUploadProfilePicture(e.target.files[0])} />
+                  </label>
                 </div>
-                <label className="absolute inset-0 flex items-center justify-center bg-ink/40 opacity-0 group-hover:opacity-100 transition rounded-full cursor-pointer">
-                  <span className="text-white text-xs font-bold">Değiştir</span>
-                  <input 
-                    type="file" 
-                    className="hidden" 
-                    accept="image/*" 
-                    onChange={(e) => e.target.files?.[0] && handleUploadProfilePicture(e.target.files[0])}
-                  />
-                </label>
-              </div>
-              <div className="text-center md:text-left flex-1">
-                <h2 className="text-3xl font-extrabold text-ink">{summary?.profile.full_name || currentUser?.full_name || "-"}</h2>
-                <p className="text-primary font-semibold">{summary?.profile.title || currentUser?.title || "-"}</p>
-                <div className="mt-4 flex flex-wrap justify-center md:justify-start gap-2">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${(summary?.profile.is_verified_talent || currentUser?.is_verified_talent) ? "bg-success/10 text-success" : "bg-ink/5 text-ink/40"}`}>
-                    {(summary?.profile.is_verified_talent || currentUser?.is_verified_talent) ? "Doğrulanmış" : "Standart Hesap"}
-                  </span>
-                  {(summary?.profile.is_premium || currentUser?.is_premium) && (
-                    <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold">Premium Üye</span>
-                  )}
-                  {(summary?.profile.is_mentor || currentUser?.is_mentor) && (
-                    <span className="bg-secondary/10 text-secondary px-3 py-1 rounded-full text-xs font-bold">Resmi Mentör</span>
-                  )}
+                <div className="flex-1 text-center md:text-left">
+                  <p className="text-xs font-bold uppercase tracking-[0.24em] text-primary/55">Profile command center</p>
+                  <h2 className="mt-3 text-4xl font-extrabold text-ink">{summary?.profile.full_name || currentUser?.full_name || "-"}</h2>
+                  <p className="mt-2 text-lg font-semibold text-primary">{summary?.profile.title || currentUser?.title || "Startup Builder"}</p>
+                  <p className="mt-4 max-w-2xl text-sm leading-7 text-ink/62">{summary?.profile.bio || currentUser?.bio || "Your public profile is the conversion layer for founder trust, premium visibility and better team introductions."}</p>
+                  <div className="mt-5 flex flex-wrap justify-center gap-2 md:justify-start">
+                    <span className={`rounded-full px-3 py-1 text-xs font-bold ${(summary?.profile.is_verified_talent || currentUser?.is_verified_talent) ? "bg-success/10 text-success" : "bg-ink/5 text-ink/40"}`}>
+                      {(summary?.profile.is_verified_talent || currentUser?.is_verified_talent) ? "Doğrulanmış" : "Standart Hesap"}
+                    </span>
+                    {(summary?.profile.is_premium || currentUser?.is_premium) && <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">Premium Üye</span>}
+                    {(summary?.profile.is_mentor || currentUser?.is_mentor) && <span className="rounded-full bg-secondary/10 px-3 py-1 text-xs font-bold text-secondary">Resmi Mentör</span>}
+                  </div>
+                </div>
+                <div className="grid min-w-[240px] gap-3 sm:grid-cols-2">
+                  {[
+                    ["Profile strength", `${Math.min(100, profileStrength * 25)}%`],
+                    ["Visibility layer", (summary?.profile.is_premium || currentUser?.is_premium) ? "Premium" : "Standard"],
+                    ["Primary skills", `${summary?.profile.skills?.length || currentUser?.skills?.length || 0}`],
+                    ["Interests", `${summary?.profile.interests?.length || currentUser?.interests?.length || 0}`],
+                  ].map(([label, value]) => (
+                    <div key={String(label)} className="rounded-2xl bg-[#F7F8FC] p-4">
+                      <p className="text-xs font-bold uppercase tracking-widest text-ink/42">{label}</p>
+                      <p className="mt-2 text-xl font-extrabold text-ink">{value}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
               {[
                 ["E-posta", summary?.profile.email || currentUser?.email || "-"],
                 ["Katılım Tarihi", formatJoinedDate(summary?.profile.date_joined || currentUser?.date_joined || "")],
+                ["Skill graph", (summary?.profile.skills || currentUser?.skills || []).join(", ") || "Henüz eklenmedi"],
+                ["Interest graph", (summary?.profile.interests || currentUser?.interests || []).join(", ") || "Henüz eklenmedi"],
               ].map(([label, value]) => (
-                <div
-                  key={String(label)}
-                  className="app-panel rounded-[2rem] p-6"
-                >
-                  <p className="text-xs font-bold uppercase tracking-widest text-ink/42">
-                    {label}
-                  </p>
-                  <p className="mt-2 text-lg font-bold text-ink">{value}</p>
+                <div key={String(label)} className="app-panel rounded-[2rem] p-6">
+                  <p className="text-xs font-bold uppercase tracking-widest text-ink/42">{label}</p>
+                  <p className="mt-2 text-sm font-bold leading-6 text-ink">{value}</p>
                 </div>
               ))}
             </div>
 
             <div className="app-panel rounded-[2rem] p-6 lg:col-span-2">
-              <p className="text-xs font-bold uppercase tracking-widest text-ink/42">
-                Herkese Açık Profil
-              </p>
-              <p className="mt-2 text-sm leading-6 text-ink/62">
-                Diğer kullanıcıların seni nasıl gördüğünü, puan ve yorumlarının nasıl listelendiğini buradan kontrol edebilirsin.
-              </p>
-              <button
-                type="button"
-                onClick={() => currentUser && openPublicProfile(currentUser.id)}
-                className="mt-4 rounded-2xl bg-ink px-6 py-3 text-sm font-bold text-white transition hover:bg-ink/90"
-              >
-                Açık Profilimi Gör
-              </button>
+              <p className="text-xs font-bold uppercase tracking-widest text-ink/42">Herkese Açık Profil</p>
+              <p className="mt-2 text-sm leading-6 text-ink/62">Diğer kullanıcıların seni nasıl gördüğünü, puan ve yorumlarının nasıl listelendiğini buradan kontrol edebilirsin.</p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button type="button" onClick={() => currentUser && openPublicProfile(currentUser.id)} className="rounded-2xl bg-ink px-6 py-3 text-sm font-bold text-white transition hover:bg-ink/90">
+                  Açık Profilimi Gör
+                </button>
+                {onboardingNeeded && (
+                  <button type="button" onClick={() => setOnboardingOpen(true)} className="rounded-2xl border border-primary/20 bg-white px-6 py-3 text-sm font-bold text-primary transition hover:bg-primary/5">
+                    Profil Sinyalini Güçlendir
+                  </button>
+                )}
+              </div>
             </div>
 
             {!summary?.profile.is_premium && !currentUser?.is_premium ? (
               <div className="rounded-[2rem] border border-primary/15 bg-primary/5 p-6 shadow-halo backdrop-blur lg:col-span-2">
-                <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">
-                  Premium
-                </p>
-                <h3 className="mt-2 text-2xl font-extrabold text-ink">
-                  YZ Ekip Kurucu ve doğrulanmış yetenek rozeti için Premium'a geç
-                </h3>
-                <p className="mt-2 text-sm leading-6 text-ink/62">
-                  Premium hesabını aktifleştirerek YZ Ekip Kurucu, gelişmiş filtreler ve doğrulanmış yetenek başvuru akışına erişebilirsin.
-                </p>
-                {billingFeedback && (
-                  <div className="mt-4 rounded-2xl border border-primary/10 bg-white px-4 py-3 text-sm text-primary">
-                    {billingFeedback}
-                  </div>
-                )}
+                <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">Premium</p>
+                <h3 className="mt-2 text-2xl font-extrabold text-ink">YZ Ekip Kurucu ve doğrulanmış yetenek rozeti için Premium'a geç</h3>
+                <p className="mt-2 text-sm leading-6 text-ink/62">Premium hesabını aktifleştirerek YZ Ekip Kurucu, gelişmiş filtreler ve doğrulanmış yetenek başvuru akışına erişebilirsin.</p>
+                {billingFeedback && <div className="mt-4 rounded-2xl border border-primary/10 bg-white px-4 py-3 text-sm text-primary">{billingFeedback}</div>}
                 <div className="mt-5 flex flex-wrap gap-3">
-                  <a
-                    href="#premium"
-                    className="rounded-2xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90"
-                  >
-                    Premium Sayfasına Git
-                  </a>
-                  <button
-                    type="button"
-                    onClick={() => startPremiumSimulation("monthly")}
-                    className="rounded-2xl border border-primary/20 bg-white px-6 py-3 text-sm font-bold text-primary transition hover:bg-primary/5"
-                  >
+                  <a href="#premium" className="rounded-2xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90">Premium Sayfasına Git</a>
+                  <button type="button" onClick={() => startPremiumSimulation("monthly")} className="rounded-2xl border border-primary/20 bg-white px-6 py-3 text-sm font-bold text-primary transition hover:bg-primary/5">
                     Hızlı Aylık Aktivasyon
                   </button>
                 </div>
               </div>
             ) : (
               <div className="rounded-[2rem] border border-amber-200/50 bg-amber-50/50 p-6 shadow-halo backdrop-blur lg:col-span-2">
-                <p className="text-sm font-bold uppercase tracking-[0.2em] text-amber-600/70">
-                  Doğrulanmış Yetenek Başvurusu
-                </p>
-                <h3 className="mt-2 text-2xl font-extrabold text-ink">
-                  Yeteneklerini doğrula ve öne çık
-                </h3>
-                <p className="mt-2 text-sm leading-6 text-ink/62">
-                  Premium üye olduğun için doğrulanmış yetenek rozetine başvurabilirsin. Bu başvuru doğrudan yönetim ekibinin inceleme havuzuna düşer ve onaylandığında profilinde görünür.
-                </p>
+                <p className="text-sm font-bold uppercase tracking-[0.2em] text-amber-600/70">Doğrulanmış Yetenek Başvurusu</p>
+                <h3 className="mt-2 text-2xl font-extrabold text-ink">Yeteneklerini doğrula ve öne çık</h3>
+                <p className="mt-2 text-sm leading-6 text-ink/62">Premium üye olduğun için doğrulanmış yetenek rozetine başvurabilirsin. Bu başvuru doğrudan yönetim ekibinin inceleme havuzuna düşer ve onaylandığında profilinde görünür.</p>
                 <form className="mt-6 space-y-4" onSubmit={handleVerifiedSubmit}>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Başvurduğun Ünvan (örn: Senior React Developer)"
-                    value={verifiedForm.requested_title}
-                    onChange={(e) => setVerifiedForm({ ...verifiedForm, requested_title: e.target.value })}
-                    className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-amber-400"
-                  />
-                  <input
-                    type="url"
-                    required
-                    placeholder="Portfolyo URL (GitHub, LinkedIn vs.)"
-                    value={verifiedForm.portfolio_url}
-                    onChange={(e) => setVerifiedForm({ ...verifiedForm, portfolio_url: e.target.value })}
-                    className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-amber-400"
-                  />
-                  <textarea
-                    placeholder="Eklemek istediğin notlar..."
-                    value={verifiedForm.note}
-                    onChange={(e) => setVerifiedForm({ ...verifiedForm, note: e.target.value })}
-                    className="min-h-24 w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-amber-400"
-                  />
-                  {verifiedFeedback && (
-                    <div className="rounded-2xl border border-amber-200 bg-amber-100 px-4 py-3 text-sm text-amber-700">
-                      {verifiedFeedback}
-                    </div>
-                  )}
-                  <button
-                    type="submit"
-                    className="rounded-2xl bg-amber-500 px-6 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-amber-600"
-                  >
-                    Rozet Başvurusu Yap
-                  </button>
+                  <input type="text" required placeholder="Başvurduğun Ünvan (örn: Senior React Developer)" value={verifiedForm.requested_title} onChange={(e) => setVerifiedForm({ ...verifiedForm, requested_title: e.target.value })} className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-amber-400" />
+                  <input type="url" required placeholder="Portfolyo URL (GitHub, LinkedIn vs.)" value={verifiedForm.portfolio_url} onChange={(e) => setVerifiedForm({ ...verifiedForm, portfolio_url: e.target.value })} className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-amber-400" />
+                  <textarea placeholder="Eklemek istediğin notlar..." value={verifiedForm.note} onChange={(e) => setVerifiedForm({ ...verifiedForm, note: e.target.value })} className="min-h-24 w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-amber-400" />
+                  {verifiedFeedback && <div className="rounded-2xl border border-amber-200 bg-amber-100 px-4 py-3 text-sm text-amber-700">{verifiedFeedback}</div>}
+                  <button type="submit" className="rounded-2xl bg-amber-500 px-6 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-amber-600">Rozet Başvurusu Yap</button>
                 </form>
               </div>
             )}
@@ -2737,74 +2711,49 @@ function DashboardPage({
               </div>
             ) : publicProfile ? (
               <>
-                <div className="rounded-[2rem] border border-white/60 bg-white/88 p-8 shadow-halo backdrop-blur">
-                  <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+                <div className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-white/88 p-8 shadow-halo backdrop-blur">
+                  <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top_left,rgba(71,93,178,0.18),transparent_40%),radial-gradient(circle_at_80%_0%,rgba(63,177,112,0.12),transparent_26%)]" />
+                  <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                     <div className="max-w-3xl">
-                      <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">
-                        Üye Profili
-                      </p>
-                      <h2 className="mt-2 text-3xl font-extrabold text-ink">
-                        {publicProfile.full_name}
-                      </h2>
+                      <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">Üye Profili</p>
+                      <h2 className="mt-2 text-4xl font-extrabold text-ink">{publicProfile.full_name}</h2>
                       <p className="mt-2 text-base text-ink/62">
                         {publicProfile.title}
                         {publicProfile.is_verified_talent ? " · Doğrulanmış Yetenek" : ""}
                         {publicProfile.is_premium ? " · Premium" : ""}
                       </p>
-                      <p className="mt-4 text-sm leading-7 text-ink/68">
-                        {publicProfile.bio || "Bu kullanıcı henüz biyografi eklememiş."}
-                      </p>
+                      <p className="mt-4 text-sm leading-7 text-ink/68">{publicProfile.bio || "Bu kullanıcı henüz biyografi eklememiş."}</p>
                     </div>
-                    <div className="grid min-w-[260px] gap-3 sm:grid-cols-2">
+                    <div className="grid min-w-[280px] gap-3 sm:grid-cols-2">
                       <div className="rounded-2xl bg-[#F7F8FC] p-4">
-                        <p className="text-xs font-bold uppercase tracking-widest text-ink/42">
-                          Ortalama Puan
-                        </p>
-                        <p className="mt-2 text-2xl font-extrabold text-ink">
-                          {publicProfile.average_rating ? `${publicProfile.average_rating}/5` : "-"}
-                        </p>
+                        <p className="text-xs font-bold uppercase tracking-widest text-ink/42">Ortalama Puan</p>
+                        <p className="mt-2 text-2xl font-extrabold text-ink">{publicProfile.average_rating ? `${publicProfile.average_rating}/5` : "-"}</p>
                       </div>
                       <div className="rounded-2xl bg-[#F7F8FC] p-4">
-                        <p className="text-xs font-bold uppercase tracking-widest text-ink/42">
-                          Yorum Sayısı
-                        </p>
-                        <p className="mt-2 text-2xl font-extrabold text-ink">
-                          {publicProfile.reviews_count}
-                        </p>
+                        <p className="text-xs font-bold uppercase tracking-widest text-ink/42">Yorum Sayısı</p>
+                        <p className="mt-2 text-2xl font-extrabold text-ink">{publicProfile.reviews_count}</p>
                       </div>
                       <div className="rounded-2xl bg-[#F7F8FC] p-4 sm:col-span-2">
-                        <p className="text-xs font-bold uppercase tracking-widest text-ink/42">
-                          Katılım Tarihi
-                        </p>
-                        <p className="mt-2 text-base font-bold text-ink">
-                          {formatJoinedDate(publicProfile.date_joined)}
-                        </p>
+                        <p className="text-xs font-bold uppercase tracking-widest text-ink/42">Katılım Tarihi</p>
+                        <p className="mt-2 text-base font-bold text-ink">{formatJoinedDate(publicProfile.date_joined)}</p>
                       </div>
                     </div>
                   </div>
 
                   <div className="mt-6 grid gap-4 lg:grid-cols-2">
                     <div className="rounded-2xl bg-[#F7F8FC] p-5">
-                      <p className="text-xs font-bold uppercase tracking-widest text-ink/42">
-                        Yetenekler
-                      </p>
+                      <p className="text-xs font-bold uppercase tracking-widest text-ink/42">Yetenekler</p>
                       <div className="mt-3 flex flex-wrap gap-2">
                         {publicProfile.skills.length ? publicProfile.skills.map((skill) => (
-                          <span key={skill} className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                            {skill}
-                          </span>
+                          <span key={skill} className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">{skill}</span>
                         )) : <span className="text-sm text-ink/58">Yetenek bilgisi yok.</span>}
                       </div>
                     </div>
                     <div className="rounded-2xl bg-[#F7F8FC] p-5">
-                      <p className="text-xs font-bold uppercase tracking-widest text-ink/42">
-                        İlgi Alanları
-                      </p>
+                      <p className="text-xs font-bold uppercase tracking-widest text-ink/42">İlgi Alanları</p>
                       <div className="mt-3 flex flex-wrap gap-2">
                         {publicProfile.interests.length ? publicProfile.interests.map((interest) => (
-                          <span key={interest} className="rounded-full bg-success/10 px-3 py-1 text-xs font-semibold text-success">
-                            {interest}
-                          </span>
+                          <span key={interest} className="rounded-full bg-success/10 px-3 py-1 text-xs font-semibold text-success">{interest}</span>
                         )) : <span className="text-sm text-ink/58">İlgi alanı bilgisi yok.</span>}
                       </div>
                     </div>
@@ -2813,9 +2762,7 @@ function DashboardPage({
 
                 <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
                   <section className="rounded-[2rem] border border-white/60 bg-white/88 p-6 shadow-halo backdrop-blur">
-                    <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">
-                      Son Projeler
-                    </p>
+                    <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">Son Projeler</p>
                     <div className="mt-4 space-y-3">
                       {publicProfile.recent_projects.length ? publicProfile.recent_projects.map((project) => (
                         <article key={project.id} className="rounded-2xl border border-ink/8 bg-[#F7F8FC] p-4">
@@ -2823,37 +2770,21 @@ function DashboardPage({
                           <p className="mt-2 text-sm leading-6 text-ink/62">{project.summary}</p>
                         </article>
                       )) : (
-                        <div className="rounded-2xl border border-dashed border-ink/15 bg-[#F7F8FC] p-4 text-sm text-ink/55">
-                          Görüntülenecek proje yok.
-                        </div>
+                        <div className="rounded-2xl border border-dashed border-ink/15 bg-[#F7F8FC] p-4 text-sm text-ink/55">Görüntülenecek proje yok.</div>
                       )}
                     </div>
                   </section>
 
                   <section className="rounded-[2rem] border border-white/60 bg-white/88 p-6 shadow-halo backdrop-blur">
-                    <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">
-                      Yorumlar ve Puanlar
-                    </p>
-                    {publicProfileFeedback && (
-                      <div className="mt-4 rounded-2xl border border-primary/10 bg-primary/5 px-4 py-3 text-sm text-primary">
-                        {publicProfileFeedback}
-                      </div>
-                    )}
+                    <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">Yorumlar ve Puanlar</p>
+                    {publicProfileFeedback && <div className="mt-4 rounded-2xl border border-primary/10 bg-primary/5 px-4 py-3 text-sm text-primary">{publicProfileFeedback}</div>}
                     <div className="mt-4 space-y-3">
                       {publicProfile.reviews.length ? publicProfile.reviews.map((review) => (
                         <article key={review.id} className="rounded-2xl border border-ink/8 bg-[#F7F8FC] p-4">
                           <div className="flex items-start justify-between gap-4">
                             <div>
-                              <button
-                                type="button"
-                                onClick={() => openPublicProfile(review.reviewer.id)}
-                                className="font-bold text-ink transition hover:text-primary"
-                              >
-                                {review.reviewer.full_name}
-                              </button>
-                              <p className="mt-1 text-xs uppercase tracking-widest text-ink/42">
-                                {review.project.title}
-                              </p>
+                              <button type="button" onClick={() => openPublicProfile(review.reviewer.id)} className="font-bold text-ink transition hover:text-primary">{review.reviewer.full_name}</button>
+                              <p className="mt-1 text-xs uppercase tracking-widest text-ink/42">{review.project.title}</p>
                             </div>
                             <div className="text-right">
                               <p className="text-sm font-bold text-amber-500">{renderStars(review.rating)}</p>
@@ -2863,53 +2794,25 @@ function DashboardPage({
                           <p className="mt-3 text-sm leading-6 text-ink/68">{review.comment}</p>
                         </article>
                       )) : (
-                        <div className="rounded-2xl border border-dashed border-ink/15 bg-[#F7F8FC] p-4 text-sm text-ink/55">
-                          Bu kullanıcı için henüz yorum yok.
-                        </div>
+                        <div className="rounded-2xl border border-dashed border-ink/15 bg-[#F7F8FC] p-4 text-sm text-ink/55">Bu kullanıcı için henüz yorum yok.</div>
                       )}
                     </div>
 
                     {currentUser && publicProfile.eligible_review_applications.length > 0 && (
                       <form className="mt-6 space-y-4 rounded-2xl border border-primary/10 bg-primary/5 p-5" onSubmit={handleCreateReview}>
-                        <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/60">
-                          Birlikte Çalışma Yorumu
-                        </p>
-                        <select
-                          value={reviewForm.application_id}
-                          onChange={(e) => setReviewForm((current) => ({ ...current, application_id: e.target.value }))}
-                          className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary/40"
-                          required
-                        >
+                        <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/60">Birlikte Çalışma Yorumu</p>
+                        <select value={reviewForm.application_id} onChange={(e) => setReviewForm((current) => ({ ...current, application_id: e.target.value }))} className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary/40" required>
                           {publicProfile.eligible_review_applications.map((item) => (
-                            <option key={item.application_id} value={item.application_id}>
-                              {item.project_title}
-                            </option>
+                            <option key={item.application_id} value={item.application_id}>{item.project_title}</option>
                           ))}
                         </select>
-                        <select
-                          value={reviewForm.rating}
-                          onChange={(e) => setReviewForm((current) => ({ ...current, rating: Number(e.target.value) }))}
-                          className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary/40"
-                        >
+                        <select value={reviewForm.rating} onChange={(e) => setReviewForm((current) => ({ ...current, rating: Number(e.target.value) }))} className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary/40">
                           {[5, 4, 3, 2, 1].map((rating) => (
-                            <option key={rating} value={rating}>
-                              {rating} puan
-                            </option>
+                            <option key={rating} value={rating}>{rating} puan</option>
                           ))}
                         </select>
-                        <textarea
-                          value={reviewForm.comment}
-                          onChange={(e) => setReviewForm((current) => ({ ...current, comment: e.target.value }))}
-                          placeholder="Birlikte çalışma deneyimini kısaca yaz."
-                          className="min-h-28 w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary/40"
-                          required
-                        />
-                        <button
-                          type="submit"
-                          className="rounded-2xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90"
-                        >
-                          Yorumu Kaydet
-                        </button>
+                        <textarea value={reviewForm.comment} onChange={(e) => setReviewForm((current) => ({ ...current, comment: e.target.value }))} placeholder="Birlikte çalışma deneyimini kısaca yaz." className="min-h-28 w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary/40" required />
+                        <button type="submit" className="rounded-2xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90">Yorumu Kaydet</button>
                       </form>
                     )}
                   </section>
@@ -2917,75 +2820,81 @@ function DashboardPage({
               </>
             ) : (
               <div className="rounded-[2rem] border border-white/60 bg-white/88 p-8 shadow-halo backdrop-blur">
-                <p className="text-sm text-ink/60">
-                  {publicProfileFeedback || "Profil bulunamadı."}
-                </p>
+                <p className="text-sm text-ink/60">{publicProfileFeedback || "Profil bulunamadı."}</p>
               </div>
             )}
           </section>
         )}
 
         {route === "app-ai-builder" && (
-          <section className="rounded-[2.25rem] border border-white/60 bg-white/88 p-8 shadow-halo backdrop-blur lg:p-10 relative overflow-hidden">
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">
-              Yapay Zeka
-            </p>
-            <h2 className="mt-2 text-3xl font-extrabold text-ink">
-              AI Takım Kurucu
-            </h2>
-            <p className="mt-2 max-w-2xl text-base leading-7 text-ink/62">
-              Projeniz için en uyumlu takım arkadaşlarını yapay zeka destekli analiz algoritmamızla saniyeler içinde bulun.
-            </p>
-            
+          <section className="relative overflow-hidden rounded-[2.25rem] border border-white/60 bg-white/88 p-8 shadow-halo backdrop-blur lg:p-10">
+            <div className="absolute inset-x-0 top-0 h-28 bg-[radial-gradient(circle_at_top_left,rgba(71,93,178,0.18),transparent_42%),radial-gradient(circle_at_80%_0%,rgba(63,177,112,0.12),transparent_28%)]" />
+            <div className="relative">
+              <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">Yapay Zeka</p>
+              <h2 className="mt-2 text-3xl font-extrabold text-ink">AI Takım Kurucu</h2>
+              <p className="mt-2 max-w-2xl text-base leading-7 text-ink/62">Projeniz için en uyumlu takım arkadaşlarını yapay zeka destekli analiz algoritmamızla saniyeler içinde bulun.</p>
+            </div>
+
             {(!summary?.profile.is_premium && !currentUser?.is_premium) ? (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/40 backdrop-blur-[6px] p-6 text-center">
-                <div className="rounded-full bg-white p-4 shadow-halo mb-4 text-4xl">
-                  🔒
-                </div>
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/40 p-6 text-center backdrop-blur-[6px]">
+                <div className="mb-4 rounded-full bg-white p-4 shadow-halo text-2xl font-black text-primary">AI</div>
                 <h3 className="text-2xl font-extrabold text-ink">Premium Özellik</h3>
-                <p className="mt-2 max-w-md text-sm leading-6 text-ink/72">
-                  YZ Ekip Kurucu ile yeteneklerinize tam uyan takım arkadaşlarını saniyeler içinde bulmak için Premium'a geçin.
-                </p>
-                <a href="#app-profile" className="mt-6 rounded-2xl bg-primary px-8 py-3.5 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90">
-                  Premium Avantajlarını İncele
-                </a>
+                <p className="mt-2 max-w-md text-sm leading-6 text-ink/72">YZ Ekip Kurucu ile yeteneklerinize tam uyan takım arkadaşlarını saniyeler içinde bulmak için Premium'a geçin.</p>
+                <a href="#app-profile" className="mt-6 rounded-2xl bg-primary px-8 py-3.5 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90">Premium Avantajlarını İncele</a>
               </div>
             ) : (
-              <div className="mt-8">
-                {aiAnalysisState === "idle" && (
-                  <div className="rounded-2xl border border-primary/20 bg-primary/5 p-8 text-center flex flex-col items-center">
-                    <p className="text-lg font-bold text-primary">Analiz için Proje Seçin</p>
-                    <p className="mt-2 text-sm text-ink/62 max-w-md">Kendi oluşturduğunuz projelerinizden birini seçerek size en uygun yetenekleri listeleyin.</p>
-                    
-                    <div className="mt-6 w-full max-w-md text-left">
-                      <select
-                        value={aiSelectedProjectId || ""}
-                        onChange={(e) => setAiSelectedProjectId(Number(e.target.value))}
-                        className="w-full rounded-2xl border border-ink/20 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary/50"
-                      >
-                        <option value="" disabled>Proje seçiniz...</option>
-                        {publicProjects.filter(p => p.owner.id === currentUser?.id).map(p => (
-                          <option key={p.id} value={p.id}>{p.title}</option>
-                        ))}
-                      </select>
+              <div className="mt-8 space-y-6">
+                <div className="grid gap-4 md:grid-cols-3">
+                  {[
+                    ["Match dimensions", "Skills, goals, history"],
+                    ["Decision speed", "Under 10 seconds"],
+                    ["Output quality", "Why-match explanations"],
+                  ].map(([label, value]) => (
+                    <div key={String(label)} className="rounded-2xl border border-ink/8 bg-white p-5 shadow-sm">
+                      <p className="text-xs font-bold uppercase tracking-widest text-ink/42">{label}</p>
+                      <p className="mt-3 text-lg font-extrabold text-ink">{value}</p>
                     </div>
+                  ))}
+                </div>
 
-                    <button 
-                      onClick={runAiAnalysis}
-                      disabled={!aiSelectedProjectId}
-                      className="mt-6 rounded-2xl bg-primary px-8 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Analizi Başlat
-                    </button>
-                    
-                    {publicProjects.filter(p => p.owner.id === currentUser?.id).length === 0 && (
-                      <p className="mt-4 text-sm text-red-500 font-semibold">Önce bir proje oluşturmalısınız.</p>
-                    )}
+                {aiAnalysisState === "idle" && (
+                  <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+                    <div className="rounded-[2rem] border border-primary/20 bg-primary/5 p-8">
+                      <p className="text-lg font-bold text-primary">Analiz için Proje Seçin</p>
+                      <p className="mt-2 max-w-md text-sm text-ink/62">Kendi oluşturduğunuz projelerinizden birini seçerek size en uygun yetenekleri listeleyin.</p>
+                      <div className="mt-6 w-full text-left">
+                        <select value={aiSelectedProjectId || ""} onChange={(e) => setAiSelectedProjectId(Number(e.target.value))} className="w-full rounded-2xl border border-ink/20 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary/50">
+                          <option value="" disabled>Proje seçiniz...</option>
+                          {publicProjects.filter((p) => p.owner.id === currentUser?.id).map((p) => (
+                            <option key={p.id} value={p.id}>{p.title}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <button onClick={runAiAnalysis} disabled={!aiSelectedProjectId} className="mt-6 rounded-2xl bg-primary px-8 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">
+                        Analizi Başlat
+                      </button>
+                      {publicProjects.filter((p) => p.owner.id === currentUser?.id).length === 0 && <p className="mt-4 text-sm font-semibold text-red-500">Önce bir proje oluşturmalısınız.</p>}
+                    </div>
+                    <div className="rounded-[2rem] border border-ink/8 bg-[#081121] p-8 text-white shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
+                      <p className="text-xs font-bold uppercase tracking-[0.24em] text-white/45">How scoring works</p>
+                      <div className="mt-5 space-y-4">
+                        {[
+                          ["Technical overlap", "How strongly the candidate stack matches your project needs."],
+                          ["Goal alignment", "Whether their current interests and project intent match your mission."],
+                          ["Collaboration trust", "Feedback and prior teamwork quality that lowers founder risk."],
+                        ].map(([label, body]) => (
+                          <div key={String(label)} className="rounded-2xl border border-white/10 bg-white/6 p-4">
+                            <p className="font-bold text-white">{label}</p>
+                            <p className="mt-2 text-sm leading-7 text-slate-300">{body}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 )}
                 {aiAnalysisState === "analyzing" && (
                   <div className="rounded-2xl border border-primary/20 bg-primary/5 p-8 text-center flex flex-col items-center">
-                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary/30 border-t-primary mb-4"></div>
+                    <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-primary/30 border-t-primary"></div>
                     <p className="text-lg font-bold text-primary animate-pulse">Aday Havuzu Taranıyor...</p>
                   </div>
                 )}
@@ -2996,37 +2905,33 @@ function DashboardPage({
                       <button onClick={() => setAiAnalysisState("idle")} className="text-sm font-semibold text-primary hover:underline">Farklı Proje Analiz Et</button>
                     </div>
                     {aiMatches.length === 0 ? (
-                      <div className="rounded-2xl border border-ink/8 bg-white p-5 text-center text-sm text-ink/60">
-                        Eşleşen aday bulunamadı. Lütfen projenizin yetenek gereksinimlerini detaylandırın.
-                      </div>
+                      <div className="rounded-2xl border border-ink/8 bg-white p-5 text-center text-sm text-ink/60">Eşleşen aday bulunamadı. Lütfen projenizin yetenek gereksinimlerini detaylandırın.</div>
                     ) : (
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        {aiMatches.map(match => (
-                          <div key={match.user.id} className="rounded-2xl border border-ink/8 bg-white p-5 shadow-sm transition hover:border-primary/30">
-                            <div className="flex justify-between items-start">
+                      <div className="grid gap-4 xl:grid-cols-2">
+                        {aiMatches.map((match) => (
+                          <div key={match.user.id} className="rounded-[2rem] border border-ink/8 bg-white p-6 shadow-sm transition hover:border-primary/30">
+                            <div className="flex items-start justify-between gap-4">
                               <div>
-                                <p className="font-bold text-ink flex items-center gap-1">
+                                <p className="flex items-center gap-1 font-bold text-ink">
                                   {match.user.full_name}
-                                  {match.user.is_verified_talent && (
-                                    <span className="text-primary text-xs" title="Verified Talent">✓</span>
-                                  )}
+                                  {match.user.is_verified_talent && <span className="text-xs text-primary" title="Verified Talent">Verified</span>}
                                 </p>
                                 <p className="text-sm text-ink/60">{match.recommended_role || match.user.title}</p>
                               </div>
-                              <span className="rounded-full bg-success/10 px-3 py-1 text-xs font-bold text-success">
-                                %{Math.round(match.score)} Uyum
-                              </span>
+                              <span className="rounded-full bg-success/10 px-3 py-1 text-xs font-bold text-success">%{Math.round(match.score)} Uyum</span>
                             </div>
-                            <p className="mt-3 text-xs text-ink/50 leading-relaxed">{match.ai_summary}</p>
-                            <p className="mt-3 text-xs text-ink/40 uppercase tracking-widest truncate" title={match.matched_skills.join(", ")}>
-                              Eşleşenler: {match.matched_skills.join(", ") || "-"}
-                            </p>
-                            <button 
-                              onClick={() => openPublicProfile(match.user.id)}
-                              className="mt-4 w-full rounded-xl bg-ink/5 py-2 text-sm font-bold text-ink transition hover:bg-ink hover:text-white"
-                            >
-                              Profili İncele
-                            </button>
+                            <p className="mt-4 text-sm leading-7 text-ink/62">{match.ai_summary}</p>
+                            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                              <div className="rounded-2xl bg-[#F7F8FC] p-4">
+                                <p className="text-xs font-bold uppercase tracking-widest text-ink/40">Matched skills</p>
+                                <p className="mt-2 text-sm font-semibold text-ink">{match.matched_skills.join(", ") || "-"}</p>
+                              </div>
+                              <div className="rounded-2xl bg-[#F7F8FC] p-4">
+                                <p className="text-xs font-bold uppercase tracking-widest text-ink/40">Why this candidate</p>
+                                <p className="mt-2 text-sm font-semibold text-ink">High overlap, premium trust signals and role relevance.</p>
+                              </div>
+                            </div>
+                            <button onClick={() => openPublicProfile(match.user.id)} className="mt-5 w-full rounded-xl bg-ink/5 py-3 text-sm font-bold text-ink transition hover:bg-ink hover:text-white">Profili İncele</button>
                           </div>
                         ))}
                       </div>
@@ -3950,79 +3855,355 @@ function LandingHomeView({ onSearchUser }: { onSearchUser?: (query: string) => v
   return <FoundrlyLanding onSearchUser={onSearchUser} />;
 }
 
+const DISCOVER_COLLECTION = [
+  {
+    title: "Foundrly Copilot for Hackathons",
+    summary:
+      "A fast team workspace that ranks the best builder combinations for 48-hour sprint teams and startup weekends.",
+    role: "Frontend Engineer",
+    stage: "Hackathon live",
+    matchScore: 96,
+    momentum: "12 quality applicants in 48 hours",
+    stack: ["React", "TypeScript", "Supabase"],
+    owner: "Ece Aydin",
+  },
+  {
+    title: "Campus OS for Student Startups",
+    summary:
+      "A collaboration layer for university founders to launch projects, recruit teammates and gather proof-of-work feedback.",
+    role: "Product Designer",
+    stage: "Pre-seed build",
+    matchScore: 92,
+    momentum: "Backed by 3 incubator mentors",
+    stack: ["Figma", "Framer", "Notion API"],
+    owner: "Kaan Gurel",
+  },
+  {
+    title: "Climate Route Intelligence",
+    summary:
+      "Optimization engine for sustainable logistics teams looking for builders with data and operations intuition.",
+    role: "ML Engineer",
+    stage: "Pilot customers",
+    matchScore: 89,
+    momentum: "2 logistics pilots running",
+    stack: ["Python", "PostgreSQL", "TensorFlow"],
+    owner: "Defne Sari",
+  },
+  {
+    title: "MedLens AI Triage Studio",
+    summary:
+      "An AI-assisted diagnosis workflow designed with medical researchers, backend builders and privacy-first product teams.",
+    role: "Backend Developer",
+    stage: "Research sprint",
+    matchScore: 94,
+    momentum: "Clinical advisory board active",
+    stack: ["Django", "Docker", "OpenAPI"],
+    owner: "Mina Yalcin",
+  },
+  {
+    title: "Creator Revenue Radar",
+    summary:
+      "Analytics and recommendation tooling for independent creators that need sharp product analytics and growth experiments.",
+    role: "Growth Builder",
+    stage: "MVP shipped",
+    matchScore: 87,
+    momentum: "1.8k creator waitlist",
+    stack: ["Next.js", "Stripe", "Mixpanel"],
+    owner: "Aras Keskin",
+  },
+  {
+    title: "Founders' Legal Workflow",
+    summary:
+      "A startup operations layer for contracts, equity coordination and legal workflow visibility across early teams.",
+    role: "Operations Generalist",
+    stage: "Beta cohort",
+    matchScore: 84,
+    momentum: "Used by 26 startup teams",
+    stack: ["React", "Node.js", "Postgres"],
+    owner: "Selin Tuna",
+  },
+];
+
+const TEAMMATE_COLLECTION = [
+  {
+    name: "Aren Korkmaz",
+    role: "Full-stack Founder Engineer",
+    zone: "Building fintech and AI tools",
+    verified: true,
+    fit: 98,
+    availability: "Open for one serious team",
+    skills: ["React", "Node.js", "Product sense"],
+  },
+  {
+    name: "Lina Cevik",
+    role: "Product Designer",
+    zone: "Zero-to-one product systems",
+    verified: true,
+    fit: 94,
+    availability: "Hackathons + startup MVPs",
+    skills: ["Figma", "Motion", "User research"],
+  },
+  {
+    name: "Batu Erden",
+    role: "AI Engineer",
+    zone: "Applied ML for ops products",
+    verified: false,
+    fit: 91,
+    availability: "Part-time founder support",
+    skills: ["Python", "LLMs", "MLOps"],
+  },
+  {
+    name: "Nisa Ozturk",
+    role: "Growth Builder",
+    zone: "Acquisition loops and GTM",
+    verified: true,
+    fit: 88,
+    availability: "Seed-stage sprints",
+    skills: ["Growth", "Analytics", "Messaging"],
+  },
+];
+
+const COMMUNITY_COLLECTION = [
+  {
+    author: "Can Suer",
+    role: "Founder, B2B AI",
+    topic: "How are you structuring co-founder equity during MVP stage?",
+    stats: "29 replies · 4 investor takes",
+    signal: "Hot thread",
+  },
+  {
+    author: "Ipek Sayan",
+    role: "Design Lead, Climate startup",
+    topic: "Looking for examples of onboarding that turns builders into active collaborators in week one.",
+    stats: "16 replies · 7 saved",
+    signal: "Builder requested",
+  },
+  {
+    author: "Mert Acar",
+    role: "Operator, hackathon community",
+    topic: "What is your best workflow for matching teammates based on pace, not just stack?",
+    stats: "21 replies · 3 mentor answers",
+    signal: "AI matching",
+  },
+];
+
+const ONBOARDING_TRACKS = [
+  {
+    key: "Founder",
+    title: "Founder",
+    body: "Launching the mission, recruiting early teammates and defining what success looks like.",
+  },
+  {
+    key: "Developer",
+    title: "Developer",
+    body: "Shipping product, building technical foundations and joining teams with strong ambition.",
+  },
+  {
+    key: "Designer",
+    title: "Designer",
+    body: "Shaping product taste, interaction quality and clarity during zero-to-one execution.",
+  },
+  {
+    key: "Explorer",
+    title: "Explorer",
+    body: "Discovering serious teams, learning fast and joining the right startup environment.",
+  },
+];
+
+const ONBOARDING_SKILLS = [
+  "React",
+  "Django",
+  "Product Design",
+  "Growth",
+  "Data",
+  "iOS",
+  "AI",
+  "Community",
+];
+
+const ONBOARDING_GOALS = [
+  "Build a startup team",
+  "Join a hackathon team",
+  "Find a co-founder",
+  "Meet high-signal builders",
+];
+
 function DiscoverView() {
   const searchTerm = getHashSearchParam("search").toLocaleLowerCase("tr-TR");
-  const projects = [
-    { title: "AI Eğitim Asistanı", role: "Frontend (React) Aranıyor", stack: "React, FastAPI, Tailwind" },
-    { title: "Kripto Veri Analizi", role: "Data Scientist Aranıyor", stack: "Python, Pandas, SQL" },
-    { title: "Sürdürülebilir Tarım IoT", role: "Mobil Geliştirici", stack: "Flutter, Firebase, IoT" },
-    { title: "Lojistik Rota Optimizasyonu", role: "Backend Developer", stack: "Node.js, PostgreSQL, Redis" },
-  ];
   const filteredProjects = searchTerm
-    ? projects.filter((project) =>
-        [project.title, project.role, project.stack]
+    ? DISCOVER_COLLECTION.filter((project) =>
+        [project.title, project.role, project.summary, project.stack.join(" "), project.stage, project.owner]
           .join(" ")
           .toLocaleLowerCase("tr-TR")
           .includes(searchTerm)
       )
-    : projects;
+    : DISCOVER_COLLECTION;
 
   return (
-    <section className="mx-auto max-w-7xl px-6 py-16 lg:px-10">
-      <div className="mb-10 border-b border-ink/10 pb-6">
-        <h1 className="text-3xl font-extrabold text-ink">Keşfet</h1>
-        <p className="mt-2 text-ink/60">
-          Açık pozisyonları olan ve ekibini büyütmek isteyen projelere göz at.
-        </p>
-        {searchTerm && (
-          <div className="mt-4 inline-flex rounded-full border border-primary/18 bg-primary/6 px-4 py-2 text-sm font-semibold text-primary">
-            Arama sonucu: {searchTerm}
+    <section className="bg-[#050B18] text-white">
+      <div className="mx-auto max-w-7xl px-6 py-16 lg:px-10">
+        <div className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(71,93,178,0.34),transparent_32%),radial-gradient(circle_at_85%_15%,rgba(63,177,112,0.18),transparent_24%),linear-gradient(180deg,rgba(10,16,31,0.96),rgba(8,13,24,0.98))] p-8 shadow-[0_32px_120px_rgba(0,0,0,0.42)] lg:p-10">
+          <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white/8 to-transparent" />
+          <div className="relative grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.34em] text-white/48">Discovery engine</p>
+              <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-white lg:text-5xl">
+                Serious projects. Sharper matching. Faster team momentum.
+              </h1>
+              <p className="mt-4 max-w-2xl text-base leading-8 text-slate-300">
+                Browse startup, hackathon and campus initiatives ranked for builder quality, urgency and collaboration fit.
+              </p>
+              {searchTerm && (
+                <div className="mt-6 inline-flex rounded-full border border-primary/30 bg-primary/12 px-4 py-2 text-sm font-semibold text-[#AFC0FF]">
+                  Search signal: {searchTerm}
+                </div>
+              )}
+            </div>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {[
+                ["Live openings", filteredProjects.length],
+                ["Median fit score", "91%"],
+                ["Avg. response speed", "5h"],
+              ].map(([label, value]) => (
+                <div key={String(label)} className="rounded-[1.75rem] border border-white/10 bg-white/6 p-5 backdrop-blur">
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/40">{label}</p>
+                  <p className="mt-3 text-3xl font-black text-white">{value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 grid gap-6 xl:grid-cols-[1fr_300px]">
+          <div className="grid gap-6 md:grid-cols-2">
+            {filteredProjects.map((project) => (
+              <article
+                key={project.title}
+                className="group rounded-[2rem] border border-white/10 bg-white/6 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.22)] backdrop-blur transition hover:-translate-y-1 hover:border-white/18 hover:bg-white/8"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/38">{project.stage}</p>
+                    <h3 className="mt-3 text-2xl font-bold text-white">{project.title}</h3>
+                    <p className="mt-2 text-sm text-slate-300">{project.owner}</p>
+                  </div>
+                  <span className="rounded-full border border-success/20 bg-success/12 px-3 py-1 text-xs font-bold text-success">
+                    {project.matchScore}% fit
+                  </span>
+                </div>
+                <p className="mt-4 text-sm leading-7 text-slate-300">{project.summary}</p>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <span className="rounded-full border border-primary/20 bg-primary/12 px-3 py-1 text-xs font-semibold text-[#AFC0FF]">
+                    Open role: {project.role}
+                  </span>
+                  {project.stack.map((item) => (
+                    <span key={item} className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-xs font-semibold text-white/72">
+                      {item}
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-6 flex items-center justify-between border-t border-white/10 pt-5">
+                  <p className="text-sm text-white/54">{project.momentum}</p>
+                  <button className="rounded-full bg-white px-4 py-2 text-sm font-bold text-[#08101F] transition group-hover:bg-[#DDE5FF]">
+                    Open project
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <aside className="space-y-6">
+            <div className="rounded-[2rem] border border-white/10 bg-white/6 p-6 backdrop-blur">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/40">Why these rank higher</p>
+              <div className="mt-4 space-y-4">
+                {[
+                  "Clear role definition and team need",
+                  "Healthy founder response speed",
+                  "Verified signal or premium momentum",
+                  "High overlap with searched skill graph",
+                ].map((item) => (
+                  <div key={item} className="rounded-2xl border border-white/8 bg-black/20 px-4 py-3 text-sm text-slate-300">
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-[2rem] border border-primary/20 bg-[linear-gradient(180deg,rgba(71,93,178,0.24),rgba(9,16,31,0.82))] p-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#B8C6FF]">Premium filter layer</p>
+              <h3 className="mt-3 text-2xl font-bold text-white">Unlock mentor-backed discovery</h3>
+              <p className="mt-3 text-sm leading-7 text-slate-300">
+                Premium accounts surface roles with verified founders, fit explanations and faster application review signals.
+              </p>
+              <a
+                href="#premium"
+                className="mt-5 inline-flex rounded-full bg-white px-5 py-3 text-sm font-bold text-primary transition hover:bg-white/90"
+              >
+                Explore premium
+              </a>
+            </div>
+          </aside>
+        </div>
+
+        {filteredProjects.length === 0 && (
+          <div className="mt-8 rounded-[2rem] border border-white/10 bg-white/6 p-8 text-center text-slate-300 shadow-[0_20px_70px_rgba(0,0,0,0.18)] backdrop-blur">
+            No project matched this search. Try a role, technology, founder title or product category.
           </div>
         )}
       </div>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filteredProjects.map((p, i) => (
-          <div key={i} className="rounded-2xl border border-ink/10 bg-white p-6 shadow-sm hover:border-primary/40 transition cursor-pointer">
-            <h3 className="text-lg font-bold text-ink">{p.title}</h3>
-            <span className="mt-2 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">{p.role}</span>
-            <p className="mt-4 text-xs font-bold uppercase tracking-widest text-ink/40">Tech Stack: {p.stack}</p>
-          </div>
-        ))}
-      </div>
-      {filteredProjects.length === 0 && (
-        <div className="mt-8 rounded-[1.75rem] border border-ink/10 bg-white p-8 text-center text-ink/62 shadow-sm">
-          Bu aramaya uygun proje bulunamadı. Farklı bir rol, teknoloji ya da anahtar kelime dene.
-        </div>
-      )}
     </section>
   );
 }
 
 function TeammatesView() {
   return (
-    <section className="mx-auto max-w-7xl px-6 py-16 lg:px-10">
-      <div className="mb-10 border-b border-ink/10 pb-6">
-        <h1 className="text-3xl font-extrabold text-ink">Takım Bul</h1>
-        <p className="mt-2 text-ink/60">Projelerinde fark yaratacak yetenekli takım arkadaşlarını bul.</p>
-      </div>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {[
-          { name: "Ahmet Yılmaz", role: "Backend Developer", skills: "Django, Python, Docker", verified: true },
-          { name: "Selin Karaca", role: "UI/UX Designer", skills: "Figma, User Research", verified: false },
-          { name: "Deniz Arslan", role: "Fullstack Dev", skills: "React, Node.js", verified: true },
-          { name: "Eren Demir", role: "Data Analyst", skills: "SQL, Tableau", verified: false },
-        ].map((t, i) => (
-          <div key={i} className="rounded-2xl border border-ink/10 bg-white p-6 shadow-sm flex flex-col items-center text-center">
-            <div className="h-16 w-16 rounded-full bg-ink/5 mb-4 flex items-center justify-center text-xl font-bold text-ink/40">
-              {t.name.charAt(0)}
-            </div>
-            <h3 className="font-bold text-ink flex items-center gap-1">
-              {t.name} {t.verified && <span className="text-primary text-xs" title="Verified">✓</span>}
-            </h3>
-            <p className="text-sm text-ink/60">{t.role}</p>
-            <p className="mt-3 text-xs text-ink/40 bg-[#F7F8FC] px-2 py-1 rounded-md">{t.skills}</p>
+    <section className="bg-[#06101F] text-white">
+      <div className="mx-auto max-w-7xl px-6 py-16 lg:px-10">
+        <div className="flex flex-col gap-4 border-b border-white/10 pb-8 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.34em] text-white/45">Talent network</p>
+            <h1 className="mt-4 text-4xl font-extrabold tracking-tight">Builders worth building with.</h1>
+            <p className="mt-3 max-w-2xl text-base leading-8 text-slate-300">
+              Foundrly ranks developer, design and growth talent by real collaboration readiness, not vanity signals.
+            </p>
           </div>
-        ))}
+          <div className="rounded-[1.75rem] border border-white/10 bg-white/6 px-5 py-4 backdrop-blur">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/40">Network signal</p>
+            <p className="mt-2 text-3xl font-black">4.9/5</p>
+            <p className="text-sm text-white/56">average collaborator feedback</p>
+          </div>
+        </div>
+
+        <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+          {TEAMMATE_COLLECTION.map((teammate) => (
+            <article
+              key={teammate.name}
+              className="rounded-[2rem] border border-white/10 bg-white/6 p-6 text-left shadow-[0_22px_70px_rgba(0,0,0,0.2)] backdrop-blur transition hover:-translate-y-1 hover:border-white/18"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,rgba(71,93,178,0.9),rgba(63,177,112,0.7))] text-lg font-black text-white">
+                  {teammate.name.charAt(0)}
+                </div>
+                <span className="rounded-full border border-success/20 bg-success/12 px-3 py-1 text-xs font-bold text-success">
+                  {teammate.fit}% match
+                </span>
+              </div>
+              <h3 className="mt-5 text-xl font-bold text-white">
+                {teammate.name}
+                {teammate.verified && <span className="ml-2 text-sm text-[#AFC0FF]">Verified</span>}
+              </h3>
+              <p className="mt-1 text-sm text-white/72">{teammate.role}</p>
+              <p className="mt-4 text-sm leading-7 text-slate-300">{teammate.zone}</p>
+              <p className="mt-4 text-xs font-semibold uppercase tracking-[0.24em] text-white/40">{teammate.availability}</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {teammate.skills.map((skill) => (
+                  <span key={skill} className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-xs font-semibold text-white/74">
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -4087,35 +4268,61 @@ function EventsView() {
 
 function CommunityView() {
   return (
-    <section className="mx-auto max-w-7xl px-6 py-16 lg:px-10">
-      <div className="mb-10 border-b border-ink/10 pb-6">
-        <h1 className="text-3xl font-extrabold text-ink">Topluluk</h1>
-        <p className="mt-2 text-ink/60">Diğer kurucularla fikir alışverişi yap, soru sor ve gelişmeleri takip et.</p>
-      </div>
-      <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
-        <div className="space-y-6">
-          {[
-            { author: "Caner T.", time: "2 saat önce", topic: "React Native vs Flutter - Startup için hangisi mantıklı?", replies: 14 },
-            { author: "Elif B.", time: "5 saat önce", topic: "Stripe hesabı açarken dikkat edilmesi gerekenler neler?", replies: 8 },
-            { author: "Kemal D.", time: "1 gün önce", topic: "İlk kullanıcıları nasıl buldunuz? Growth taktikleri arıyorum.", replies: 22 },
-          ].map((c, i) => (
-            <div key={i} className="rounded-2xl border border-ink/10 bg-white p-6">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-bold text-ink/70">{c.author}</span>
-                <span className="text-xs text-ink/40">{c.time}</span>
-              </div>
-              <h3 className="text-lg font-bold text-ink">{c.topic}</h3>
-              <div className="mt-4 flex items-center gap-2">
-                <span className="text-xs font-bold bg-[#F7F8FC] px-3 py-1 rounded-full text-ink/60">{c.replies} Yanıt</span>
-                <a href="#" className="text-sm font-semibold text-primary hover:underline ml-2">Tartışmaya Katıl</a>
+    <section className="bg-[#06101F] text-white">
+      <div className="mx-auto max-w-7xl px-6 py-16 lg:px-10">
+        <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+          <div>
+            <div className="border-b border-white/10 pb-8">
+              <p className="text-xs font-semibold uppercase tracking-[0.34em] text-white/45">Community signal</p>
+              <h1 className="mt-4 text-4xl font-extrabold tracking-tight">Conversations that actually move startups forward.</h1>
+              <p className="mt-3 max-w-2xl text-base leading-8 text-slate-300">
+                Foundrly community threads center around building, hiring, launching and learning from operators who ship.
+              </p>
+            </div>
+            <div className="mt-8 space-y-5">
+              {COMMUNITY_COLLECTION.map((thread) => (
+                <article key={thread.topic} className="rounded-[2rem] border border-white/10 bg-white/6 p-6 shadow-[0_24px_70px_rgba(0,0,0,0.18)] backdrop-blur">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-bold text-white">{thread.author}</p>
+                      <p className="mt-1 text-sm text-white/54">{thread.role}</p>
+                    </div>
+                    <span className="rounded-full border border-primary/20 bg-primary/12 px-3 py-1 text-xs font-bold text-[#AFC0FF]">
+                      {thread.signal}
+                    </span>
+                  </div>
+                  <h3 className="mt-5 text-2xl font-bold text-white">{thread.topic}</h3>
+                  <p className="mt-4 text-sm text-slate-300">{thread.stats}</p>
+                  <button className="mt-5 rounded-full bg-white px-5 py-2 text-sm font-bold text-[#071121] transition hover:bg-[#DDE5FF]">
+                    Join discussion
+                  </button>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          <aside className="space-y-6">
+            <div className="rounded-[2rem] border border-white/10 bg-white/6 p-6 backdrop-blur">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/40">Community rooms</p>
+              <div className="mt-4 space-y-3">
+                {["Founder office hours", "Hackathon squad finder", "Design feedback board", "Growth experiments"].map((room) => (
+                  <div key={room} className="rounded-2xl border border-white/8 bg-black/20 px-4 py-3 text-sm text-slate-300">
+                    {room}
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
-        </div>
-        <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6 h-fit">
-          <h3 className="font-bold text-ink mb-4">Topluluğa Katıl</h3>
-          <p className="text-sm text-ink/70 mb-6">Özel sohbet kanallarına ve kurucu ağına erişmek için Premium'a geç.</p>
-          <a href="#premium" className="block w-full text-center rounded-xl bg-primary py-3 text-sm font-bold text-white shadow-halo">Premium İncele</a>
+            <div className="rounded-[2rem] border border-success/20 bg-[linear-gradient(180deg,rgba(63,177,112,0.18),rgba(8,14,25,0.92))] p-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/55">Upgrade signal</p>
+              <h3 className="mt-3 text-2xl font-bold text-white">Get into premium founder circles</h3>
+              <p className="mt-3 text-sm leading-7 text-slate-300">
+                Unlock private founder channels, mentor-led rooms and curated intros to higher-signal collaborators.
+              </p>
+              <a href="#premium" className="mt-5 inline-flex rounded-full bg-white px-5 py-3 text-sm font-bold text-success transition hover:bg-white/90">
+                See premium access
+              </a>
+            </div>
+          </aside>
         </div>
       </div>
     </section>
