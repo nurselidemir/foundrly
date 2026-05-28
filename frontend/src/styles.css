@@ -75,58 +75,58 @@
   }
 
   .app-panel {
-    border: 1px solid rgba(27, 45, 73, 0.08);
-    background: rgba(255, 255, 255, 0.88);
-    box-shadow: 0 20px 80px rgba(71, 93, 178, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 20px 80px rgba(0, 0, 0, 0.3);
     backdrop-filter: blur(18px);
   }
 
   .app-panel-strong {
-    border: 1px solid rgba(27, 45, 73, 0.1);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(247, 248, 252, 0.92) 100%);
-    box-shadow: 0 24px 90px rgba(71, 93, 178, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 24px 90px rgba(0, 0, 0, 0.35);
     backdrop-filter: blur(18px);
   }
 
   .app-subpanel {
-    border: 1px solid rgba(27, 45, 73, 0.08);
-    background: #f7f8fc;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
   }
 
   .app-kpi-card {
-    border: 1px solid rgba(27, 45, 73, 0.08);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(245, 247, 252, 0.95) 100%);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
 
   .app-section-eyebrow {
-    color: rgba(71, 93, 178, 0.65);
+    color: rgba(142, 162, 237, 0.85);
     letter-spacing: 0.22em;
   }
 
   .app-section-copy {
-    color: rgba(27, 45, 73, 0.68);
+    color: rgba(255, 255, 255, 0.7);
     line-height: 1.75;
   }
 
   .app-input {
     width: 100%;
     border-radius: 1rem;
-    border: 1px solid rgba(27, 45, 73, 0.1);
-    background: #f7f8fc;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.25);
     padding: 0.85rem 1rem;
-    color: #1b2d49;
+    color: #ffffff;
     outline: none;
     transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
   }
 
   .app-input::placeholder {
-    color: rgba(27, 45, 73, 0.34);
+    color: rgba(255, 255, 255, 0.38);
   }
 
   .app-input:focus {
-    border-color: rgba(71, 93, 178, 0.38);
-    background: #ffffff;
-    box-shadow: 0 0 0 4px rgba(71, 93, 178, 0.08);
+    border-color: rgba(71, 93, 178, 0.6);
+    background: rgba(0, 0, 0, 0.35);
+    box-shadow: 0 0 0 4px rgba(71, 93, 178, 0.2);
   }
 }
