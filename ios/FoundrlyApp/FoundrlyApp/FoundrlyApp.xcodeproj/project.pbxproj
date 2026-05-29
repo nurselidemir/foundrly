@@ -7,6 +7,27 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A3B799C4B22F2A1A5EFDD6A2 /* AdminViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B799EC2850AED40AA0F54E /* AdminViewModel.swift */; };
+		A3B799648FEB0BFCC612A03C /* AdminModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B7991C3F4AB14A94E9C110 /* AdminModels.swift */; };
+		A3B799D48061DDF67254674C /* GuideModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B799998398BBB5307A41A0 /* GuideModels.swift */; };
+		A3B79966DDF9064C95CBCBC5 /* ShowcaseModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B7990870F1F141BC44AE14 /* ShowcaseModels.swift */; };
+		A3B799D027643F3FB234961D /* EventModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B799B78565BBD5B0C1FB52 /* EventModels.swift */; };
+		A3B7991E7F82AC1DE6610869 /* ProjectDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B7998D92F65D87A1C3E706 /* ProjectDetailView.swift */; };
+		A3B7999BDC7F3E1F02901C8D /* HubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B79957B4499C04AAAB5575 /* HubView.swift */; };
+		A3B799EC040FF0AA42AD41D6 /* MentorshipUserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B7991F4A27F759C15E1F13 /* MentorshipUserView.swift */; };
+		A3B799C67378ACE2A0052B98 /* EventsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B7990F037E4A9C943193D1 /* EventsView.swift */; };
+		A3B799C011EB9659A9B671B6 /* CreateProjectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B79936EA8C5E7FB9F86760 /* CreateProjectView.swift */; };
+		A3B799B53C57EEB703E173C7 /* PremiumView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B7990DB8E4CE3C32D90F8D /* PremiumView.swift */; };
+		A3B799D1389DC07FBC3C1246 /* MyProjectsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B799A218410C95FD3A00C2 /* MyProjectsView.swift */; };
+		A3B7994B17B074AC0CF8496D /* AdminGuidesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B799E7E788BA061DA36AD3 /* AdminGuidesView.swift */; };
+		A3B79957D4371B783A6766A0 /* AdminPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B799D6679853B7318E168B /* AdminPanelView.swift */; };
+		A3B7998CDEB4A366D86C5060 /* AdminEventsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B799BAC618F8F8E24A24D6 /* AdminEventsView.swift */; };
+		A3B7995E487571A84625F27C /* AdminCreateMentorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B7999B026A3D4643ABBFE8 /* AdminCreateMentorView.swift */; };
+		A3B799A24E5449C5B5AB4EE2 /* AdminMentorsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B79966281AFAC42816695C /* AdminMentorsView.swift */; };
+		A3B7997B75F129429812BF00 /* AdminProjectsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B7996C8DF31CC471040901 /* AdminProjectsView.swift */; };
+		A3B79905B65BC40A7F4B4EE8 /* AdminUsersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B79900AC0342AC521F4C57 /* AdminUsersView.swift */; };
+		A3B7993F46F56CDF211FBF2C /* EventService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B7990F39D6084EEAC36023 /* EventService.swift */; };
+		A3B79912089DF92AC7FDD07D /* AdminService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B799D9E32C714524CD6D1D /* AdminService.swift */; };
 		A3B797792FC8587E00FE7B51 /* MentorsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B7976D2FC8587E00FE7B51 /* MentorsView.swift */; };
 		A3B7977A2FC8587E00FE7B51 /* DashboardService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B797632FC8587E00FE7B51 /* DashboardService.swift */; };
 		A3B7977B2FC8587E00FE7B51 /* AppShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B797692FC8587E00FE7B51 /* AppShellView.swift */; };
@@ -35,6 +56,27 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A3B799EC2850AED40AA0F54E /* AdminViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminViewModel.swift; sourceTree = "<group>"; };
+		A3B7991C3F4AB14A94E9C110 /* AdminModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminModels.swift; sourceTree = "<group>"; };
+		A3B799998398BBB5307A41A0 /* GuideModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuideModels.swift; sourceTree = "<group>"; };
+		A3B7990870F1F141BC44AE14 /* ShowcaseModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShowcaseModels.swift; sourceTree = "<group>"; };
+		A3B799B78565BBD5B0C1FB52 /* EventModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventModels.swift; sourceTree = "<group>"; };
+		A3B7998D92F65D87A1C3E706 /* ProjectDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectDetailView.swift; sourceTree = "<group>"; };
+		A3B79957B4499C04AAAB5575 /* HubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HubView.swift; sourceTree = "<group>"; };
+		A3B7991F4A27F759C15E1F13 /* MentorshipUserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MentorshipUserView.swift; sourceTree = "<group>"; };
+		A3B7990F037E4A9C943193D1 /* EventsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsView.swift; sourceTree = "<group>"; };
+		A3B79936EA8C5E7FB9F86760 /* CreateProjectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateProjectView.swift; sourceTree = "<group>"; };
+		A3B7990DB8E4CE3C32D90F8D /* PremiumView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumView.swift; sourceTree = "<group>"; };
+		A3B799A218410C95FD3A00C2 /* MyProjectsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyProjectsView.swift; sourceTree = "<group>"; };
+		A3B799E7E788BA061DA36AD3 /* AdminGuidesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminGuidesView.swift; sourceTree = "<group>"; };
+		A3B799D6679853B7318E168B /* AdminPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminPanelView.swift; sourceTree = "<group>"; };
+		A3B799BAC618F8F8E24A24D6 /* AdminEventsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminEventsView.swift; sourceTree = "<group>"; };
+		A3B7999B026A3D4643ABBFE8 /* AdminCreateMentorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminCreateMentorView.swift; sourceTree = "<group>"; };
+		A3B79966281AFAC42816695C /* AdminMentorsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminMentorsView.swift; sourceTree = "<group>"; };
+		A3B7996C8DF31CC471040901 /* AdminProjectsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminProjectsView.swift; sourceTree = "<group>"; };
+		A3B79900AC0342AC521F4C57 /* AdminUsersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminUsersView.swift; sourceTree = "<group>"; };
+		A3B7990F39D6084EEAC36023 /* EventService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventService.swift; sourceTree = "<group>"; };
+		A3B799D9E32C714524CD6D1D /* AdminService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminService.swift; sourceTree = "<group>"; };
 		A3B797532FC8579300FE7B51 /* FoundrlyApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FoundrlyApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A3B797612FC8587E00FE7B51 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
 		A3B797622FC8587E00FE7B51 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
@@ -82,6 +124,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A3B799000000000000000001 /* Admin */ = {
+			isa = PBXGroup;
+			children = (
+				A3B799E7E788BA061DA36AD3 /* AdminGuidesView.swift */,
+				A3B799D6679853B7318E168B /* AdminPanelView.swift */,
+				A3B799BAC618F8F8E24A24D6 /* AdminEventsView.swift */,
+				A3B7999B026A3D4643ABBFE8 /* AdminCreateMentorView.swift */,
+				A3B79966281AFAC42816695C /* AdminMentorsView.swift */,
+				A3B7996C8DF31CC471040901 /* AdminProjectsView.swift */,
+				A3B79900AC0342AC521F4C57 /* AdminUsersView.swift */,
+			);
+			path = Admin;
+			sourceTree = "<group>";
+		};
 		A3B7974A2FC8579300FE7B51 = {
 			isa = PBXGroup;
 			children = (
@@ -106,6 +162,8 @@
 		A3B797642FC8587E00FE7B51 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				A3B7990F39D6084EEAC36023 /* EventService.swift */,
+				A3B799D9E32C714524CD6D1D /* AdminService.swift */,
 				A3B797612FC8587E00FE7B51 /* APIClient.swift */,
 				A3B797622FC8587E00FE7B51 /* AuthService.swift */,
 				A3B797632FC8587E00FE7B51 /* DashboardService.swift */,
@@ -116,6 +174,7 @@
 		A3B797672FC8587E00FE7B51 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
+				A3B799EC2850AED40AA0F54E /* AdminViewModel.swift */,
 				A3B797652FC8587E00FE7B51 /* AppShellViewModel.swift */,
 				A3B797662FC8587E00FE7B51 /* AuthViewModel.swift */,
 			);
@@ -125,6 +184,13 @@
 		A3B797712FC8587E00FE7B51 /* App */ = {
 			isa = PBXGroup;
 			children = (
+				A3B7998D92F65D87A1C3E706 /* ProjectDetailView.swift */,
+				A3B79957B4499C04AAAB5575 /* HubView.swift */,
+				A3B7991F4A27F759C15E1F13 /* MentorshipUserView.swift */,
+				A3B7990F037E4A9C943193D1 /* EventsView.swift */,
+				A3B79936EA8C5E7FB9F86760 /* CreateProjectView.swift */,
+				A3B7990DB8E4CE3C32D90F8D /* PremiumView.swift */,
+				A3B799A218410C95FD3A00C2 /* MyProjectsView.swift */,
 				A3B797682FC8587E00FE7B51 /* AIBuilderView.swift */,
 				A3B797692FC8587E00FE7B51 /* AppShellView.swift */,
 				A3B7976A2FC8587E00FE7B51 /* CommunityView.swift */,
@@ -158,6 +224,7 @@
 		A3B797782FC8587E00FE7B51 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				A3B799000000000000000001 /* Admin */,
 				A3B797712FC8587E00FE7B51 /* App */,
 				A3B797752FC8587E00FE7B51 /* Auth */,
 				A3B797762FC8587E00FE7B51 /* Shared */,
@@ -179,6 +246,10 @@
 		A3B797962FC858B800FE7B51 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				A3B7991C3F4AB14A94E9C110 /* AdminModels.swift */,
+				A3B799998398BBB5307A41A0 /* GuideModels.swift */,
+				A3B7990870F1F141BC44AE14 /* ShowcaseModels.swift */,
+				A3B799B78565BBD5B0C1FB52 /* EventModels.swift */,
 				A3B797922FC858B800FE7B51 /* AuthModels.swift */,
 				A3B797932FC858B800FE7B51 /* MessageModels.swift */,
 				A3B797942FC858B800FE7B51 /* ProjectModels.swift */,
@@ -261,6 +332,27 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A3B799C4B22F2A1A5EFDD6A2 /* AdminViewModel.swift in Sources */,
+				A3B799648FEB0BFCC612A03C /* AdminModels.swift in Sources */,
+				A3B799D48061DDF67254674C /* GuideModels.swift in Sources */,
+				A3B79966DDF9064C95CBCBC5 /* ShowcaseModels.swift in Sources */,
+				A3B799D027643F3FB234961D /* EventModels.swift in Sources */,
+				A3B7991E7F82AC1DE6610869 /* ProjectDetailView.swift in Sources */,
+				A3B7999BDC7F3E1F02901C8D /* HubView.swift in Sources */,
+				A3B799EC040FF0AA42AD41D6 /* MentorshipUserView.swift in Sources */,
+				A3B799C67378ACE2A0052B98 /* EventsView.swift in Sources */,
+				A3B799C011EB9659A9B671B6 /* CreateProjectView.swift in Sources */,
+				A3B799B53C57EEB703E173C7 /* PremiumView.swift in Sources */,
+				A3B799D1389DC07FBC3C1246 /* MyProjectsView.swift in Sources */,
+				A3B7994B17B074AC0CF8496D /* AdminGuidesView.swift in Sources */,
+				A3B79957D4371B783A6766A0 /* AdminPanelView.swift in Sources */,
+				A3B7998CDEB4A366D86C5060 /* AdminEventsView.swift in Sources */,
+				A3B7995E487571A84625F27C /* AdminCreateMentorView.swift in Sources */,
+				A3B799A24E5449C5B5AB4EE2 /* AdminMentorsView.swift in Sources */,
+				A3B7997B75F129429812BF00 /* AdminProjectsView.swift in Sources */,
+				A3B79905B65BC40A7F4B4EE8 /* AdminUsersView.swift in Sources */,
+				A3B7993F46F56CDF211FBF2C /* EventService.swift in Sources */,
+				A3B79912089DF92AC7FDD07D /* AdminService.swift in Sources */,
 				A3B7978F2FC858A200FE7B51 /* AppSession.swift in Sources */,
 				A3B797902FC858A200FE7B51 /* Theme.swift in Sources */,
 				A3B797912FC858A200FE7B51 /* FoundrlyApp.swift in Sources */,

@@ -11,6 +11,18 @@ final class AppSession: ObservableObject {
         accessToken != nil && currentUser != nil
     }
 
+    var isAdmin: Bool {
+        currentUser?.is_staff == true || currentUser?.is_superuser == true
+    }
+
+    var isMentor: Bool {
+        currentUser?.is_mentor == true
+    }
+
+    var isPremium: Bool {
+        currentUser?.is_premium == true
+    }
+
     func updateSession(accessToken: String, refreshToken: String, user: CurrentUser) {
         self.accessToken = accessToken
         self.refreshToken = refreshToken

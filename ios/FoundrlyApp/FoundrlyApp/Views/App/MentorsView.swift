@@ -3,242 +3,410 @@ import SwiftUI
 struct MentorsView: View {
     @EnvironmentObject private var session: AppSession
     @ObservedObject var viewModel: AppShellViewModel
+    
     @State private var selectedMentor: MentorSummary?
     @State private var requestMessage = ""
-    @State private var offerDrafts: [Int: String] = [:]
+    @State private var showRequestSheet = false
+    
+    // States for mentor responding to requests
+    @State private var offerPrices: [Int: String] = [:]
+    @State private var offerTimes: [Int: String] = [:]
+
+    var sortedRequests: [MentorRequestSummary] {
+        viewModel.mentorRequests.sorted { r1, r2 in
+            let score1 = statusScore(r1.status)
+            let score2 = statusScore(r2.status)
+            return score1 > score2
+        }
+    }
+    
+    private func statusScore(_ status: String) -> Int {
+        switch status {
+        case "paid_reserved": return 10
+        case "pending": return 9
+        case "offered": return 8
+        case "mentor_completed": return 7
+        case "disputed": return 6
+        case "released": return 5
+        case "declined": return 4
+        default: return 0
+        }
+    }
 
     var body: some View {
         NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 18) {
-                    if session.currentUser?.is_mentor == true {
-                        mentorPanel
-                    } else {
-                        mentorsMarketplace
-                    }
+            ZStack {
+                FoundrlyBackground()
+                
+                ScrollView {
+                    VStack(spacing: 18) {
+                        if session.currentUser?.is_mentor == true {
+                            mentorPanel
+                        } else {
+                            mentorsMarketplace
+                        }
 
-                    if !viewModel.feedbackMessage.isEmpty {
-                        Text(viewModel.feedbackMessage)
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(FoundrlyTheme.accent)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .foundrlyCard()
+                        if !viewModel.feedbackMessage.isEmpty {
+                            Text(viewModel.feedbackMessage)
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(FoundrlyTheme.accent)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .foundrlyCard()
+                        }
                     }
+                    .padding(20)
                 }
-                .padding(20)
-                .padding(.bottom, 40)
             }
-            .foundrlyScreen()
-            .navigationTitle("Mentörler")
+            .navigationTitle(session.currentUser?.is_mentor == true ? "Mentör Paneli" : "Mentörler")
+            .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showRequestSheet) {
+                if let mentor = selectedMentor {
+                    ZStack {
+                        FoundrlyTheme.surface.ignoresSafeArea()
+                        VStack(spacing: 20) {
+                            Text("Mentörlük Talebi")
+                                .font(.headline)
+                                .foregroundStyle(FoundrlyTheme.textPrimary)
+                            
+                            Text("\(mentor.full_name) isimli mentörden görüşme talep ediyorsunuz. Ücret: ₺\(Int(mentor.mentor_price))")
+                                .font(.caption)
+                                .foregroundStyle(FoundrlyTheme.textSecondary)
+                                .multilineTextAlignment(.center)
+                            
+                            TextField("Görüşmek istediğiniz konuyu detaylıca yazın...", text: $requestMessage, axis: .vertical)
+                                .textFieldStyle(.plain)
+                                .lineLimit(4...8)
+                                .padding()
+                                .background(FoundrlyTheme.surfaceRaised)
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                                .foregroundStyle(.white)
+                            
+                            HStack(spacing: 16) {
+                                Button("İptal") {
+                                    showRequestSheet = false
+                                    requestMessage = ""
+                                    selectedMentor = nil
+                                }
+                                .foregroundStyle(FoundrlyTheme.textSecondary)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(FoundrlyTheme.surfaceRaised)
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                                
+                                Button("Talebi Gönder") {
+                                    Task {
+                                        await viewModel.requestMentor(session: session, mentorId: mentor.id, message: requestMessage)
+                                        showRequestSheet = false
+                                        requestMessage = ""
+                                        selectedMentor = nil
+                                    }
+                                }
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(FoundrlyTheme.primary)
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                            }
+                        }
+                        .padding(24)
+                    }
+                    .presentationDetents([.medium])
+                }
+            }
         }
     }
 
     private var mentorsMarketplace: some View {
         VStack(alignment: .leading, spacing: 16) {
-            FoundrlySectionHeader(
-                eyebrow: "Mentör Ağı",
-                title: "Üst düzey uzmanlarla ilerle",
-                subtitle: "Kilitli alanları da premium bir ürün yüzeyi gibi yeniden düzenledim; metin çakışması yerine daha net değer anlatıyor."
-            )
+            Text("Mentör Desteği")
+                .font(.title2.bold())
+                .foregroundStyle(FoundrlyTheme.textPrimary)
 
             if session.currentUser?.is_premium != true {
-                HStack(alignment: .top, spacing: 12) {
-                    lockedCard("1:1 görüşme", "Premium ile deneyimli mentörlerden doğrudan yön al.")
-                    lockedCard("Öncelikli talep", "Daha görünür talep kartı ve hızlı dönüş akışı.")
-                }
-
-                Button("Premium'u Aç") {
-                    Task { await viewModel.activatePremium(session: session, plan: "monthly") }
-                }
-                .foundrlyPrimaryButton()
-            } else if let selectedMentor {
-                mentorDetail(selectedMentor)
-            } else {
-                ForEach(viewModel.mentors) { mentor in
-                    Button {
-                        selectedMentor = mentor
+                VStack(spacing: 12) {
+                    Image(systemName: "crown.fill")
+                        .font(.title)
+                        .foregroundStyle(FoundrlyTheme.accent)
+                    
+                    Text("Birebir Mentörlük Alın")
+                        .font(.headline)
+                    
+                    Text("Mentörlük sistemine erişebilmek ve alanında uzman kişilerden destek almak için Premium üye olmalısınız.")
+                        .font(.caption)
+                        .foregroundStyle(FoundrlyTheme.textSecondary)
+                        .multilineTextAlignment(.center)
+                    
+                    NavigationLink {
+                        PremiumView(viewModel: viewModel)
                     } label: {
+                        Text("Premium'a Yükselt")
+                            .font(.subheadline.bold())
+                            .foregroundStyle(.black)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 10)
+                            .background(FoundrlyTheme.accent)
+                            .clipShape(Capsule())
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(24)
+                .foundrlyCard()
+            } else {
+                if viewModel.mentors.isEmpty {
+                    Text("Şu an aktif mentör bulunmuyor.")
+                        .font(.subheadline)
+                        .foregroundStyle(FoundrlyTheme.textSecondary)
+                } else {
+                    ForEach(viewModel.mentors) { mentor in
                         VStack(alignment: .leading, spacing: 12) {
-                            HStack(alignment: .top) {
-                                VStack(alignment: .leading, spacing: 6) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "person.circle.fill")
+                                    .font(.system(size: 40))
+                                    .foregroundStyle(FoundrlyTheme.primary)
+                                
+                                VStack(alignment: .leading, spacing: 2) {
                                     Text(mentor.full_name)
-                                        .font(.headline.bold())
-                                        .foregroundStyle(.white)
+                                        .font(.subheadline.bold())
+                                        .foregroundStyle(FoundrlyTheme.textPrimary)
                                     Text(mentor.title)
-                                        .font(.subheadline)
+                                        .font(.caption2)
                                         .foregroundStyle(FoundrlyTheme.textSecondary)
                                 }
+                                
                                 Spacer()
-                                FoundrlyPill(
-                                    title: mentor.mentor_price == 0 ? "Ücretsiz" : "$\(Int(mentor.mentor_price))",
-                                    tint: FoundrlyTheme.accent.opacity(0.18),
-                                    textColor: FoundrlyTheme.accent
-                                )
-                            }
-
-                            Text(mentor.bio)
-                                .font(.subheadline)
-                                .foregroundStyle(FoundrlyTheme.textSecondary)
-                                .lineLimit(3)
-
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 8) {
-                                    ForEach(mentor.skills, id: \.self) { skill in
-                                        Text(skill)
-                                            .font(.caption.bold())
-                                            .padding(.horizontal, 12)
-                                            .padding(.vertical, 8)
-                                            .background(FoundrlyTheme.surfaceSoft.opacity(0.92))
-                                            .clipShape(Capsule())
-                                    }
+                                
+                                Button {
+                                    selectedMentor = mentor
+                                    showRequestSheet = true
+                                } label: {
+                                    Text("Talep Et")
+                                        .font(.caption.bold())
+                                        .foregroundStyle(.white)
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 8)
+                                        .background(FoundrlyTheme.primary)
+                                        .clipShape(Capsule())
                                 }
                             }
+                            
+                            Text(mentor.bio)
+                                .font(.caption)
+                                .foregroundStyle(FoundrlyTheme.textSecondary)
+                                .lineLimit(2)
+                            
+                            HStack {
+                                Text("Görüşme Ücreti:")
+                                    .font(.caption2)
+                                    .foregroundStyle(FoundrlyTheme.textSecondary)
+                                Text("₺\(Int(mentor.mentor_price)) / görüşme")
+                                    .font(.caption.bold())
+                                    .foregroundStyle(FoundrlyTheme.accent)
+                            }
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .foundrlySoftCard()
+                        .foundrlyCard()
                     }
                 }
             }
         }
-        .foundrlyCard()
-    }
-
-    private func mentorDetail(_ mentor: MentorSummary) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Button("← Mentör listesine dön") {
-                selectedMentor = nil
-                requestMessage = ""
-            }
-            .font(.footnote.bold())
-            .foregroundStyle(FoundrlyTheme.accent)
-
-            Text(mentor.full_name)
-                .font(.title2.bold())
-            Text(mentor.title)
-                .foregroundStyle(FoundrlyTheme.textSecondary)
-            Text(mentor.bio)
-                .foregroundStyle(FoundrlyTheme.textSecondary)
-
-            TextField("Projeni ve beklentini kısaca anlat", text: $requestMessage, axis: .vertical)
-                .padding()
-                .background(FoundrlyTheme.surfaceSoft.opacity(0.92))
-                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-
-            Button("Mentörlük Talebi Gönder") {
-                guard !requestMessage.isEmpty else { return }
-                Task {
-                    await viewModel.requestMentor(session: session, mentorId: mentor.id, message: requestMessage)
-                    requestMessage = ""
-                    selectedMentor = nil
-                }
-            }
-            .foundrlyPrimaryButton()
-        }
-        .foundrlySoftCard()
     }
 
     private var mentorPanel: some View {
         VStack(alignment: .leading, spacing: 16) {
-            FoundrlySectionHeader(
-                eyebrow: "Mentör Paneli",
-                title: "Taleplerini profesyonel biçimde yönet",
-                subtitle: "Gelir, teklif ve bekleyen kullanıcı akışını daha derli toplu bir panelde topladım."
-            )
-
-            if let user = session.currentUser {
-                HStack(spacing: 12) {
-                    statPill("Bakiye", "$\(Int(user.mentor_balance ?? 0))")
-                    statPill("Kredi", "\(user.mentor_credits ?? 0)")
-                    statPill("Ücret", "$\(Int(user.mentor_price ?? 0))")
-                }
+            // Balance / Price summary
+            HStack(spacing: 14) {
+                statPill("Cüzdan", "₺\(Int(session.currentUser?.mentor_balance ?? 0))")
+                statPill("Görüşme Ücreti", "₺\(Int(session.currentUser?.mentor_price ?? 0))")
             }
+            .frame(maxWidth: .infinity)
+            
+            Text("Mentörlük Talepleri")
+                .font(.title2.bold())
+                .foregroundStyle(FoundrlyTheme.textPrimary)
 
-            if viewModel.mentorRequests.isEmpty {
-                Text("Henüz mentörlük talebi yok.")
+            if sortedRequests.isEmpty {
+                Text("Henüz bir talep almadınız.")
+                    .font(.subheadline)
                     .foregroundStyle(FoundrlyTheme.textSecondary)
-                    .foundrlySoftCard()
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding()
             } else {
-                ForEach(viewModel.mentorRequests) { request in
+                ForEach(sortedRequests) { request in
                     VStack(alignment: .leading, spacing: 12) {
-                        Text(request.user_details?.full_name ?? "Kullanıcı")
-                            .font(.headline.bold())
+                        HStack {
+                            Text(request.user_details?.full_name ?? "Üye")
+                                .font(.subheadline.bold())
+                                .foregroundStyle(FoundrlyTheme.textPrimary)
+                            
+                            Spacer()
+                            
+                            FoundrlyStatusBadge(status: request.status)
+                        }
+                        
                         Text(request.message)
+                            .font(.caption)
                             .foregroundStyle(FoundrlyTheme.textSecondary)
-                        FoundrlyPill(title: request.status.uppercased(), tint: FoundrlyTheme.primary.opacity(0.22))
-
-                        if request.status == "pending" {
-                            TextField("Teklif ücreti", text: Binding(
-                                get: { offerDrafts[request.id] ?? (request.offered_price > 0 ? String(Int(request.offered_price)) : "") },
-                                set: { offerDrafts[request.id] = $0 }
-                            ))
-                            .keyboardType(.numberPad)
-                            .padding()
-                            .background(FoundrlyTheme.surfaceSoft.opacity(0.92))
-                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-
-                            HStack(spacing: 12) {
-                                Button("Onayla") {
-                                    let price = Double(offerDrafts[request.id] ?? "") ?? request.offered_price
-                                    Task {
-                                        await viewModel.updateMentorRequest(
-                                            session: session,
-                                            requestId: request.id,
-                                            status: "accepted",
-                                            offeredPrice: price
-                                        )
-                                    }
-                                }
-                                .foundrlyPrimaryButton()
-
-                                Button("Tamamlandı") {
-                                    Task {
-                                        await viewModel.updateMentorRequest(
-                                            session: session,
-                                            requestId: request.id,
-                                            status: "completed"
-                                        )
-                                    }
-                                }
-                                .foundrlySecondaryButton()
+                        
+                        // Meeting time and price information
+                        if let mt = request.meeting_time {
+                            HStack {
+                                Label(mt, systemImage: "clock")
+                                Spacer()
+                                Text("Ücret: ₺\(Int(request.offered_price))")
+                                    .font(.caption.bold())
                             }
+                            .font(.caption2)
+                            .foregroundStyle(FoundrlyTheme.textSecondary)
+                        }
+                        
+                        // Status specific UIs
+                        if request.status == "pending" {
+                            VStack(spacing: 10) {
+                                TextField("Önerilen Tarih/Saat (Örn: 15 Haziran 14:00)", text: Binding(
+                                    get: { offerTimes[request.id, default: ""] },
+                                    set: { offerTimes[request.id] = $0 }
+                                ))
+                                .textFieldStyle(.plain)
+                                .padding(10)
+                                .background(FoundrlyTheme.surface)
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .foregroundStyle(.white)
+                                .font(.caption)
+                                
+                                TextField("Önerilen Ücret (Boş bırakılırsa standart fiyat: ₺\(Int(session.currentUser?.mentor_price ?? 0)))", text: Binding(
+                                    get: { offerPrices[request.id, default: ""] },
+                                    set: { offerPrices[request.id] = $0 }
+                                ))
+                                .textFieldStyle(.plain)
+                                .padding(10)
+                                .background(FoundrlyTheme.surface)
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .foregroundStyle(.white)
+                                .font(.caption)
+                                .keyboardType(.numberPad)
+                                
+                                HStack(spacing: 12) {
+                                    Button {
+                                        Task {
+                                            let price = Double(offerPrices[request.id] ?? "")
+                                            let time = offerTimes[request.id] ?? "Belirlenmedi"
+                                            await viewModel.mentorAction(
+                                                session: session,
+                                                requestId: request.id,
+                                                action: "offer",
+                                                offeredPrice: price,
+                                                meetingTime: time
+                                            )
+                                        }
+                                    } label: {
+                                        Text("Zaman ve Ücret Öner")
+                                            .font(.caption.bold())
+                                            .foregroundStyle(.white)
+                                            .padding(.horizontal, 14)
+                                            .padding(.vertical, 8)
+                                            .background(FoundrlyTheme.primary)
+                                            .clipShape(Capsule())
+                                    }
+                                    
+                                    Button {
+                                        Task {
+                                            await viewModel.mentorAction(
+                                                session: session,
+                                                requestId: request.id,
+                                                action: "decline"
+                                            )
+                                        }
+                                    } label: {
+                                        Text("Reddet")
+                                            .font(.caption.bold())
+                                            .foregroundStyle(FoundrlyTheme.error)
+                                            .padding(.horizontal, 14)
+                                            .padding(.vertical, 8)
+                                            .background(FoundrlyTheme.error.opacity(0.12))
+                                            .clipShape(Capsule())
+                                    }
+                                }
+                            }
+                            .padding(.top, 4)
+                        } else if request.status == "offered" {
+                            Text("Zaman ve ücret önerildi. Kullanıcı onayı ve ödemesi bekleniyor.")
+                                .font(.caption2.italic())
+                                .foregroundStyle(FoundrlyTheme.textSecondary)
+                        } else if request.status == "paid_reserved" {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Görüşme Ödemesi Güvence Altında!")
+                                    .font(.caption2.bold())
+                                    .foregroundStyle(FoundrlyTheme.accent)
+                                
+                                Button {
+                                    Task {
+                                        await viewModel.mentorAction(
+                                            session: session,
+                                            requestId: request.id,
+                                            action: "mark_completed"
+                                        )
+                                    }
+                                } label: {
+                                    Text("Görüşmeyi Tamamlandı Olarak İşaretle")
+                                        .font(.caption.bold())
+                                        .foregroundStyle(.white)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 10)
+                                        .background(FoundrlyTheme.accent)
+                                        .clipShape(Capsule())
+                                }
+                            }
+                            .padding(10)
+                            .background(FoundrlyTheme.accent.opacity(0.08))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(FoundrlyTheme.accent.opacity(0.3), lineWidth: 1)
+                            )
+                        } else if request.status == "mentor_completed" {
+                            Text("Görüşmeyi tamamlandı olarak işaretlediniz. Kullanıcı onayı (veya itirazı) bekleniyor. Ödeme onaylandığında hesabınıza geçecektir.")
+                                .font(.caption2.italic())
+                                .foregroundStyle(FoundrlyTheme.accent)
+                        } else if request.status == "released" {
+                            Text("Görüşme başarıyla tamamlandı ve ücret serbest bırakılarak hesabınıza aktarıldı ✓")
+                                .font(.caption2.bold())
+                                .foregroundStyle(FoundrlyTheme.accent)
+                        } else if request.status == "disputed" {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Kullanıcı Tarafından İtiraz Açıldı")
+                                    .font(.caption2.bold())
+                                    .foregroundStyle(FoundrlyTheme.error)
+                                if let reason = request.dispute_reason {
+                                    Text("Nedeni: \(reason)")
+                                        .font(.system(size: 10))
+                                        .foregroundStyle(FoundrlyTheme.textSecondary)
+                                }
+                            }
+                            .padding(8)
+                            .background(FoundrlyTheme.error.opacity(0.08))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .foundrlySoftCard()
+                    .padding()
+                    .background(FoundrlyTheme.surfaceRaised)
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                 }
             }
         }
-        .foundrlyCard()
-    }
-
-    private func lockedCard(_ title: String, _ body: String) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Image(systemName: "lock.shield.fill")
-                .font(.title3)
-                .foregroundStyle(FoundrlyTheme.gold)
-            Text(title)
-                .font(.headline.bold())
-            Text(body)
-                .font(.subheadline)
-                .foregroundStyle(FoundrlyTheme.textSecondary)
-        }
-        .frame(maxWidth: .infinity, minHeight: 150, alignment: .leading)
-        .padding(16)
-        .background(FoundrlyTheme.surfaceSoft.opacity(0.92))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
     private func statPill(_ title: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title.uppercased())
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
                 .font(.caption.bold())
-                .foregroundStyle(FoundrlyTheme.textMuted)
+                .foregroundStyle(FoundrlyTheme.textSecondary)
             Text(value)
                 .font(.headline.bold())
+                .foregroundStyle(.white)
         }
+        .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(FoundrlyTheme.surfaceSoft.opacity(0.92))
+        .background(FoundrlyTheme.surfaceRaised)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 }

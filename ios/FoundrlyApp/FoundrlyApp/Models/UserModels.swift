@@ -1,15 +1,5 @@
 import Foundation
 
-private func decodeFlexibleDouble<K: CodingKey>(from container: KeyedDecodingContainer<K>, forKey key: K) throws -> Double? {
-    if let value = try container.decodeIfPresent(Double.self, forKey: key) {
-        return value
-    }
-    if let stringValue = try container.decodeIfPresent(String.self, forKey: key) {
-        return Double(stringValue)
-    }
-    return nil
-}
-
 struct CurrentUser: Codable, Identifiable {
     let id: Int
     let email: String
@@ -30,137 +20,31 @@ struct CurrentUser: Codable, Identifiable {
     let date_joined: String
 
     enum CodingKeys: String, CodingKey {
-        case id
-        case email
-        case full_name
-        case title
-        case bio
-        case skills
-        case interests
-        case profile_picture
-        case is_verified_talent
-        case is_premium
-        case is_mentor
-        case mentor_credits
-        case mentor_price
-        case mentor_balance
-        case is_staff
-        case is_superuser
-        case date_joined
+        case id, email, full_name, title, bio, skills, interests, profile_picture
+        case is_verified_talent, is_premium, is_mentor, mentor_credits, mentor_price, mentor_balance
+        case is_staff, is_superuser, date_joined
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decodeIfPresent(Int.self, forKey: .id) ?? 0
-        email = try container.decodeIfPresent(String.self, forKey: .email) ?? ""
-        full_name = try container.decodeIfPresent(String.self, forKey: .full_name) ?? ""
-        title = try container.decodeIfPresent(String.self, forKey: .title) ?? ""
-        bio = try container.decodeIfPresent(String.self, forKey: .bio) ?? ""
-        skills = try container.decodeIfPresent([String].self, forKey: .skills) ?? []
-        interests = try container.decodeIfPresent([String].self, forKey: .interests) ?? []
+        id = try container.decode(Int.self, forKey: .id)
+        email = try container.decode(String.self, forKey: .email)
+        full_name = (try? container.decodeIfPresent(String.self, forKey: .full_name)) ?? ""
+        title = (try? container.decodeIfPresent(String.self, forKey: .title)) ?? ""
+        bio = (try? container.decodeIfPresent(String.self, forKey: .bio)) ?? ""
+        skills = (try? container.decodeIfPresent([String].self, forKey: .skills)) ?? []
+        interests = (try? container.decodeIfPresent([String].self, forKey: .interests)) ?? []
         profile_picture = try container.decodeIfPresent(String.self, forKey: .profile_picture)
-        is_verified_talent = try container.decodeIfPresent(Bool.self, forKey: .is_verified_talent) ?? false
-        is_premium = try container.decodeIfPresent(Bool.self, forKey: .is_premium) ?? false
+        is_verified_talent = (try? container.decodeIfPresent(Bool.self, forKey: .is_verified_talent)) ?? false
+        is_premium = (try? container.decodeIfPresent(Bool.self, forKey: .is_premium)) ?? false
         is_mentor = try container.decodeIfPresent(Bool.self, forKey: .is_mentor)
         mentor_credits = try container.decodeIfPresent(Int.self, forKey: .mentor_credits)
-        mentor_price = try decodeFlexibleDouble(from: container, forKey: .mentor_price)
-        mentor_balance = try decodeFlexibleDouble(from: container, forKey: .mentor_balance)
         is_staff = try container.decodeIfPresent(Bool.self, forKey: .is_staff)
         is_superuser = try container.decodeIfPresent(Bool.self, forKey: .is_superuser)
-        date_joined = try container.decodeIfPresent(String.self, forKey: .date_joined) ?? ""
-    }
+        date_joined = (try? container.decodeIfPresent(String.self, forKey: .date_joined)) ?? ""
 
-    init(dictionary: [String: Any]) {
-        id = dictionary["id"] as? Int ?? 0
-        email = dictionary["email"] as? String ?? ""
-        full_name = dictionary["full_name"] as? String ?? ""
-        title = dictionary["title"] as? String ?? ""
-        bio = dictionary["bio"] as? String ?? ""
-        skills = dictionary["skills"] as? [String] ?? []
-        interests = dictionary["interests"] as? [String] ?? []
-        profile_picture = dictionary["profile_picture"] as? String
-        is_verified_talent = dictionary["is_verified_talent"] as? Bool ?? false
-        is_premium = dictionary["is_premium"] as? Bool ?? false
-        is_mentor = dictionary["is_mentor"] as? Bool
-        mentor_credits = dictionary["mentor_credits"] as? Int
-        if let value = dictionary["mentor_price"] as? Double {
-            mentor_price = value
-        } else if let value = dictionary["mentor_price"] as? String {
-            mentor_price = Double(value)
-        } else {
-            mentor_price = nil
-        }
-        if let value = dictionary["mentor_balance"] as? Double {
-            mentor_balance = value
-        } else if let value = dictionary["mentor_balance"] as? String {
-            mentor_balance = Double(value)
-        } else {
-            mentor_balance = nil
-        }
-        is_staff = dictionary["is_staff"] as? Bool
-        is_superuser = dictionary["is_superuser"] as? Bool
-        date_joined = dictionary["date_joined"] as? String ?? ""
-    }
-
-    func merged(with fallback: CurrentUser?) -> CurrentUser {
-        guard let fallback else { return self }
-        return CurrentUser(
-            id: id == 0 ? fallback.id : id,
-            email: email.isEmpty ? fallback.email : email,
-            full_name: full_name.isEmpty ? fallback.full_name : full_name,
-            title: title.isEmpty ? fallback.title : title,
-            bio: bio.isEmpty ? fallback.bio : bio,
-            skills: skills.isEmpty ? fallback.skills : skills,
-            interests: interests.isEmpty ? fallback.interests : interests,
-            profile_picture: profile_picture ?? fallback.profile_picture,
-            is_verified_talent: is_verified_talent || fallback.is_verified_talent,
-            is_premium: is_premium || fallback.is_premium,
-            is_mentor: is_mentor ?? fallback.is_mentor,
-            mentor_credits: mentor_credits ?? fallback.mentor_credits,
-            mentor_price: mentor_price ?? fallback.mentor_price,
-            mentor_balance: mentor_balance ?? fallback.mentor_balance,
-            is_staff: is_staff ?? fallback.is_staff,
-            is_superuser: is_superuser ?? fallback.is_superuser,
-            date_joined: date_joined.isEmpty ? fallback.date_joined : date_joined
-        )
-    }
-
-    init(
-        id: Int,
-        email: String,
-        full_name: String,
-        title: String,
-        bio: String,
-        skills: [String],
-        interests: [String],
-        profile_picture: String?,
-        is_verified_talent: Bool,
-        is_premium: Bool,
-        is_mentor: Bool?,
-        mentor_credits: Int?,
-        mentor_price: Double?,
-        mentor_balance: Double?,
-        is_staff: Bool?,
-        is_superuser: Bool?,
-        date_joined: String
-    ) {
-        self.id = id
-        self.email = email
-        self.full_name = full_name
-        self.title = title
-        self.bio = bio
-        self.skills = skills
-        self.interests = interests
-        self.profile_picture = profile_picture
-        self.is_verified_talent = is_verified_talent
-        self.is_premium = is_premium
-        self.is_mentor = is_mentor
-        self.mentor_credits = mentor_credits
-        self.mentor_price = mentor_price
-        self.mentor_balance = mentor_balance
-        self.is_staff = is_staff
-        self.is_superuser = is_superuser
-        self.date_joined = date_joined
+        mentor_price = try container.decodeFlexibleDoubleIfPresent(forKey: .mentor_price)
+        mentor_balance = try container.decodeFlexibleDoubleIfPresent(forKey: .mentor_balance)
     }
 }
 
@@ -169,10 +53,6 @@ struct PublicUserSummary: Codable, Identifiable {
     let email: String?
     let full_name: String
     let title: String
-    let bio: String?
-    let skills: [String]?
-    let interests: [String]?
-    let profile_picture: String?
     let is_verified_talent: Bool
     let is_premium: Bool?
 }
@@ -228,6 +108,31 @@ struct PublicProfile: Codable, Identifiable {
     let reviews: [PublicReview]
     let recent_projects: [PublicProfileProject]
     let eligible_review_applications: [EligibleReviewApplication]
+
+    enum CodingKeys: String, CodingKey {
+        case id, full_name, title, bio, skills, interests
+        case is_verified_talent, is_premium, date_joined, average_rating, reviews_count, reviews
+        case recent_projects, eligible_review_applications
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        full_name = try container.decode(String.self, forKey: .full_name)
+        title = try container.decode(String.self, forKey: .title)
+        bio = try container.decode(String.self, forKey: .bio)
+        skills = try container.decode([String].self, forKey: .skills)
+        interests = try container.decode([String].self, forKey: .interests)
+        is_verified_talent = try container.decode(Bool.self, forKey: .is_verified_talent)
+        is_premium = try container.decode(Bool.self, forKey: .is_premium)
+        date_joined = try container.decode(String.self, forKey: .date_joined)
+        reviews_count = try container.decode(Int.self, forKey: .reviews_count)
+        reviews = try container.decode([PublicReview].self, forKey: .reviews)
+        recent_projects = try container.decode([PublicProfileProject].self, forKey: .recent_projects)
+        eligible_review_applications = try container.decode([EligibleReviewApplication].self, forKey: .eligible_review_applications)
+
+        average_rating = try container.decodeFlexibleDoubleIfPresent(forKey: .average_rating)
+    }
 }
 
 struct CreateReviewRequest: Encodable {
@@ -262,14 +167,7 @@ struct MentorSummary: Codable, Identifiable {
     let mentor_price: Double
 
     enum CodingKeys: String, CodingKey {
-        case id
-        case full_name
-        case title
-        case bio
-        case skills
-        case profile_picture
-        case is_mentor
-        case mentor_price
+        case id, full_name, title, bio, skills, profile_picture, is_mentor, mentor_price
     }
 
     init(from decoder: Decoder) throws {
@@ -281,7 +179,8 @@ struct MentorSummary: Codable, Identifiable {
         skills = try container.decode([String].self, forKey: .skills)
         profile_picture = try container.decodeIfPresent(String.self, forKey: .profile_picture)
         is_mentor = try container.decode(Bool.self, forKey: .is_mentor)
-        mentor_price = try decodeFlexibleDouble(from: container, forKey: .mentor_price) ?? 0
+
+        mentor_price = try container.decodeFlexibleDouble(forKey: .mentor_price)
     }
 }
 
@@ -298,23 +197,25 @@ struct MentorRequestSummary: Codable, Identifiable {
     let user_details: MentorSummary?
     let message: String
     let status: String
+    let meeting_time: String?
+    let user_confirmed: Bool?
     let price_at_request: Double
     let offered_price: Double
+    let reserved_amount: Double?
     let commission_rate: Double
+    let mentor_completed_at: String?
+    let user_confirmed_at: String?
+    let released_at: String?
+    let disputed_at: String?
+    let dispute_reason: String?
+    let status_label: String?
     let created_at: String
 
     enum CodingKeys: String, CodingKey {
-        case id
-        case mentor
-        case mentor_details
-        case user
-        case user_details
-        case message
-        case status
-        case price_at_request
-        case offered_price
-        case commission_rate
-        case created_at
+        case id, mentor, mentor_details, user, user_details, message, status
+        case meeting_time, user_confirmed, price_at_request, offered_price, reserved_amount
+        case commission_rate, mentor_completed_at, user_confirmed_at, released_at, disputed_at
+        case dispute_reason, status_label, created_at
     }
 
     init(from decoder: Decoder) throws {
@@ -326,14 +227,58 @@ struct MentorRequestSummary: Codable, Identifiable {
         user_details = try container.decodeIfPresent(MentorSummary.self, forKey: .user_details)
         message = try container.decode(String.self, forKey: .message)
         status = try container.decode(String.self, forKey: .status)
-        price_at_request = try decodeFlexibleDouble(from: container, forKey: .price_at_request) ?? 0
-        offered_price = try decodeFlexibleDouble(from: container, forKey: .offered_price) ?? 0
-        commission_rate = try decodeFlexibleDouble(from: container, forKey: .commission_rate) ?? 0
+        meeting_time = try container.decodeIfPresent(String.self, forKey: .meeting_time)
+        user_confirmed = try container.decodeIfPresent(Bool.self, forKey: .user_confirmed)
+        mentor_completed_at = try container.decodeIfPresent(String.self, forKey: .mentor_completed_at)
+        user_confirmed_at = try container.decodeIfPresent(String.self, forKey: .user_confirmed_at)
+        released_at = try container.decodeIfPresent(String.self, forKey: .released_at)
+        disputed_at = try container.decodeIfPresent(String.self, forKey: .disputed_at)
+        dispute_reason = try container.decodeIfPresent(String.self, forKey: .dispute_reason)
+        status_label = try container.decodeIfPresent(String.self, forKey: .status_label)
         created_at = try container.decode(String.self, forKey: .created_at)
+
+        price_at_request = try container.decodeFlexibleDouble(forKey: .price_at_request)
+        offered_price = try container.decodeFlexibleDouble(forKey: .offered_price)
+        reserved_amount = try container.decodeFlexibleDoubleIfPresent(forKey: .reserved_amount)
+        commission_rate = try container.decodeFlexibleDouble(forKey: .commission_rate)
     }
 }
 
-struct MentorStatusPayload: Encodable {
-    let status: String
+struct MentorActionPayload: Encodable {
+    let action: String
     let offered_price: Double?
+    let meeting_time: String?
+}
+
+struct MentorConfirmPayload: Encodable {
+    let action: String
+    let dispute_reason: String?
+}
+
+extension KeyedDecodingContainer {
+    func decodeFlexibleDouble(forKey key: KeyedDecodingContainer<K>.Key) throws -> Double {
+        if let doubleValue = try? decode(Double.self, forKey: key) {
+            return doubleValue
+        }
+        if let stringValue = try? decode(String.self, forKey: key), let doubleValue = Double(stringValue) {
+            return doubleValue
+        }
+        if let intValue = try? decode(Int.self, forKey: key) {
+            return Double(intValue)
+        }
+        return try decode(Double.self, forKey: key)
+    }
+
+    func decodeFlexibleDoubleIfPresent(forKey key: KeyedDecodingContainer<K>.Key) throws -> Double? {
+        if let doubleValue = try? decodeIfPresent(Double.self, forKey: key) {
+            return doubleValue
+        }
+        if let stringValue = try? decodeIfPresent(String.self, forKey: key), let doubleValue = Double(stringValue) {
+            return doubleValue
+        }
+        if let intValue = try? decodeIfPresent(Int.self, forKey: key) {
+            return Double(intValue)
+        }
+        return nil
+    }
 }

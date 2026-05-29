@@ -213,7 +213,7 @@ Bu özellik sayesinde kullanıcılar ekip arkadaşı seçerken yalnızca profil 
 
 | Platform | Planlanan | Teknoloji | Açıklama |
 |----------|-----------|-----------|----------|
-| **Web Uygulaması** | `Evet (Landing + Demo App Akışları)` | `React` | `Web versiyonu ürün tanıtımı, pricing, kayıt/giriş ve demo amaçlı uygulama akışlarını içermektedir. Responsive tasarım ile mobil uyumludur; ana kullanım odağı yine mobil uygulamadır.` |
+| **Web Uygulaması** | `Evet (Landing + Demo App Akışları)` | `React` | `Web versiyonu ürün tanıtımı, pricing, kayıt/giriş ve demo amaçlı uygulama akışlarını içermektedir. Responsive tasarım ile mobil uyumludur.` |
 | **iOS Uygulaması** | `Evet` | `SwiftUI` | `iOS tarafında Foundrly'nin SwiftUI kaynak dosyalari hazirdir. Giris, kayit, kesfet, mesajlar, premium, mentor ve profil akislari bulunur; Xcode proje paketi olusturularak calistirilabilir.` |
 | **Android Uygulaması** | `Hayır` | `-` | `İlk aşamada planlanmıyor.` | 
 | **Tablet Desteği** | `Hayır` | `-` | `İlk aşamada planlanmıyor.` | 

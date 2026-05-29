@@ -10,17 +10,8 @@ struct AuthService {
 
     func login(request: LoginRequest) async throws -> (TokenResponse, CurrentUser) {
         let body = try JSONEncoder().encode(request)
-        let tokenJSON = try await client.sendJSONObject(path: "api/auth/token/", method: "POST", body: body)
-        guard
-            let access = tokenJSON["access"] as? String,
-            let refresh = tokenJSON["refresh"] as? String
-        else {
-            throw APIError.server("Giriş yanıtında oturum bilgileri eksik.")
-        }
-
-        let tokens = TokenResponse(access: access, refresh: refresh)
-        let userJSON = try await client.sendJSONObject(path: "api/users/me/", token: tokens.access)
-        let user = CurrentUser(dictionary: userJSON)
+        let tokens: TokenResponse = try await client.send(path: "api/auth/token/", method: "POST", body: body)
+        let user: CurrentUser = try await client.send(path: "api/users/me/", token: tokens.access)
         return (tokens, user)
     }
 }

@@ -11,10 +11,6 @@ struct DashboardService {
         try await client.send(path: "api/projects/", token: token)
     }
 
-    func loadProjectDetail(token: String, projectId: Int) async throws -> ProjectCard {
-        try await client.send(path: "api/projects/\(projectId)/", token: token)
-    }
-
     func loadRecommendedProjects(token: String) async throws -> [RecommendedProjectMatch] {
         try await client.send(path: "api/dashboard/recommended-projects/", token: token)
     }
@@ -25,10 +21,6 @@ struct DashboardService {
 
     func loadReceivedApplications(token: String) async throws -> [TeamApplication] {
         try await client.send(path: "api/applications/?received=true", token: token)
-    }
-
-    func loadSentApplications(token: String) async throws -> [TeamApplication] {
-        try await client.send(path: "api/applications/?mine=true", token: token)
     }
 
     func updateApplicationStatus(token: String, applicationId: Int, status: String) async throws {
@@ -117,7 +109,7 @@ struct DashboardService {
     }
 
     func updateMentorRequestStatus(token: String, requestId: Int, status: String, offeredPrice: Double? = nil) async throws {
-        let body = try JSONEncoder().encode(MentorStatusPayload(status: status, offered_price: offeredPrice))
+        let body = try JSONEncoder().encode(MentorActionPayload(action: status, offered_price: offeredPrice, meeting_time: nil))
         try await client.sendWithoutResponse(
             path: "api/mentors/requests/\(requestId)/status/",
             method: "PATCH",
@@ -126,43 +118,32 @@ struct DashboardService {
         )
     }
 
-    func createFriendRequest(token: String, receiverId: Int) async throws {
-        let body = try JSONSerialization.data(withJSONObject: ["receiver": receiverId])
-        try await client.sendWithoutResponse(
-            path: "api/friend-requests/",
-            method: "POST",
-            token: token,
-            body: body
-        )
+    func updateProfile(token: String, fields: [String: Any]) async throws -> CurrentUser {
+        let body = try JSONSerialization.data(withJSONObject: fields)
+        return try await client.send(path: "api/users/me/", method: "PATCH", token: token, body: body)
     }
 
-    func updateFriendRequest(token: String, requestId: Int, status: String) async throws {
+    func loadUserMentorRequests(token: String) async throws -> [MentorRequestSummary] {
+        try await client.send(path: "api/mentors/requests/", token: token)
+    }
+
+    func mentorAction(token: String, requestId: Int, action: String, offeredPrice: Double? = nil, meetingTime: String? = nil) async throws {
+        let body = try JSONEncoder().encode(MentorActionPayload(action: action, offered_price: offeredPrice, meeting_time: meetingTime))
+        try await client.sendWithoutResponse(path: "api/mentors/requests/\(requestId)/status/", method: "PATCH", token: token, body: body)
+    }
+
+    func userConfirmMentor(token: String, requestId: Int, action: String, disputeReason: String? = nil) async throws {
+        let body = try JSONEncoder().encode(MentorConfirmPayload(action: action, dispute_reason: disputeReason))
+        try await client.sendWithoutResponse(path: "api/mentors/requests/\(requestId)/confirm/", method: "PATCH", token: token, body: body)
+    }
+
+    func respondFriendRequest(token: String, requestId: Int, status: String) async throws {
         let body = try JSONSerialization.data(withJSONObject: ["status": status])
-        try await client.sendWithoutResponse(
-            path: "api/friend-requests/\(requestId)/",
-            method: "PATCH",
-            token: token,
-            body: body
-        )
+        try await client.sendWithoutResponse(path: "api/friend-requests/\(requestId)/", method: "PATCH", token: token, body: body)
     }
 
-    func loadCommunityMembers(token: String, search: String = "", verifiedOnly: Bool = false) async throws -> [PublicUserSummary] {
-        var path = "api/users/"
-        var queryItems: [String] = []
-
-        if !search.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-           let encodedSearch = search.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
-            queryItems.append("search=\(encodedSearch)")
-        }
-
-        if verifiedOnly {
-            queryItems.append("verified_only=true")
-        }
-
-        if !queryItems.isEmpty {
-            path += "?" + queryItems.joined(separator: "&")
-        }
-
-        return try await client.send(path: path, token: token)
+    func sendFriendRequest(token: String, receiverId: Int) async throws {
+        let body = try JSONSerialization.data(withJSONObject: ["receiver": receiverId])
+        try await client.sendWithoutResponse(path: "api/friend-requests/", method: "POST", token: token, body: body)
     }
 }

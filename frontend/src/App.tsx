@@ -2771,32 +2771,7 @@ function DashboardPage({
               </div>
             </section>
 
-            {summary?.friend_requests && summary.friend_requests.filter((r) => r.status === "pending" && r.receiver === currentUser?.id).length > 0 && (
-              <section className="app-panel rounded-[2.25rem] border-secondary/20 p-8 lg:p-10">
-                <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#9ab0ff]">Ağ İstekleri</p>
-                <div className="mt-6 space-y-3">
-                  {summary.friend_requests
-                    .filter((r) => r.status === "pending" && r.receiver === currentUser?.id)
-                    .map((req) => (
-                      <div key={req.id} className="app-solid-card flex flex-col gap-4 rounded-2xl p-5 md:flex-row md:items-center md:justify-between">
-                        <div>
-                          <p className="text-sm font-bold text-white">
-                            {req.sender_name} <span className="font-normal text-white/58">seninle ağ kurmak istiyor.</span>
-                          </p>
-                        </div>
-                        <div className="flex gap-2">
-                          <button onClick={() => handleUpdateFriendRequest(req.id, "accepted")} className="rounded-xl bg-primary px-4 py-1.5 text-xs font-bold text-white shadow-halo transition hover:bg-primary/90">
-                            Kabul Et
-                          </button>
-                          <button onClick={() => handleUpdateFriendRequest(req.id, "rejected")} className="rounded-xl border border-white/12 bg-white/6 px-4 py-1.5 text-xs font-bold text-white/78 transition hover:bg-white/10">
-                            Reddet
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </section>
-            )}
+
 
             {applicationFeedback && (
               <div className="rounded-2xl border border-primary/10 bg-primary/5 px-4 py-3 text-sm text-primary">

@@ -37,8 +37,6 @@ struct DashboardSummary: Codable {
     let metrics: DashboardMetrics
     let recent_projects: [ProjectCard]
     let friend_requests: [FriendRequestSummary]?
-    let recent_received_applications: [TeamApplication]?
-    let recent_sent_applications: [TeamApplication]?
 }
 
 struct TeamApplication: Codable, Identifiable {
@@ -47,7 +45,14 @@ struct TeamApplication: Codable, Identifiable {
     let applicant: PublicUserSummary
     let message: String
     let status: String
+    let project_details: ProjectApplicationProject?
     let created_at: String
+}
+
+struct ProjectApplicationProject: Codable, Identifiable {
+    let id: Int
+    let title: String
+    let owner: PublicUserSummary
 }
 
 struct RecommendedProjectMatch: Codable, Identifiable {

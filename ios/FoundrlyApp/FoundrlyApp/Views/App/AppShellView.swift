@@ -5,51 +5,85 @@ struct AppShellView: View {
     @StateObject private var viewModel = AppShellViewModel()
 
     var body: some View {
-        ZStack {
-            FoundrlyTheme.background.ignoresSafeArea()
+        Group {
+            if session.isAdmin {
+                TabView {
+                    AdminPanelView()
+                        .tabItem {
+                            Label("Yönetim", systemImage: "shield.fill")
+                        }
 
-            TabView {
-                HomeView(viewModel: viewModel)
-                    .tabItem {
-                        Label("Ana Sayfa", systemImage: "house.fill")
-                    }
+                    DiscoverView(viewModel: viewModel)
+                        .tabItem {
+                            Label("Keşfet", systemImage: "sparkle.magnifyingglass")
+                        }
 
-                DiscoverView(viewModel: viewModel)
-                    .tabItem {
-                        Label("Keşfet", systemImage: "sparkles.rectangle.stack.fill")
-                    }
+                    MessagesView(viewModel: viewModel)
+                        .tabItem {
+                            Label("Mesajlar", systemImage: "message.fill")
+                        }
 
-                MessagesView(viewModel: viewModel)
-                    .tabItem {
-                        Label("Mesajlar", systemImage: "message.fill")
-                    }
+                    ProfileView(viewModel: viewModel)
+                        .tabItem {
+                            Label("Profil", systemImage: "person.crop.circle.fill")
+                        }
+                }
+                .tint(FoundrlyTheme.error)
+            } else if session.isMentor {
+                TabView {
+                    MentorsView(viewModel: viewModel)
+                        .tabItem {
+                            Label("Mentörlük", systemImage: "signature")
+                        }
 
-                AIBuilderView(viewModel: viewModel)
-                    .tabItem {
-                        Label("AI", systemImage: "sparkles")
-                    }
+                    DiscoverView(viewModel: viewModel)
+                        .tabItem {
+                            Label("Keşfet", systemImage: "sparkle.magnifyingglass")
+                        }
 
-                MentorsView(viewModel: viewModel)
-                    .tabItem {
-                        Label("Mentörler", systemImage: "person.3.fill")
-                    }
+                    MessagesView(viewModel: viewModel)
+                        .tabItem {
+                            Label("Mesajlar", systemImage: "message.fill")
+                        }
 
-                CommunityView(viewModel: viewModel)
-                    .tabItem {
-                        Label("Topluluk", systemImage: "bubble.left.and.bubble.right.fill")
-                    }
+                    ProfileView(viewModel: viewModel)
+                        .tabItem {
+                            Label("Profil", systemImage: "person.crop.circle.fill")
+                        }
+                }
+                .tint(FoundrlyTheme.success)
+            } else {
+                TabView {
+                    HomeView(viewModel: viewModel)
+                        .tabItem {
+                            Label("Ana Sayfa", systemImage: "house.fill")
+                        }
 
-                ProfileView(viewModel: viewModel)
-                    .tabItem {
-                        Label("Profilim", systemImage: "person.crop.circle.fill")
-                    }
+                    DiscoverView(viewModel: viewModel)
+                        .tabItem {
+                            Label("Keşfet", systemImage: "sparkle.magnifyingglass")
+                        }
+
+                    CreateProjectView(viewModel: viewModel)
+                        .tabItem {
+                            Label("Oluştur", systemImage: "plus.circle.fill")
+                        }
+
+                    MessagesView(viewModel: viewModel)
+                        .tabItem {
+                            Label("Mesajlar", systemImage: "message.fill")
+                        }
+
+                    ProfileView(viewModel: viewModel)
+                        .tabItem {
+                            Label("Profil", systemImage: "person.crop.circle.fill")
+                        }
+                }
+                .tint(FoundrlyTheme.primary)
             }
-            .tint(FoundrlyTheme.primaryBright)
         }
         .task {
-            if viewModel.summary == nil {
-                await viewModel.load(session: session)
-            }
+            await viewModel.load(session: session)
         }
     }
 }

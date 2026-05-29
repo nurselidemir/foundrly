@@ -18,6 +18,7 @@ struct MessageCounterpart: Codable, Identifiable {
     let id: Int
     let full_name: String
     let title: String
+    let is_verified_talent: Bool?
 }
 
 struct LatestMessage: Codable, Identifiable {

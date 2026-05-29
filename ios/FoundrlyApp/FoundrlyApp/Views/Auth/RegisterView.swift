@@ -5,6 +5,9 @@ struct RegisterView: View {
     @StateObject private var viewModel = AuthViewModel()
     let onSwitch: () -> Void
 
+    @State private var selectedRoleIndex = 0
+    let roles = ["Founder", "Developer", "Designer", "Mentor"]
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             FoundrlySectionHeader(
@@ -15,7 +18,32 @@ struct RegisterView: View {
 
             Group {
                 input("Ad Soyad", text: $viewModel.fullName)
-                input("Ünvan", text: $viewModel.title)
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Foundrly Rolü")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(FoundrlyTheme.textSecondary)
+                    
+                    HStack(spacing: 8) {
+                        ForEach(0..<roles.count, id: \.self) { index in
+                            Button {
+                                selectedRoleIndex = index
+                                viewModel.title = roles[index]
+                            } label: {
+                                Text(roles[index])
+                                    .font(.system(size: 12, weight: .bold))
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 8)
+                                    .background(selectedRoleIndex == index ? FoundrlyTheme.primary : FoundrlyTheme.surfaceSoft.opacity(0.5))
+                                    .foregroundStyle(selectedRoleIndex == index ? .white : FoundrlyTheme.textSecondary)
+                                    .clipShape(Capsule())
+                            }
+                        }
+                    }
+                }
+                .padding(.vertical, 4)
+                
+                input("Detaylı Ünvan (örn. iOS Geliştirici)", text: $viewModel.title)
                 input("E-posta", text: $viewModel.email, autoCaps: false)
                 secureInput("Şifre", text: $viewModel.password)
                 input("Kısa bio", text: $viewModel.bio)
@@ -34,6 +62,9 @@ struct RegisterView: View {
             }
 
             Button(viewModel.isLoading ? "Hesap oluşturuluyor..." : "Hesap Oluştur") {
+                if viewModel.title.isEmpty {
+                    viewModel.title = roles[selectedRoleIndex]
+                }
                 Task { await viewModel.register(session: session) }
             }
             .foundrlyPrimaryButton()
@@ -43,6 +74,9 @@ struct RegisterView: View {
                 .foregroundStyle(FoundrlyTheme.accent)
         }
         .foundrlyCard()
+        .onAppear {
+            viewModel.title = roles[selectedRoleIndex]
+        }
     }
 
     private func input(_ placeholder: String, text: Binding<String>, autoCaps: Bool = true) -> some View {

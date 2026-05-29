@@ -3,422 +3,411 @@ import SwiftUI
 struct HomeView: View {
     @EnvironmentObject private var session: AppSession
     @ObservedObject var viewModel: AppShellViewModel
-    @State private var projectTitle = ""
-    @State private var projectSummary = ""
-    @State private var projectProblem = ""
-    @State private var techStack = ""
-    @State private var roles = ""
+
+    var discoverUsers: [ShowcaseUser] {
+        viewModel.showcaseUsers.filter { $0.id != session.currentUser?.id }
+    }
 
     var body: some View {
         NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 18) {
-                    if let summary = viewModel.summary {
-                        hero(summary: summary)
-
-                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
-                            metricCard("Projeler", "\(summary.metrics.owned_projects_count)", "Ürün vitrinin")
-                            metricCard("Başvurular", "\(summary.metrics.received_applications_count)", "Yeni sinyaller")
-                            metricCard("Bekleyen", "\(summary.metrics.pending_received_applications_count)", "Geri dönüş bekliyor")
-                            metricCard("Kabul", "\(summary.metrics.accepted_received_applications_count)", "Takıma katılanlar")
-                        }
-
-                        quickCreate
-
-                        if !summary.recent_projects.isEmpty {
-                            recentProjects(summary.recent_projects)
-                        }
-                    }
-
-                    if !viewModel.receivedApplications.isEmpty {
-                        incomingApplications
-                    }
-
-                    if !pendingFriendRequests.isEmpty {
-                        friendRequestsPanel
-                    }
-
-                    if !viewModel.sentApplications.isEmpty {
-                        outgoingApplications
-                    }
-
-                    if !viewModel.recommendedProjects.isEmpty {
-                        recommendedProjects
-                    }
-
-                    if !viewModel.feedbackMessage.isEmpty {
-                        Text(viewModel.feedbackMessage)
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(FoundrlyTheme.accent)
+            ZStack {
+                FoundrlyBackground()
+                
+                ScrollView {
+                    VStack(spacing: 20) {
+                        if let summary = viewModel.summary {
+                            
+                            // 1. Welcome & Role Header
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("Hoş geldin,")
+                                            .font(.subheadline)
+                                            .foregroundStyle(FoundrlyTheme.textSecondary)
+                                        Text(summary.profile.full_name)
+                                            .font(.system(size: 26, weight: .black, design: .rounded))
+                                            .foregroundStyle(.white)
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    if session.isPremium {
+                                        HStack(spacing: 4) {
+                                            Image(systemName: "crown.fill")
+                                            Text("PREMIUM")
+                                        }
+                                        .font(.system(size: 8, weight: .bold))
+                                        .foregroundStyle(.black)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(FoundrlyTheme.accent)
+                                        .clipShape(Capsule())
+                                    }
+                                }
+                                
+                                Text(summary.profile.title)
+                                    .font(.footnote)
+                                    .foregroundStyle(FoundrlyTheme.textSecondary)
+                            }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .foundrlyCard()
+
+                            // 2. Premium / Active Sub Banner
+                            if !session.isPremium {
+                                NavigationLink {
+                                    PremiumView(viewModel: viewModel)
+                                } label: {
+                                    HStack(spacing: 16) {
+                                        Image(systemName: "crown.fill")
+                                            .font(.system(size: 24))
+                                            .foregroundStyle(.white)
+                                            .padding(12)
+                                            .background(FoundrlyTheme.accent.opacity(0.2))
+                                            .clipShape(Circle())
+                                        
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Foundrly Premium'a Katıl")
+                                                .font(.subheadline.bold())
+                                                .foregroundStyle(.white)
+                                            Text("Yapay zeka ekip kurucusu ve doğrulanmış yetenek rozetini aç.")
+                                                .font(.caption2)
+                                                .foregroundStyle(.white.opacity(0.8))
+                                                .multilineTextAlignment(.leading)
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        Image(systemName: "chevron.right")
+                                            .font(.caption)
+                                            .foregroundStyle(.white.opacity(0.7))
+                                    }
+                                    .padding()
+                                    .background(
+                                        LinearGradient(
+                                            colors: [FoundrlyTheme.primary, FoundrlyTheme.primary.opacity(0.6), FoundrlyTheme.accent],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                                    .shadow(color: FoundrlyTheme.primary.opacity(0.4), radius: 10)
+                                }
+                            } else {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "sparkles")
+                                        .font(.system(size: 18))
+                                        .foregroundStyle(FoundrlyTheme.accent)
+                                    Text("Premium Avantajları Aktif · Yapay Zeka Desteği Açık")
+                                        .font(.caption.bold())
+                                        .foregroundStyle(FoundrlyTheme.accent)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(FoundrlyTheme.accent.opacity(0.08))
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 14)
+                                        .stroke(FoundrlyTheme.accent.opacity(0.2), lineWidth: 1)
+                                )
+                            }
+                            
+                            // 3. AI Team Builder Card
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("AI Team Builder")
+                                            .font(.headline.bold())
+                                            .foregroundStyle(.white)
+                                        Text("Projeniz için yapay zeka destekli kurucu ortak önerileri")
+                                            .font(.caption)
+                                            .foregroundStyle(FoundrlyTheme.textSecondary)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "sparkles")
+                                        .font(.title2)
+                                        .foregroundStyle(FoundrlyTheme.accent)
+                                }
+                                
+                                NavigationLink {
+                                    AIBuilderView(viewModel: viewModel)
+                                } label: {
+                                    HStack {
+                                        Text("Yapay Zekayla Eşleşmeleri Gör")
+                                            .font(.caption.bold())
+                                        Spacer()
+                                        Image(systemName: "arrow.right")
+                                            .font(.caption)
+                                    }
+                                    .foregroundStyle(.white)
+                                    .padding()
+                                    .background(FoundrlyTheme.primary)
+                                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                                }
+                            }
+                            .foundrlyCard()
+
+
+
+                            // 5. AI Recommended Projects
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack {
+                                    Text("Sana Özel Önerilen Projeler")
+                                        .font(.headline.bold())
+                                        .foregroundStyle(.white)
+                                    Spacer()
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "sparkles")
+                                        Text("AI")
+                                    }
+                                    .font(.system(size: 8, weight: .bold))
+                                    .foregroundStyle(FoundrlyTheme.accent)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 3)
+                                    .background(FoundrlyTheme.accent.opacity(0.12))
+                                    .clipShape(Capsule())
+                                }
+                                
+                                if session.isPremium {
+                                    if viewModel.recommendedProjects.isEmpty {
+                                        Text("Yeteneklerinize ve ilgi alanlarınıza özel proje önerileri hazırlanıyor. Lütfen daha sonra tekrar kontrol edin.")
+                                            .font(.caption)
+                                            .foregroundStyle(FoundrlyTheme.textSecondary)
+                                            .padding(.vertical, 8)
+                                    } else {
+                                        ForEach(viewModel.recommendedProjects.prefix(3)) { match in
+                                            NavigationLink {
+                                                ProjectDetailView(project: match.project, viewModel: viewModel)
+                                            } label: {
+                                                VStack(alignment: .leading, spacing: 8) {
+                                                    HStack {
+                                                        Text(match.project.title)
+                                                            .font(.subheadline.bold())
+                                                            .foregroundStyle(.white)
+                                                        Spacer()
+                                                        Text(match.match_label)
+                                                            .font(.system(size: 9, weight: .bold))
+                                                            .foregroundStyle(FoundrlyTheme.accent)
+                                                            .padding(.horizontal, 8)
+                                                            .padding(.vertical, 4)
+                                                            .background(FoundrlyTheme.accent.opacity(0.12))
+                                                            .clipShape(Capsule())
+                                                    }
+                                                    
+                                                    Text(match.ai_summary)
+                                                        .font(.caption)
+                                                        .foregroundStyle(FoundrlyTheme.textSecondary)
+                                                        .lineLimit(2)
+                                                        .multilineTextAlignment(.leading)
+                                                }
+                                                .padding()
+                                                .background(FoundrlyTheme.surfaceRaised.opacity(0.6))
+                                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    // Lock visual for standard users
+                                    VStack(spacing: 12) {
+                                        Image(systemName: "lock.fill")
+                                            .font(.title2)
+                                            .foregroundStyle(FoundrlyTheme.accent)
+                                        Text("Yapay Zeka Proje Önerileri Kilitli")
+                                            .font(.subheadline.bold())
+                                            .foregroundStyle(.white)
+                                        Text("Yeteneklerinize göre eşleştirilen projeleri ve yapay zeka uyum detaylarını görmek için Premium'a yükseltin.")
+                                            .font(.caption2)
+                                            .foregroundStyle(FoundrlyTheme.textSecondary)
+                                            .multilineTextAlignment(.center)
+                                            .padding(.horizontal, 10)
+                                        
+                                        NavigationLink {
+                                            PremiumView(viewModel: viewModel)
+                                        } label: {
+                                            Text("Premium'a Geç")
+                                                .font(.caption.bold())
+                                                .foregroundStyle(.black)
+                                                .padding(.horizontal, 16)
+                                                .padding(.vertical, 8)
+                                                .background(FoundrlyTheme.accent)
+                                                .clipShape(Capsule())
+                                        }
+                                    }
+                                    .padding(.vertical, 16)
+                                    .frame(maxWidth: .infinity)
+                                    .background(FoundrlyTheme.surfaceRaised.opacity(0.4))
+                                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                                }
+                            }
+                            .foundrlyCard()
+
+                            // 6. Showcase Teammates (Ekip Arkadaşlarım)
+                            VStack(alignment: .leading, spacing: 14) {
+                                HStack {
+                                    Text("Öne Çıkan Girişimci ve Yetenekler")
+                                        .font(.headline.weight(.bold))
+                                        .foregroundStyle(FoundrlyTheme.textPrimary)
+                                    Spacer()
+                                }
+                                
+                                if discoverUsers.isEmpty {
+                                    Text("Önerilen yetenek bulunmuyor.")
+                                        .font(.caption)
+                                        .foregroundStyle(FoundrlyTheme.textSecondary)
+                                } else {
+                                    ForEach(discoverUsers.prefix(3)) { user in
+                                        NavigationLink {
+                                            PublicProfileView(viewModel: viewModel, userId: user.id)
+                                        } label: {
+                                            HStack(spacing: 12) {
+                                                Text(user.full_name.prefix(2).uppercased())
+                                                    .font(.system(size: 12, weight: .bold))
+                                                    .foregroundStyle(.white)
+                                                    .frame(width: 36, height: 36)
+                                                    .background(FoundrlyTheme.primary.opacity(0.8))
+                                                    .clipShape(Circle())
+                                                
+                                                VStack(alignment: .leading, spacing: 2) {
+                                                    HStack(spacing: 4) {
+                                                        Text(user.full_name)
+                                                            .font(.subheadline.bold())
+                                                            .foregroundStyle(.white)
+                                                        
+                                                        if user.is_verified_talent {
+                                                            Image(systemName: "checkmark.seal.fill")
+                                                                .font(.system(size: 10))
+                                                                .foregroundStyle(FoundrlyTheme.accent)
+                                                        }
+                                                    }
+                                                    
+                                                    Text(user.title)
+                                                        .font(.caption2)
+                                                        .foregroundStyle(FoundrlyTheme.textSecondary)
+                                                }
+                                                
+                                                Spacer()
+                                                
+                                                Image(systemName: "chevron.right")
+                                                    .font(.caption2)
+                                                    .foregroundStyle(FoundrlyTheme.textSecondary)
+                                            }
+                                            .padding()
+                                            .background(FoundrlyTheme.surfaceRaised.opacity(0.6))
+                                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                                        }
+                                    }
+                                }
+                            }
+                            .foundrlyCard()
+
+                            // 7. Dashboard KPI Grid (2x3)
+                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
+                                metricCard("Projelerim", "\(summary.metrics.owned_projects_count)", icon: "folder.fill")
+                                metricCard("Gelen Başvurular", "\(summary.metrics.received_applications_count)", icon: "paperplane.fill")
+                                metricCard("Bekleyen", "\(summary.metrics.pending_received_applications_count)", icon: "clock.fill")
+                                metricCard("Kabul Edilen", "\(summary.metrics.accepted_received_applications_count)", icon: "checkmark.circle.fill")
+                                metricCard("Gönderdiklerim", "\(summary.metrics.sent_applications_count)", icon: "arrow.up.right.circle.fill")
+                                metricCard("Ekiplerim", "\(summary.metrics.accepted_memberships_count)", icon: "person.3.fill")
+                            }
+
+                            // 8. Quick Navigation Cards
+                            VStack(alignment: .leading, spacing: 14) {
+                                Text("Hızlı Erişim")
+                                    .font(.headline.weight(.bold))
+                                    .foregroundStyle(FoundrlyTheme.textPrimary)
+                                
+                                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
+                                    NavigationLink {
+                                        EventsView(viewModel: viewModel)
+                                    } label: {
+                                        quickNavCard("Etkinlikler", icon: "calendar", desc: "Topluluk etkinlikleri")
+                                    }
+                                    
+                                    NavigationLink {
+                                        HubView(viewModel: viewModel)
+                                    } label: {
+                                        quickNavCard("Rehberler", icon: "book.fill", desc: "Girişim merkezi")
+                                    }
+                                    
+                                    NavigationLink {
+                                        MentorshipUserView(viewModel: viewModel)
+                                    } label: {
+                                        quickNavCard("Mentörlük", icon: "signature", desc: "Görüşme taleplerim")
+                                    }
+                                    
+                                    NavigationLink {
+                                        AIBuilderView(viewModel: viewModel)
+                                    } label: {
+                                        quickNavCard("AI Kurucu", icon: "sparkles", desc: "Yapay zeka eşleşme")
+                                    }
+                                }
+                            }
+                            .foundrlyCard()
+                            
+                        } else if viewModel.isLoading {
+                            ProgressView()
+                                .tint(.white)
+                                .padding()
+                        }
+                        
+                        if !viewModel.feedbackMessage.isEmpty {
+                            Text(viewModel.feedbackMessage)
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(FoundrlyTheme.accent)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .foundrlyCard()
+                        }
                     }
+                    .padding(20)
                 }
-                .padding(20)
-                .padding(.bottom, 40)
             }
-            .foundrlyScreen()
             .navigationTitle("Foundrly")
+            .navigationBarTitleDisplayMode(.large)
         }
     }
 
-    private var pendingFriendRequests: [FriendRequestSummary] {
-        let currentUserId = session.currentUser?.id
-        return viewModel.friendRequests.filter { $0.status == "pending" && $0.receiver == currentUserId }
-    }
-
-    private func hero(summary: DashboardSummary) -> some View {
-        VStack(alignment: .leading, spacing: 18) {
-            FoundrlySectionHeader(
-                eyebrow: "Panel",
-                title: "Hoş geldin, \(summary.profile.full_name)",
-                subtitle: "Bugün ekibini büyütmek, doğru başvuruları filtrelemek ve yeni fırsatları yönetmek için hazırsın."
-            )
-
-            HStack(alignment: .top, spacing: 12) {
-                heroSpotlight(
-                    title: summary.profile.is_premium ? "Premium görünürlük açık" : "Premium kilitli",
-                    body: summary.profile.is_premium
-                        ? "AI eşleşmelerin ve gelişmiş keşif alanların aktif."
-                        : "Daha iyi keşif ve AI eşleşmeleri için premium'a geç."
-                )
-
-                heroSpotlight(
-                    title: summary.profile.is_verified_talent ? "Doğrulanmış yetenek" : "Profil sinyali artmalı",
-                    body: summary.profile.is_verified_talent
-                        ? "Rozetin aktif. Topluluk içinde daha güçlü görünüyorsun."
-                        : "Biyografi, yetenek ve proje geçmişini güçlendir."
-                )
-            }
-        }
-        .foundrlyCard()
-    }
-
-    private func heroSpotlight(title: String, body: String) -> some View {
+    private func metricCard(_ title: String, _ value: String, icon: String) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(title)
-                .font(.headline.bold())
-                .foregroundStyle(FoundrlyTheme.textPrimary)
-            Text(body)
-                .font(.subheadline)
-                .foregroundStyle(FoundrlyTheme.textSecondary)
+            HStack {
+                Image(systemName: icon)
+                    .font(.caption)
+                    .foregroundStyle(FoundrlyTheme.primary)
+                Spacer()
+            }
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(value)
+                    .font(.system(size: 24, weight: .black, design: .rounded))
+                    .foregroundStyle(.white)
+                Text(title.uppercased())
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundStyle(FoundrlyTheme.textSecondary)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(FoundrlyTheme.surfaceSoft.opacity(0.9))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .foundrlyCard()
     }
-
-    private func metricCard(_ title: String, _ value: String, _ caption: String) -> some View {
+    
+    private func quickNavCard(_ title: String, icon: String, desc: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title.uppercased())
-                .font(.caption.weight(.bold))
-                .tracking(1)
-                .foregroundStyle(FoundrlyTheme.textMuted)
-            Text(value)
-                .font(.system(size: 30, weight: .black, design: .rounded))
-                .foregroundStyle(FoundrlyTheme.textPrimary)
-            Text(caption)
-                .font(.caption)
-                .foregroundStyle(FoundrlyTheme.textSecondary)
-        }
-        .frame(maxWidth: .infinity, minHeight: 138, alignment: .leading)
-        .foundrlyCard()
-    }
-
-    private var quickCreate: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            FoundrlySectionHeader(
-                eyebrow: "Hızlı Başlangıç",
-                title: "Yeni proje vitrini aç",
-                subtitle: "Kurucu, geliştirici ve tasarımcıları tek karttan etkileyecek kısa ama güçlü bir ilan oluştur."
-            )
-
-            Group {
-                field("Proje başlığı", text: $projectTitle)
-                field("Kısa özet", text: $projectSummary)
-                field("Problem tanımı", text: $projectProblem)
-                field("Teknolojiler", text: $techStack)
-                field("Aranan roller", text: $roles)
-            }
-
-            Button("Projeyi Oluştur") {
-                Task {
-                    await viewModel.createProject(
-                        session: session,
-                        request: CreateProjectRequest(
-                            title: projectTitle,
-                            summary: projectSummary,
-                            problem_statement: projectProblem,
-                            tech_stack: splitTags(techStack),
-                            needed_roles: splitTags(roles)
-                        )
-                    )
-                    projectTitle = ""
-                    projectSummary = ""
-                    projectProblem = ""
-                    techStack = ""
-                    roles = ""
-                }
-            }
-            .foundrlyPrimaryButton()
-        }
-        .foundrlyCard()
-    }
-
-    private func recentProjects(_ projects: [ProjectCard]) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            FoundrlySectionHeader(
-                eyebrow: "Aktif Alan",
-                title: "Son projelerin",
-                subtitle: "Topluluk önünde açık olan ürün kartların ve görünürlük statüleri burada."
-            )
-
-            ForEach(projects.prefix(3)) { project in
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(alignment: .top) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(project.title)
-                                .font(.headline.bold())
-                            Text(project.summary)
-                                .font(.subheadline)
-                                .foregroundStyle(FoundrlyTheme.textSecondary)
-                                .lineLimit(3)
-                        }
-                        Spacer()
-                        FoundrlyPill(
-                            title: project.is_premium_highlighted ? "Premium" : "Standart",
-                            tint: project.is_premium_highlighted ? FoundrlyTheme.gold.opacity(0.22) : FoundrlyTheme.surfaceSoft,
-                            textColor: project.is_premium_highlighted ? FoundrlyTheme.gold : .white
-                        )
-                    }
-
-                    Text("Son güncelleme: \(project.updated_at.prefix(10))")
-                        .font(.caption)
-                        .foregroundStyle(FoundrlyTheme.textMuted)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .foundrlySoftCard()
+            Image(systemName: icon)
+                .font(.subheadline)
+                .foregroundStyle(FoundrlyTheme.primary)
+                .padding(8)
+                .background(FoundrlyTheme.primary.opacity(0.12))
+                .clipShape(Circle())
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption.bold())
+                    .foregroundStyle(.white)
+                Text(desc)
+                    .font(.system(size: 8))
+                    .foregroundStyle(FoundrlyTheme.textSecondary)
             }
         }
-        .foundrlyCard()
-    }
-
-    private var incomingApplications: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            FoundrlySectionHeader(
-                eyebrow: "Aday Akışı",
-                title: "Yeni başvurular",
-                subtitle: "En sıcak adayları hızlıca inceleyip ekibine dahil et."
-            )
-
-            ForEach(viewModel.receivedApplications.prefix(4)) { application in
-                VStack(alignment: .leading, spacing: 12) {
-                    NavigationLink {
-                        PublicProfileView(viewModel: viewModel, userId: application.applicant.id)
-                    } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(application.applicant.full_name)
-                                .font(.headline.bold())
-                                .foregroundStyle(.white)
-                            Text(application.applicant.title)
-                                .font(.subheadline)
-                                .foregroundStyle(FoundrlyTheme.textSecondary)
-                        }
-                    }
-
-                    Text(application.message)
-                        .font(.subheadline)
-                        .foregroundStyle(FoundrlyTheme.textSecondary)
-
-                    if application.status == "pending" {
-                        HStack(spacing: 12) {
-                            Button("Kabul Et") {
-                                Task {
-                                    await viewModel.updateApplicationStatus(
-                                        session: session,
-                                        applicationId: application.id,
-                                        status: "accepted"
-                                    )
-                                }
-                            }
-                            .foundrlyPrimaryButton()
-
-                            Button("Reddet") {
-                                Task {
-                                    await viewModel.updateApplicationStatus(
-                                        session: session,
-                                        applicationId: application.id,
-                                        status: "rejected"
-                                    )
-                                }
-                            }
-                            .foundrlySecondaryButton()
-                        }
-                    } else {
-                        FoundrlyPill(
-                            title: application.status == "accepted" ? "Kabul edildi" : "Reddedildi",
-                            tint: application.status == "accepted" ? FoundrlyTheme.accent.opacity(0.18) : FoundrlyTheme.danger.opacity(0.18),
-                            textColor: application.status == "accepted" ? FoundrlyTheme.accent : FoundrlyTheme.danger
-                        )
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .foundrlySoftCard()
-            }
-        }
-        .foundrlyCard()
-    }
-
-    private var friendRequestsPanel: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            FoundrlySectionHeader(
-                eyebrow: "Bağlantılar",
-                title: "Seni bekleyen ağ istekleri",
-                subtitle: "Web panelindeki gibi yeni bağlantıları hızla kabul edip topluluk erişimini büyütebilirsin."
-            )
-
-            ForEach(pendingFriendRequests) { request in
-                VStack(alignment: .leading, spacing: 12) {
-                    Text(request.sender_name)
-                        .font(.headline.bold())
-                    Text("Seninle ağ kurmak istiyor. Kabul ettiğinde mobil topluluk yüzeyinde daha kolay tekrar karşılaşacaksınız.")
-                        .font(.subheadline)
-                        .foregroundStyle(FoundrlyTheme.textSecondary)
-
-                    HStack(spacing: 12) {
-                        Button("Kabul Et") {
-                            Task {
-                                await viewModel.updateFriendRequest(session: session, requestId: request.id, status: "accepted")
-                            }
-                        }
-                        .foundrlyPrimaryButton()
-
-                        Button("Reddet") {
-                            Task {
-                                await viewModel.updateFriendRequest(session: session, requestId: request.id, status: "rejected")
-                            }
-                        }
-                        .foundrlySecondaryButton()
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .foundrlySoftCard()
-            }
-        }
-        .foundrlyCard()
-    }
-
-    private var outgoingApplications: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            FoundrlySectionHeader(
-                eyebrow: "Gönderdiğin Başvurular",
-                title: "Takip etmen gereken fırsatlar",
-                subtitle: "Web’deki gönderilen başvuru mantığını mobilde görünür hale getirdim; hangi projelerde sırada olduğunu tek bakışta görebilirsin."
-            )
-
-            ForEach(viewModel.sentApplications.prefix(4)) { application in
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Proje #\(application.project)")
-                        .font(.headline.bold())
-                    Text(application.message)
-                        .font(.subheadline)
-                        .foregroundStyle(FoundrlyTheme.textSecondary)
-                    FoundrlyPill(
-                        title: statusLabel(for: application.status),
-                        tint: statusTint(for: application.status),
-                        textColor: statusTextColor(for: application.status)
-                    )
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .foundrlySoftCard()
-            }
-        }
-        .foundrlyCard()
-    }
-
-    private var recommendedProjects: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            FoundrlySectionHeader(
-                eyebrow: "AI Önerileri",
-                title: "Sana özel proje sinyalleri",
-                subtitle: "Premium kullanıcılara web’de gösterilen uyum bazlı önerileri ana mobil paneline de taşıdım."
-            )
-
-            ForEach(viewModel.recommendedProjects.prefix(3)) { match in
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(alignment: .top) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(match.project.title)
-                                .font(.headline.bold())
-                            Text(match.project.owner.full_name)
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(FoundrlyTheme.accent)
-                        }
-                        Spacer()
-                        FoundrlyPill(
-                            title: "%\(Int(match.score)) uyum",
-                            tint: FoundrlyTheme.accent.opacity(0.18),
-                            textColor: FoundrlyTheme.accent
-                        )
-                    }
-
-                    Text(match.ai_summary)
-                        .font(.subheadline)
-                        .foregroundStyle(FoundrlyTheme.textSecondary)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .foundrlySoftCard()
-            }
-        }
-        .foundrlyCard()
-    }
-
-    private func field(_ title: String, text: Binding<String>) -> some View {
-        TextField(title, text: text, axis: .vertical)
-            .padding()
-            .background(FoundrlyTheme.surfaceSoft.opacity(0.92))
-            .foregroundStyle(.white)
-            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-    }
-
-    private func splitTags(_ text: String) -> [String] {
-        text
-            .split(separator: ",")
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-    }
-
-    private func statusLabel(for status: String) -> String {
-        switch status {
-        case "accepted":
-            return "Kabul edildi"
-        case "rejected":
-            return "Reddedildi"
-        default:
-            return "Beklemede"
-        }
-    }
-
-    private func statusTint(for status: String) -> Color {
-        switch status {
-        case "accepted":
-            return FoundrlyTheme.accent.opacity(0.18)
-        case "rejected":
-            return FoundrlyTheme.danger.opacity(0.18)
-        default:
-            return FoundrlyTheme.gold.opacity(0.18)
-        }
-    }
-
-    private func statusTextColor(for status: String) -> Color {
-        switch status {
-        case "accepted":
-            return FoundrlyTheme.accent
-        case "rejected":
-            return FoundrlyTheme.danger
-        default:
-            return FoundrlyTheme.gold
-        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(FoundrlyTheme.surfaceRaised)
+        .clipShape(RoundedRectangle(cornerRadius: 18))
     }
 }
