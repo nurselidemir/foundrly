@@ -16,3 +16,16 @@ media/
 .pytest_cache/
 .mypy_cache/
 stripe
+
+# macOS
+.DS_Store
+
+# Xcode
+build/
+DerivedData/
+.deriveddata/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcuserstate
+*.xccheckout
+*.xcscmblueprint

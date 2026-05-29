@@ -36,7 +36,7 @@ const COMPARISON_ROWS = [
 
 const FAQS = [
   { q: "Premium'u iptal edebilir miyim?", a: "Evet, istediğiniz zaman iptal edebilirsiniz. İptal sonrasında mevcut dönem sonuna kadar Premium özelliklerine erişmeye devam edersiniz." },
-  { q: "YZ Eşleştirme nasıl çalışır?", a: "TF-IDF tabanlı semantik analiz motorumuz projenizin ihtiyaçlarını ve kullanıcı becerilerini karşılaştırarak en uyumlu adayları önerir." },
+  { q: "YZ Eşleştirme nasıl çalışır?", a: "YZ eşleştirme; teknik beceriler, ilgi alanları, rol eşleşmesi ve TF-IDF tabanlı semantik benzerlik sinyallerini birleştirerek aday önerileri üretir." },
   { q: "Doğrulanmış Rozet nasıl alınır?", a: "Premium üyeliğinizle birlikte portfolyo ve proje kanıtlarınızla başvuru yapabilirsiniz. Ekibimiz değerlendirdikten sonra rozet eklenir." },
   { q: "Fiyat artışı olur mu?", a: "Mevcut üyelerimize erken erişim fiyatını garanti ediyoruz. Fiyat değişikliği durumunda önceden bildirim yapılır." },
 ];
@@ -51,7 +51,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
         className="flex w-full items-center justify-between px-6 py-5 text-left transition hover:bg-white/4"
       >
         <span className="text-base font-semibold text-white pr-4">{q}</span>
-        <span className={`text-xl text-white/50 transition-transform duration-300 ${open ? "rotate-45" : ""}`}>+</span>
+        <span className={`text-xl text-white/75 transition-transform duration-300 ${open ? "rotate-45" : ""}`}>+</span>
       </button>
       {open && (
         <div className="px-6 pb-5">
@@ -91,14 +91,14 @@ export default function PricingPage() {
             <button
               type="button"
               onClick={() => setBilling("monthly")}
-              className={`rounded-xl px-5 py-2.5 text-sm font-bold transition ${billing === "monthly" ? "bg-primary text-white" : "text-white/60 hover:text-white/80"}`}
+              className={`rounded-xl px-5 py-2.5 text-sm font-bold transition ${billing === "monthly" ? "bg-primary text-white" : "text-white/75 hover:text-white"}`}
             >
               Aylık
             </button>
             <button
               type="button"
               onClick={() => setBilling("yearly")}
-              className={`rounded-xl px-5 py-2.5 text-sm font-bold transition ${billing === "yearly" ? "bg-primary text-white" : "text-white/60 hover:text-white/80"}`}
+              className={`rounded-xl px-5 py-2.5 text-sm font-bold transition ${billing === "yearly" ? "bg-primary text-white" : "text-white/75 hover:text-white"}`}
             >
               Yıllık
               <span className="ml-1.5 rounded-full bg-success/20 px-2 py-0.5 text-[11px] font-bold text-success">
@@ -114,9 +114,9 @@ export default function PricingPage() {
         <div className="grid gap-6 md:grid-cols-2">
           {/* Free Card */}
           <div className="rounded-[2rem] border border-white/10 bg-white/5 p-8 backdrop-blur">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/45">Ücretsiz</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/75">Ücretsiz</p>
             <p className="mt-4 text-5xl font-black tracking-tight">$0</p>
-            <p className="mt-2 text-sm text-white/50">Sonsuza kadar ücretsiz</p>
+            <p className="mt-2 text-sm text-white/75">Sonsuza kadar ücretsiz</p>
 
             <div className="mt-8 space-y-3">
               {FREE_FEATURES.map((f) => (
@@ -125,10 +125,10 @@ export default function PricingPage() {
                   className={`flex items-center gap-3 rounded-2xl border px-4 py-3.5 text-sm ${
                     f.included
                       ? "border-white/10 bg-white/5 text-white/80"
-                      : "border-white/5 bg-white/3 text-white/30"
+                      : "border-white/5 bg-white/3 text-white/65"
                   }`}
                 >
-                  <span className={f.included ? "text-success" : "text-white/20"}>
+                  <span className={f.included ? "text-success" : "text-white/65"}>
                     {f.included ? "✓" : "✗"}
                   </span>
                   <span className={f.included ? "" : "line-through"}>{f.text}</span>
@@ -152,9 +152,9 @@ export default function PricingPage() {
               </span>
             </div>
 
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/45">Premium</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/75">Premium</p>
             <p className="mt-4 text-5xl font-black tracking-tight">{monthlyPrice}</p>
-            <p className="mt-2 text-sm text-white/50">{yearlyNote}</p>
+            <p className="mt-2 text-sm text-white/75">{yearlyNote}</p>
 
             <div className="mt-8 space-y-3">
               {PREMIUM_FEATURES.map((f) => (
@@ -184,8 +184,8 @@ export default function PricingPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-white/10 bg-white/5">
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-[0.2em] text-white/45">Özellik</th>
-                  <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-[0.2em] text-white/45">Ücretsiz</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-[0.2em] text-white/75">Özellik</th>
+                  <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-[0.2em] text-white/75">Ücretsiz</th>
                   <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-[0.2em] text-[#9ab0ff]">Premium</th>
                 </tr>
               </thead>
@@ -193,7 +193,7 @@ export default function PricingPage() {
                 {COMPARISON_ROWS.map((row, i) => (
                   <tr key={row.label} className={`border-b border-white/8 ${i % 2 === 0 ? "bg-white/3" : ""}`}>
                     <td className="px-6 py-4 text-sm font-semibold text-white/75">{row.label}</td>
-                    <td className="px-6 py-4 text-center text-sm text-white/50">{row.free}</td>
+                    <td className="px-6 py-4 text-center text-sm text-white/75">{row.free}</td>
                     <td className="px-6 py-4 text-center text-sm font-semibold text-[#9ab0ff]">{row.premium}</td>
                   </tr>
                 ))}
@@ -215,14 +215,14 @@ export default function PricingPage() {
         {/* CTA */}
         <div className="mt-16 relative overflow-hidden rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_50%_50%,rgba(71,93,178,0.2),transparent_70%)] p-12 text-center backdrop-blur">
           <h2 className="text-3xl font-extrabold text-white">Hâlâ kararsız mısın?</h2>
-          <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-white/60">
+          <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-white/75">
             Ücretsiz başla, istediğin zaman yükselt. Kredi kartı gerekmez.
           </p>
           <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <a href="#register" className="rounded-2xl bg-primary px-8 py-3.5 text-sm font-bold text-white shadow-[0_12px_36px_rgba(71,93,178,0.4)] transition hover:scale-[1.02]">
               Ücretsiz Başla
             </a>
-            <a href="#discover" className="rounded-2xl border border-white/10 bg-white/5 px-8 py-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/8">
+            <a href="#discover" className="rounded-2xl border border-white/10 bg-white/5 px-8 py-3.5 text-sm font-semibold text-white/90 transition hover:bg-white/8">
               Platformu Keşfet
             </a>
           </div>

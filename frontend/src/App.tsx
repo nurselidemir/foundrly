@@ -2,6 +2,17 @@ import { useEffect, useState } from "react";
 import FoundrlyLanding from "./components/marketing/FoundrlyLanding";
 
 type HealthState = { status: "loading" | "ready" | "error"; message: string };
+type PremiumSubscriptionSummary = {
+  plan: "monthly" | "yearly";
+  price_label: string;
+  status: "active" | "canceled";
+};
+
+type PremiumSubscriptionState = {
+  is_premium: boolean;
+  subscription: PremiumSubscriptionSummary | null;
+};
+
 type RouteName =
   | "home"
   | "mentors"
@@ -298,34 +309,90 @@ type AdminProject = {
   }>;
 };
 
+type ShowcaseProject = {
+  id: number;
+  title: string;
+  summary: string;
+  problem_statement: string;
+  tech_stack: string[];
+  needed_roles: string[];
+  is_premium_highlighted: boolean;
+  created_at: string;
+  owner: {
+    id: number;
+    full_name: string;
+    title: string;
+    is_verified_talent: boolean;
+    is_premium: boolean;
+  };
+};
+
+type ShowcaseUser = {
+  id: number;
+  full_name: string;
+  title: string;
+  bio: string;
+  skills: string[];
+  interests: string[];
+  profile_picture: string | null;
+  is_verified_talent: boolean;
+  is_premium: boolean;
+  average_rating: number | null;
+  recent_projects_count: number;
+  date_joined: string;
+};
+
+type CommunityThreadItem = {
+  id: number;
+  topic: string;
+  stats_label: string;
+  signal_label: string;
+  created_at: string;
+  author: {
+    id: number;
+    full_name: string;
+    title: string;
+    is_verified_talent: boolean;
+  };
+};
+
+type CommunityEventItem = {
+  id: number;
+  title: string;
+  description: string;
+  location: string;
+  tag: string;
+  event_date: string;
+  is_online: boolean;
+};
+
+type ShowcaseData = {
+  projects: ShowcaseProject[];
+  users: ShowcaseUser[];
+  threads: CommunityThreadItem[];
+  events: CommunityEventItem[];
+};
+
 const NAV_LINKS = [
   { label: "Ana Sayfa", href: "#home" },
-  { label: "Mentörler", href: "#mentors" },
-  { label: "Keşfet", href: "#discover" },
-  { label: "Takım Bul", href: "#teammates" },
   { label: "Girişim Merkezi", href: "#hub" },
   { label: "Etkinlikler", href: "#events" },
-  { label: "Topluluk", href: "#community" },
   { label: "Fiyatlandırma", href: "#pricing" },
 ];
-
-const MEMBERS_ONLY_NAV_HREFS = new Set(["#mentors", "#discover", "#teammates"]);
 const MEMBERS_ONLY_ROUTES = new Set<RouteName>(["mentors", "discover", "teammates"]);
 
 const ENTRY_LINKS = [
   { label: "Giriş Yap", href: "#login", className: "border border-ink/12 bg-white/80 text-ink hover:border-primary/25 hover:text-primary" },
-  { label: "Takımını Kur", href: "#register", className: "bg-primary text-white hover:bg-primary/90 shadow-halo" },
+  { label: "Kayıt Ol", href: "#register", className: "bg-primary text-white hover:bg-primary/90 shadow-halo" },
 ];
 
 const FOOTER_COMPANY_LINKS = [
   { label: "Hakkımızda", href: "#about" },
   { label: "Kariyer", href: "#careers" },
-  { label: "Topluluk", href: "#community" },
 ];
 
 const FOOTER_SUPPORT_LINKS = [
   { label: "İletişim", href: "#contact" },
-  { label: "Discord", href: "#community" },
   { label: "Gizlilik Politikası", href: "#privacy" },
   { label: "SSS", href: "#faq" },
 ];
@@ -334,6 +401,7 @@ const APP_NAV_BASE = [
   { label: "Anasayfa", href: "#app-home" },
   { label: "Keşfet", href: "#app-discover" },
   { label: "Proje Oluştur", href: "#app-create" },
+  { label: "Etkinlikler", href: "#app-events" },
   { label: "Mesajlar", href: "#app-messages" },
   { label: "Mentörler", href: "#app-mentors" },
   { label: "YZ Ekip Kurucu", href: "#app-ai-builder" },
@@ -353,7 +421,7 @@ const FEATURES = [
     icon: "🤖",
     title: "YZ Ekip Kurucu",
     description:
-      "TF-IDF tabanlı anlamsal eşleştirme motoru, proje ihtiyaçlarını ve kullanıcı becerilerini analiz ederek en uygun ekip üyelerini önerir.",
+      "TF-IDF tabanlı anlamsal eşleştirme motoru; proje ihtiyaçları, beceriler, ilgi alanları ve rol uyumunu birlikte değerlendirerek aday önerileri üretir.",
     badge: "Premium",
     badgeColor: "bg-primary/10 text-primary",
   },
@@ -574,7 +642,6 @@ const PLANS = [
       "Ekip başvurusu",
       "Temel ekip eşleşmesi",
       "Proje görünürlüğü",
-      "Topluluk erişimi",
     ],
     locked: ["Öncelikli eşleşme", "Doğrulanmış profil", "Yüksek görünürlük"],
   },
@@ -652,9 +719,9 @@ function getRouteFromHash(): RouteName {
       return "app-mentors";
     case "#app-mentor-panel":
       return "app-mentor-panel";
-    case "#app-networking":
-      return "app-networking";
-    case "#app-admin":
+    case "#app-events":
+      return "app-events";
+    case "#app-messages":
       return "app-admin";
     default:
       return "home";
@@ -672,6 +739,26 @@ function getHashSearchParam(key: string) {
   const [, queryString = ""] = window.location.hash.split("?");
   const params = new URLSearchParams(queryString);
   return params.get(key)?.trim() ?? "";
+}
+
+function getPostAuthHash() {
+  const next = getHashSearchParam("next");
+  switch (next) {
+    case "events":
+      return "#app-networking";
+    case "community":
+      return "#app-networking";
+    case "premium":
+      return "#premium";
+    default:
+      return "#app-home";
+  }
+}
+
+function getAuthenticatedPublicCtaHref(target: "events" | "community") {
+  if (typeof window === "undefined") return `#register?next=${target}`;
+  const hasSession = Boolean(localStorage.getItem("foundrly_access_token") || localStorage.getItem("foundrly_current_user"));
+  return hasSession ? "#app-networking" : `#register?next=${target}`;
 }
 
 function getStoredAccessToken() {
@@ -707,15 +794,26 @@ function renderStars(rating: number) {
 function PremiumSimulationPage({
   authenticated,
   currentUser,
+  subscriptionState,
   onStartSimulation,
+  onCancelSubscription,
   feedback,
 }: {
   authenticated: boolean;
   currentUser: CurrentUser | null;
+  subscriptionState: PremiumSubscriptionState | null;
   onStartSimulation?: (plan: "monthly" | "yearly") => Promise<void> | void;
+  onCancelSubscription?: () => Promise<void> | void;
   feedback?: string;
 }) {
   const alreadyPremium = Boolean(currentUser?.is_premium);
+  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly">("monthly");
+  const [cardHolder, setCardHolder] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvc, setCardCvc] = useState("");
+  const [paymentError, setPaymentError] = useState("");
+  const [mentorSessionFeedback, setMentorSessionFeedback] = useState("");
   const benefitCards = [
     {
       title: "Seçilmiş Eşleşme",
@@ -733,7 +831,7 @@ function PremiumSimulationPage({
   const premiumStats = [
     { label: "Daha hızlı aday bulma", value: "3x" },
     { label: "Öne çıkan proje görünürlüğü", value: "+68%" },
-    { label: "Doğrulanmış güven sinyali", value: "7/24" },
+    { label: "Ücretsiz mentör görüşmesi", value: "1 x 15 dk" },
   ];
 
   return (
@@ -752,35 +850,35 @@ function PremiumSimulationPage({
             </div>
 
             <div className="space-y-5">
-              <p className="max-w-xl text-sm font-semibold uppercase tracking-[0.3em] text-ink/45">
+              <p className="max-w-xl text-sm font-semibold uppercase tracking-[0.3em] text-white/58">
                 Hızlı hareket eden kurucular daha güçlü ekipler kurar
               </p>
-              <h1 className="max-w-4xl font-display text-5xl leading-[0.96] tracking-tight text-ink lg:text-7xl">
+              <h1 className="max-w-4xl font-display text-5xl leading-[0.96] tracking-tight text-white lg:text-7xl">
                 Ekip kurmayı
-                <span className="block text-primary">premium bir avantaja</span>
+                <span className="block text-[#9ab0ff]">premium bir avantaja</span>
                 dönüştür.
               </h1>
-              <p className="max-w-2xl text-lg leading-8 text-ink/72 lg:text-xl">
+              <p className="max-w-2xl text-lg leading-8 text-white/76 lg:text-xl">
                 Foundrly Premium; daha yüksek görünürlük, daha güçlü güven sinyali ve yapay zeka destekli eşleşme katmanı ile iyi fikirleri daha hızlı doğru insanlarla buluşturur.
               </p>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
               {premiumStats.map((stat) => (
-                <div key={stat.label} className="premium-panel rounded-[1.75rem] p-5">
-                  <p className="text-3xl font-black tracking-tight text-ink">{stat.value}</p>
-                  <p className="mt-2 text-sm leading-6 text-ink/68">{stat.label}</p>
+                <div key={stat.label} className="rounded-[1.75rem] border border-white/12 bg-[#0b1630]/72 p-5 shadow-[0_18px_55px_rgba(4,8,18,0.28)] backdrop-blur">
+                  <p className="text-3xl font-black tracking-tight text-white">{stat.value}</p>
+                  <p className="mt-2 text-sm leading-6 text-white/68">{stat.label}</p>
                 </div>
               ))}
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
               {benefitCards.map((card) => (
-                <article key={card.title} className="rounded-[1.75rem] border border-white/65 bg-white/72 p-5 shadow-[0_16px_45px_rgba(27,45,73,0.07)] backdrop-blur">
-                  <p className="text-xs font-bold uppercase tracking-[0.24em] text-primary/60">
+                <article key={card.title} className="rounded-[1.75rem] border border-white/12 bg-[#0b1630]/72 p-5 shadow-[0_16px_45px_rgba(4,8,18,0.24)] backdrop-blur">
+                  <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#9ab0ff]/82">
                     {card.title}
                   </p>
-                  <p className="mt-3 text-sm leading-7 text-ink/70">{card.body}</p>
+                  <p className="mt-3 text-sm leading-7 text-white/72">{card.body}</p>
                 </article>
               ))}
             </div>
@@ -815,6 +913,8 @@ function PremiumSimulationPage({
                   "YZ Ekip Kurucu ile aday kalitesini yükselt",
                   "Premium kurucu görünürlüğü ile daha iyi başvuru al",
                   "Doğrulanmış yetenek başvurusu ile güven sinyalini güçlendir",
+                  "Her ay 1 ücretsiz 15 dakikalık mentör görüşmesi aç",
+                  "İlk ücretsiz görüşmeden sonra ek seansları ödeme sistemi ile başlat",
                 ].map((item) => (
                   <div key={item} className="flex items-start gap-3 text-sm text-white/78">
                     <span className="mt-1 h-2.5 w-2.5 rounded-full bg-aurum" />
@@ -846,56 +946,167 @@ function PremiumSimulationPage({
                 </div>
               ) : alreadyPremium ? (
                 <div className="mt-7 space-y-4">
-                  <div className="rounded-[1.4rem] border border-white/12 bg-white/8 px-4 py-4 text-sm leading-7 text-white/78">
-                    Hesabın şu anda premium özelliklere erişebiliyor. Şimdi eşleşme zekasını, networking akışlarını ve verified profil avantajlarını kullanabilirsin.
+                  <div className="rounded-[1.4rem] border border-success/20 bg-success/10 px-4 py-4 text-sm leading-7 text-white/82">
+                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-success">Premium aktif</p>
+                    <p className="mt-2">
+                      Hesabın şu anda premium özelliklere erişebiliyor. Her ay 1 ücretsiz 15 dakikalık mentör görüşmen var; ek seanslar için ödeme adımını kullanabilirsin.
+                    </p>
+                    {subscriptionState?.subscription && (
+                      <p className="mt-3 text-sm text-white/70">
+                        Aktif plan: {subscriptionState.subscription.plan === "monthly" ? "Aylık Premium" : "Yıllık Premium"} · {subscriptionState.subscription.price_label}
+                      </p>
+                    )}
+                  </div>
+                  <div className="rounded-[1.4rem] border border-white/12 bg-white/8 px-4 py-4">
+                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/48">Üyeliğimi Yönet</p>
+                    <div className="mt-4 flex flex-wrap gap-3">
+                      <a
+                        href="#app-profile"
+                        className="rounded-2xl border border-white/16 bg-[#101b38] px-5 py-3 text-center text-sm font-bold text-white transition hover:bg-[#162447]"
+                      >
+                        Profilime Dön
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => onCancelSubscription?.()}
+                        className="rounded-2xl border border-red-300/30 bg-red-400/10 px-5 py-3 text-center text-sm font-bold text-red-100 transition hover:bg-red-400/16"
+                      >
+                        Premium'u İptal Et
+                      </button>
+                    </div>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <a
                       href="#app-ai-builder"
-                      className="rounded-2xl bg-white px-5 py-3 text-center text-sm font-bold text-ink transition hover:bg-white/90"
+                      className="rounded-2xl border border-white/16 bg-[#101b38] px-5 py-3 text-center text-sm font-bold text-white transition hover:bg-[#162447]"
                     >
                       YZ Ekip Kurucu
                     </a>
                     <a
-                      href="#app-profile"
+                      href="#app-networking"
                       className="rounded-2xl border border-white/16 bg-white/8 px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/12"
                     >
-                      Profilime Dön
+                      Topluluğa Git
                     </a>
+                  </div>
+                  <div className="rounded-[1.4rem] border border-white/12 bg-white/8 px-4 py-4">
+                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/48">Ek Mentör Seansı</p>
+                    <p className="mt-3 text-sm leading-6 text-white/70">
+                      Ücretsiz 15 dakikalık görüşme hakkını kullandıktan sonra ek seansı kart bilgilerinle güvenli şekilde açabilirsin.
+                    </p>
+                    <div className="mt-4 grid gap-3">
+                      <input value={cardHolder} onChange={(e) => setCardHolder(e.target.value)} placeholder="Kart üzerindeki isim" className="app-input" />
+                      <input value={cardNumber} onChange={(e) => setCardNumber(e.target.value)} placeholder="Kart numarası" className="app-input" />
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <input value={cardExpiry} onChange={(e) => setCardExpiry(e.target.value)} placeholder="SKT (AA/YY)" className="app-input" />
+                        <input value={cardCvc} onChange={(e) => setCardCvc(e.target.value)} placeholder="CVC" className="app-input" />
+                      </div>
+                    </div>
+                    {mentorSessionFeedback && (
+                      <div className="mt-4 rounded-2xl border border-success/20 bg-success/12 px-4 py-3 text-sm text-white">
+                        {mentorSessionFeedback}
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!cardHolder.trim() || !cardNumber.trim() || !cardExpiry.trim() || !cardCvc.trim()) {
+                          setMentorSessionFeedback("Ek seans için kart bilgilerini doldurup ödemeyi onaylamalısın.");
+                          return;
+                        }
+                        setMentorSessionFeedback("Ödeme alındı. 15 dakikalık ek mentör seansı hesabına tanımlandı.");
+                      }}
+                      className="mt-4 w-full rounded-2xl bg-white px-5 py-3 text-center text-sm font-bold text-[#08101f] transition hover:bg-white/90"
+                    >
+                      Ek Mentör Seansını Aç
+                    </button>
                   </div>
                 </div>
               ) : (
                 <div className="mt-7 space-y-4">
+                  <div className="rounded-[1.6rem] border border-white/12 bg-white/8 p-5">
+                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/55">Güvenli Ödeme</p>
+                    <p className="mt-3 text-sm leading-6 text-white/70">
+                      Kart bilgilerini girip onay verdiğinde premium erişim anında aktive edilir.
+                    </p>
+                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPlan("monthly")}
+                        className={`rounded-2xl border px-4 py-4 text-left transition ${selectedPlan === "monthly" ? "border-white/24 bg-white text-[#08101f] shadow-[0_10px_30px_rgba(255,255,255,0.12)]" : "border-white/12 bg-[#101b38] text-white"}`}
+                      >
+                        <span className="block text-xs font-bold uppercase tracking-[0.2em]">Aylık Plan</span>
+                        <span className="mt-2 block text-2xl font-black">$5</span>
+                        <span className="mt-2 block text-sm opacity-75">Her ay 1 ücretsiz 15 dk mentör görüşmesi</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPlan("yearly")}
+                        className={`rounded-2xl border px-4 py-4 text-left transition ${selectedPlan === "yearly" ? "border-white/24 bg-white text-[#08101f] shadow-[0_10px_30px_rgba(255,255,255,0.12)]" : "border-white/12 bg-[#101b38] text-white"}`}
+                      >
+                        <span className="block text-xs font-bold uppercase tracking-[0.2em]">Yıllık Plan</span>
+                        <span className="mt-2 block text-2xl font-black">$48</span>
+                        <span className="mt-2 block text-sm opacity-75">12 ay kesintisiz premium akış</span>
+                      </button>
+                    </div>
+                    <div className="mt-5 grid gap-3">
+                      <input value={cardHolder} onChange={(e) => setCardHolder(e.target.value)} placeholder="Kart üzerindeki isim" className="app-input" />
+                      <input value={cardNumber} onChange={(e) => setCardNumber(e.target.value)} placeholder="Kart numarası" className="app-input" />
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <input value={cardExpiry} onChange={(e) => setCardExpiry(e.target.value)} placeholder="SKT (AA/YY)" className="app-input" />
+                        <input value={cardCvc} onChange={(e) => setCardCvc(e.target.value)} placeholder="CVC" className="app-input" />
+                      </div>
+                    </div>
+                    {paymentError && (
+                      <div className="mt-4 rounded-2xl border border-red-300/20 bg-red-400/10 px-4 py-3 text-sm text-red-100">
+                        {paymentError}
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!cardHolder.trim() || !cardNumber.trim() || !cardExpiry.trim() || !cardCvc.trim()) {
+                          setPaymentError("Kart bilgilerini doldurup ödemeyi onaylamalısın.");
+                          return;
+                        }
+                        setPaymentError("");
+                        onStartSimulation?.(selectedPlan);
+                      }}
+                      className="mt-5 w-full rounded-2xl bg-white px-5 py-3 text-center text-sm font-bold text-ink transition hover:bg-white/90"
+                    >
+                      Ödemeyi Onayla ve Premium'u Aç
+                    </button>
+                  </div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <button
                       type="button"
-                      onClick={() => onStartSimulation?.("monthly")}
-                      className="rounded-[1.6rem] bg-white px-5 py-5 text-left text-ink transition hover:-translate-y-0.5 hover:bg-white/92"
+                      onClick={() => setSelectedPlan("monthly")}
+                      className="rounded-[1.6rem] border border-white/20 bg-white px-5 py-5 text-left text-[#08101f] transition hover:-translate-y-0.5 hover:bg-white/92"
                     >
                       <span className="block text-xs font-bold uppercase tracking-[0.22em] text-primary/60">
                         Aylık erişim
                       </span>
                       <span className="mt-2 block text-3xl font-black">$5</span>
                       <span className="mt-2 block text-sm leading-6 text-ink/65">
-                        Premium katmanı anında aç ve görünürlük farkını hisset.
+                        Premium katmanı anında aç, görünürlüğünü artır ve her ay 1 ücretsiz 15 dakikalık mentör görüşmesi kazan.
                       </span>
                     </button>
                     <button
                       type="button"
-                      onClick={() => onStartSimulation?.("yearly")}
-                      className="rounded-[1.6rem] border border-white/16 bg-white/8 px-5 py-5 text-left text-white transition hover:-translate-y-0.5 hover:bg-white/12"
+                      onClick={() => setSelectedPlan("yearly")}
+                      className="rounded-[1.6rem] border border-white/16 bg-[#101b38] px-5 py-5 text-left text-white transition hover:-translate-y-0.5 hover:bg-[#162447]"
                     >
                       <span className="block text-xs font-bold uppercase tracking-[0.22em] text-white/55">
                         Yıllık erişim
                       </span>
                       <span className="mt-2 block text-3xl font-black">$48</span>
                       <span className="mt-2 block text-sm leading-6 text-white/68">
-                        En iyi fiyatla tüm premium akışlara kesintisiz eriş.
+                        En iyi fiyatla tüm premium akışlara ve her ay yenilenen ücretsiz mentör görüşme hakkına eriş.
                       </span>
                     </button>
                   </div>
                   <p className="text-xs uppercase tracking-[0.24em] text-white/42">
-                    Demo aktivasyonu anında hesabına işlenir.
+                    Kart onayı sonrası premium aktivasyonu anında hesabına işlenir.
                   </p>
                 </div>
               )}
@@ -949,12 +1160,12 @@ function SiteFooter() {
       <div className="relative mx-auto max-w-7xl px-6 py-16 lg:px-10">
         <div className="grid gap-12 lg:grid-cols-[1.4fr_0.8fr_0.8fr_0.8fr_1fr]">
           <div className="max-w-md">
-            <p className="text-3xl font-extrabold tracking-tight text-white">Foundrly</p>
-            <p className="mt-3 text-xs font-semibold uppercase tracking-[0.34em] text-white/42">
-              Fikirleri ekiplere dönüştür.
-            </p>
+            <div className="flex items-center gap-4 mb-4">
+              <img src="/f.jpg" alt="Foundrly" className="h-14 w-14 rounded-xl object-cover" />
+              <p className="text-3xl font-extrabold tracking-tight text-white">Foundrly</p>
+            </div>
             <p className="mt-6 text-base leading-8 text-slate-300">
-              Daha keskin eşleşme, daha güçlü güven ve daha hızlı yürütme isteyen kurucular ve geliştiriciler için premium startup ağı.
+              Daha keskin eşleşme, daha güçlü güven ve daha hızlı yürütme isteyen kurucular ve geliştiriciler için premium ağ.
             </p>
           </div>
 
@@ -972,7 +1183,6 @@ function SiteFooter() {
             <div className="mt-5 space-y-4 text-sm text-slate-300">
               <a href="#about" className="block transition hover:text-white">Hakkımızda</a>
               <a href="#careers" className="block transition hover:text-white">Kariyer</a>
-              <a href="#community" className="block transition hover:text-white">Topluluk</a>
             </div>
           </div>
 
@@ -999,7 +1209,6 @@ function SiteFooter() {
 
         <div className="mt-12 flex flex-col gap-3 border-t border-white/10 pt-6 text-sm text-white/42 md:flex-row md:items-center md:justify-between">
           <p>© 2026 Foundrly. Tüm hakları saklıdır.</p>
-          <p>Tutkulu ekipler için geliştirildi.</p>
         </div>
       </div>
     </footer>
@@ -1026,6 +1235,8 @@ function AuthPage({
     type: "idle" | "success" | "error";
     message: string;
   }>({ type: "idle", message: "" });
+  const nextParam = getHashSearchParam("next");
+  const nextSuffix = nextParam ? `?next=${encodeURIComponent(nextParam)}` : "";
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -1057,7 +1268,7 @@ function AuthPage({
           message: "Hesabın oluşturuldu. Şimdi giriş sayfasına geçebilirsin.",
         });
         setPassword("");
-        window.location.hash = "#login";
+        window.location.hash = `#login${nextSuffix}`;
       } else {
         const tokenResponse = await fetch("/api/auth/token/", {
           method: "POST",
@@ -1085,7 +1296,7 @@ function AuthPage({
 
         const me = await meResponse.json();
         localStorage.setItem("foundrly_current_user", JSON.stringify(me));
-        window.location.hash = "#app-home";
+        window.location.hash = getPostAuthHash();
       }
     } catch (error) {
       setFeedback({
@@ -1103,7 +1314,7 @@ function AuthPage({
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(71,93,178,0.28),transparent_28%),radial-gradient(circle_at_82%_16%,rgba(63,177,112,0.15),transparent_24%),radial-gradient(circle_at_50%_100%,rgba(71,93,178,0.2),transparent_42%)]" />
       <header className="relative z-10 border-b border-white/10 bg-[#050B18]/72 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
-          <a href="#app-home" className="flex flex-col leading-none">
+          <a href="#home" className="flex flex-col leading-none">
             <span className="text-2xl font-extrabold tracking-tight text-white">
               Foundrly
             </span>
@@ -1122,7 +1333,7 @@ function AuthPage({
               }`}
             />
             <a
-              href="#"
+              href="#home"
               className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-semibold text-white transition hover:border-white/22 hover:bg-white/10"
             >
               Ana Sayfa
@@ -1158,7 +1369,7 @@ function AuthPage({
                 "Kayıt verilerine göre akıllı ekip eşleşmesi",
                 "Doğrulanmış yetenek ile daha güvenilir profiller",
                 "Premium ile daha yüksek görünürlük",
-                "Girişim odaklı topluluk ve mentör erişimi",
+                "Alanında uzman mentör erişimi",
               ].map((item) => (
                 <div
                   key={item}
@@ -1319,7 +1530,7 @@ function AuthPage({
             <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm text-white/60">
               <span>{isRegister ? "Zaten hesabın var mı?" : "Hesabın yok mu?"}</span>
               <a
-                href={isRegister ? "#login" : "#register"}
+                href={isRegister ? `#login${nextSuffix}` : `#register${nextSuffix}`}
                 className="font-semibold text-[#9ab0ff] transition hover:text-white"
               >
                 {isRegister ? "Giriş ekranına git" : "Kayıt sayfasını aç"}
@@ -1382,6 +1593,7 @@ function DashboardPage({
   const [recommendedProjects, setRecommendedProjects] = useState<any[]>([]);
   const [mentors, setMentors] = useState<any[]>([]);
   const [mentorRequests, setMentorRequests] = useState<any[]>([]);
+  const [userRequests, setUserRequests] = useState<any[]>([]);
   const [mentorFeedback, setMentorFeedback] = useState("");
   const [verifiedForm, setVerifiedForm] = useState({ requested_title: "", portfolio_url: "", note: "" });
   const [verifiedFeedback, setVerifiedFeedback] = useState("");
@@ -1447,12 +1659,14 @@ function DashboardPage({
 
     if (premiumStatus) {
       try {
-        const [recRes, mentorsRes] = await Promise.all([
+        const [recRes, mentorsRes, userReqRes] = await Promise.all([
           fetch("/api/dashboard/recommended-projects/", { headers: authHeaders }),
           fetch("/api/mentors/", { headers: authHeaders }),
+          fetch("/api/mentors/requests/", { headers: authHeaders }),
         ]);
         if (recRes.ok) setRecommendedProjects(await recRes.json());
         if (mentorsRes.ok) setMentors(await mentorsRes.json());
+        if (userReqRes.ok) setUserRequests(await userReqRes.json());
       } catch (e) {}
     }
 
@@ -1659,13 +1873,30 @@ function DashboardPage({
     }
   };
 
-  const handleMentorRequestStatus = async (requestId: number, status: string, offeredPrice?: number) => {
+  const handleMentorRequestStatus = async (requestId: number, status: string, offeredPrice?: number, meetingTime?: string) => {
     if (!authHeaders) return;
     try {
       const response = await fetch(`/api/mentors/requests/${requestId}/status/`, {
         method: "PATCH",
         headers: authHeaders,
-        body: JSON.stringify({ status, offered_price: offeredPrice }),
+        body: JSON.stringify({ 
+          status, 
+          offered_price: offeredPrice,
+          meeting_time: meetingTime
+        }),
+      });
+      if (response.ok) {
+        loadDashboard();
+      }
+    } catch (e) {}
+  };
+
+  const handleConfirmMentorRequest = async (requestId: number) => {
+    if (!authHeaders) return;
+    try {
+      const response = await fetch(`/api/mentors/requests/${requestId}/confirm/`, {
+        method: "PATCH",
+        headers: authHeaders,
       });
       if (response.ok) {
         loadDashboard();
@@ -2269,21 +2500,23 @@ function DashboardPage({
             </section>
 
             {summary?.friend_requests && summary.friend_requests.filter((r) => r.status === "pending" && r.receiver === currentUser?.id).length > 0 && (
-              <section className="rounded-[2.25rem] border border-secondary/20 bg-secondary/5 p-8 shadow-sm lg:p-10">
-                <p className="text-sm font-bold uppercase tracking-[0.2em] text-secondary">Ağ İstekleri</p>
+              <section className="app-panel rounded-[2.25rem] border-secondary/20 p-8 lg:p-10">
+                <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#9ab0ff]">Ağ İstekleri</p>
                 <div className="mt-6 space-y-3">
                   {summary.friend_requests
                     .filter((r) => r.status === "pending" && r.receiver === currentUser?.id)
                     .map((req) => (
-                      <div key={req.id} className="flex items-center justify-between rounded-2xl border border-secondary/10 bg-white p-4 shadow-sm">
+                      <div key={req.id} className="app-solid-card flex flex-col gap-4 rounded-2xl p-5 md:flex-row md:items-center md:justify-between">
                         <div>
-                          <p className="text-sm font-bold text-ink">{req.sender_name} <span className="font-normal text-ink/40">seninle ağ kurmak istiyor.</span></p>
+                          <p className="text-sm font-bold text-white">
+                            {req.sender_name} <span className="font-normal text-white/58">seninle ağ kurmak istiyor.</span>
+                          </p>
                         </div>
                         <div className="flex gap-2">
                           <button onClick={() => handleUpdateFriendRequest(req.id, "accepted")} className="rounded-xl bg-primary px-4 py-1.5 text-xs font-bold text-white shadow-halo transition hover:bg-primary/90">
                             Kabul Et
                           </button>
-                          <button onClick={() => handleUpdateFriendRequest(req.id, "rejected")} className="rounded-xl bg-ink/5 px-4 py-1.5 text-xs font-bold text-ink transition hover:bg-ink/10">
+                          <button onClick={() => handleUpdateFriendRequest(req.id, "rejected")} className="rounded-xl border border-white/12 bg-white/6 px-4 py-1.5 text-xs font-bold text-white/78 transition hover:bg-white/10">
                             Reddet
                           </button>
                         </div>
@@ -2322,23 +2555,23 @@ function DashboardPage({
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/80">AI Takım Kurucu</p>
-                    <h2 className="mt-1 text-2xl font-extrabold text-ink">Size Özel AI Önerileri</h2>
+                    <h2 className="mt-1 text-2xl font-extrabold text-white">Size Özel AI Önerileri</h2>
                   </div>
                 </div>
                 <div className="mt-5 grid gap-4 lg:grid-cols-2">
                   {recommendedProjects.map((match) => (
-                    <article key={match.project.id} className="app-kpi-card rounded-2xl border-primary/20 p-5 transition hover:border-primary/40">
+                    <article key={match.project.id} className="app-solid-card rounded-2xl border-primary/20 p-5 transition hover:border-primary/40">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
-                          <p className="text-lg font-bold text-ink">{match.project.title}</p>
-                          <button type="button" onClick={() => openPublicProfile(match.project.owner.id)} className="mt-1 text-left text-sm text-ink/58 transition hover:text-primary">
+                          <p className="text-lg font-bold text-white">{match.project.title}</p>
+                          <button type="button" onClick={() => openPublicProfile(match.project.owner.id)} className="mt-1 text-left text-sm text-white/62 transition hover:text-[#9ab0ff]">
                             {match.project.owner.full_name} · {match.project.owner.title}
                           </button>
                         </div>
                         <span className="rounded-full bg-success/10 px-3 py-1 text-xs font-bold text-success whitespace-nowrap">%{Math.round(match.score)} Uyum</span>
                       </div>
-                      <p className="mt-3 text-xs leading-relaxed text-ink/50">{match.ai_summary}</p>
-                      <p className="mt-3 text-xs uppercase tracking-widest text-ink/40 truncate" title={match.matched_skills.join(", ")}>
+                      <p className="mt-3 text-xs leading-relaxed text-white/68">{match.ai_summary}</p>
+                      <p className="mt-3 text-xs uppercase tracking-widest text-white/42 truncate" title={match.matched_skills.join(", ")}>
                         Eşleşenler: {match.matched_skills.join(", ") || "-"}
                       </p>
                     </article>
@@ -2352,7 +2585,7 @@ function DashboardPage({
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">Aktif Projeler</p>
-                    <h2 className="mt-1 text-2xl font-extrabold text-ink">Başvurabileceğin projeler</h2>
+                    <h2 className="mt-1 text-2xl font-extrabold text-white">Başvurabileceğin projeler</h2>
                   </div>
                   <input value={projectSearch} onChange={(e) => setProjectSearch(e.target.value)} placeholder="Proje ara" className="app-input sm:max-w-xs" />
                 </div>
@@ -2363,14 +2596,14 @@ function DashboardPage({
                     .map((project) => {
                       const alreadyApplied = sentApplications.some((application) => application.project === project.id);
                       return (
-                        <article key={project.id} className="app-subpanel rounded-2xl p-5">
+                        <article key={project.id} className="app-solid-card rounded-2xl p-5">
                           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                             <div>
-                              <p className="text-lg font-bold text-ink">{project.title}</p>
-                              <button type="button" onClick={() => openPublicProfile(project.owner.id)} className="mt-1 text-left text-sm text-ink/58 transition hover:text-primary">
+                              <p className="text-lg font-bold text-white">{project.title}</p>
+                              <button type="button" onClick={() => openPublicProfile(project.owner.id)} className="mt-1 text-left text-sm text-white/60 transition hover:text-[#9ab0ff]">
                                 {project.owner.full_name} · {project.owner.title}
                               </button>
-                              <p className="mt-3 text-sm leading-6 text-ink/68">{project.summary}</p>
+                              <p className="mt-3 text-sm leading-6 text-white/68">{project.summary}</p>
                             </div>
                             <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">{project.is_premium_highlighted ? "Premium" : "Açık"}</span>
                           </div>
@@ -2380,13 +2613,13 @@ function DashboardPage({
                           ) : (
                             <div className="mt-4 space-y-3">
                               {selectedProjectId === project.id && (
-                                <textarea value={applicationMessage} onChange={(e) => setApplicationMessage(e.target.value)} placeholder="Projeye neden uygun olduğunu kısa yaz." className="app-input min-h-24 bg-white" />
+                                <textarea value={applicationMessage} onChange={(e) => setApplicationMessage(e.target.value)} placeholder="Projeye neden uygun olduğunu kısa yaz." className="app-input min-h-24" />
                               )}
                               <div className="flex flex-wrap gap-3">
                                 {selectedProjectId === project.id ? (
                                   <>
                                     <button type="button" onClick={() => handleApplicationSubmit(project.id)} className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white transition hover:bg-primary/90">Başvuruyu Gönder</button>
-                                    <button type="button" onClick={() => { setSelectedProjectId(null); setApplicationMessage(""); }} className="rounded-full border border-ink/10 bg-white px-5 py-2 text-sm font-semibold text-ink transition hover:border-primary/25 hover:text-primary">Vazgeç</button>
+                                    <button type="button" onClick={() => { setSelectedProjectId(null); setApplicationMessage(""); }} className="rounded-full border border-white/12 bg-white/6 px-5 py-2 text-sm font-semibold text-white transition hover:bg-white/10">Vazgeç</button>
                                   </>
                                 ) : (
                                   <button type="button" onClick={() => setSelectedProjectId(project.id)} className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white transition hover:bg-primary/90">Başvur</button>
@@ -2406,20 +2639,20 @@ function DashboardPage({
                   <div className="mt-4 space-y-3">
                     {receivedApplications.length ? (
                       receivedApplications.slice(0, 5).map((application) => (
-                        <article key={application.id} className="app-subpanel rounded-2xl p-4">
-                          <button type="button" onClick={() => openPublicProfile(application.applicant.id)} className="font-bold text-ink transition hover:text-primary">{application.applicant.full_name}</button>
-                          <p className="mt-1 text-sm text-ink/58">{application.message}</p>
-                          <p className="mt-2 text-xs font-bold uppercase tracking-widest text-ink/42">{application.status}</p>
+                        <article key={application.id} className="app-solid-card rounded-2xl p-4">
+                          <button type="button" onClick={() => openPublicProfile(application.applicant.id)} className="font-bold text-white transition hover:text-[#9ab0ff]">{application.applicant.full_name}</button>
+                          <p className="mt-1 text-sm text-white/60">{application.message}</p>
+                          <p className="mt-2 text-xs font-bold uppercase tracking-widest text-white/42">{application.status}</p>
                           {application.status === "pending" && (
                             <div className="mt-4 flex gap-3">
                               <button type="button" onClick={() => handleApplicationStatus(application.id, "accepted")} className="rounded-full bg-success px-4 py-2 text-sm font-semibold text-white transition hover:bg-success/90">Kabul Et</button>
-                              <button type="button" onClick={() => handleApplicationStatus(application.id, "rejected")} className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-500 transition hover:bg-red-100">Reddet</button>
+                              <button type="button" onClick={() => handleApplicationStatus(application.id, "rejected")} className="rounded-full border border-red-400/20 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-200 transition hover:bg-red-500/16">Reddet</button>
                             </div>
                           )}
                         </article>
                       ))
                     ) : (
-                      <div className="rounded-2xl border border-dashed border-ink/15 bg-[#F7F8FC] p-4 text-sm text-ink/55">Henüz gelen başvuru yok.</div>
+                      <div className="rounded-2xl border border-dashed border-white/12 bg-black/20 p-4 text-sm text-white/55">Henüz gelen başvuru yok.</div>
                     )}
                   </div>
                 </section>
@@ -2450,7 +2683,7 @@ function DashboardPage({
             <p className="app-section-eyebrow text-sm font-bold uppercase tracking-[0.2em]">
               Proje Oluştur
             </p>
-            <h2 className="mt-2 text-3xl font-extrabold">Yeni proje başlat</h2>
+            <h2 className="mt-2 text-3xl font-extrabold text-white">Yeni proje başlat</h2>
             <form className="mt-8 space-y-5" onSubmit={handleProjectCreate}>
               {[
                 ["Başlık", "title", "Foundrly Mobile App"],
@@ -2460,7 +2693,7 @@ function DashboardPage({
                 ["Aranan Roller", "needed_roles", "Frontend Developer, UI Designer"],
               ].map(([label, key, placeholder]) => (
                 <label className="block" key={String(key)}>
-                  <span className="mb-2 block text-sm font-semibold text-ink/72">
+                  <span className="mb-2 block text-sm font-semibold text-white/72">
                     {label}
                   </span>
                   {key === "summary" || key === "problem_statement" ? (
@@ -2494,7 +2727,7 @@ function DashboardPage({
               ))}
 
               {projectFeedback && (
-                <div className="rounded-2xl border border-primary/10 bg-primary/5 px-4 py-3 text-sm text-primary">
+                <div className="rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-[#c7d3ff]">
                   {projectFeedback}
                 </div>
               )}
@@ -2766,8 +2999,8 @@ function DashboardPage({
                       onClick={() => loadThreadDetail(thread.application_id)}
                       className={`w-full rounded-2xl border p-4 text-left transition ${
                         selectedThread?.application_id === thread.application_id
-                          ? "border-primary/25 bg-primary/5"
-                          : "border-ink/8 bg-[#F7F8FC]"
+                          ? "border-primary/25 bg-primary/12"
+                          : "border-white/8 bg-white/6"
                       }`}
                     >
                       <span
@@ -2784,21 +3017,21 @@ function DashboardPage({
                             openPublicProfile(thread.counterpart.id);
                           }
                         }}
-                        className="text-sm font-bold text-ink transition hover:text-primary"
+                        className="text-sm font-bold text-white transition hover:text-[#9ab0ff]"
                       >
                         {thread.counterpart.full_name}
                       </span>
-                      <p className="mt-1 text-xs uppercase tracking-widest text-ink/42">
+                      <p className="mt-1 text-xs uppercase tracking-widest text-white/42">
                         {thread.project.title}
                       </p>
-                      <p className="mt-2 text-sm text-ink/58">
+                      <p className="mt-2 text-sm text-white/62">
                         {thread.latest_message?.content ||
                           "Henüz mesaj yok. İlk mesajı sen gönder."}
                       </p>
                     </button>
                   ))
                 ) : (
-                  <div className="rounded-2xl border border-dashed border-ink/15 bg-[#F7F8FC] p-5 text-sm text-ink/55">
+                  <div className="rounded-2xl border border-dashed border-white/12 bg-black/20 p-5 text-sm text-white/55">
                     Accepted başvuru olmadığı için henüz konuşma başlamadı.
                   </div>
                 )}
@@ -2815,11 +3048,11 @@ function DashboardPage({
                         const counterpart = selectedThread.counterpart as { id?: number };
                         if (counterpart.id) openPublicProfile(counterpart.id);
                       }}
-                      className="text-sm font-bold text-ink transition hover:text-primary"
+                      className="text-sm font-bold text-white transition hover:text-[#9ab0ff]"
                     >
                       {selectedThread.counterpart.full_name}
                     </button>
-                    <p className="mt-1 text-xs uppercase tracking-widest text-ink/42">
+                    <p className="mt-1 text-xs uppercase tracking-widest text-white/42">
                       {selectedThread.project.title}
                     </p>
                   </div>
@@ -2833,12 +3066,12 @@ function DashboardPage({
                           className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-6 ${
                             mine
                               ? "ml-auto bg-primary text-white"
-                              : "border border-ink/8 bg-[#F7F8FC] text-ink"
+                              : "border border-white/10 bg-white/7 text-white"
                           }`}
                         >
                           <p
                             className={`text-[11px] font-bold uppercase tracking-widest ${
-                              mine ? "text-white/70" : "text-ink/42"
+                              mine ? "text-white/70" : "text-white/45"
                             }`}
                           >
                             {item.sender.full_name}
@@ -2857,7 +3090,7 @@ function DashboardPage({
                       className="app-input min-h-28"
                     />
                     {messageError && (
-                      <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-500">
+                      <div className="rounded-2xl border border-red-400/20 bg-red-500/12 px-4 py-3 text-sm text-red-200">
                         {messageError}
                       </div>
                     )}
@@ -2870,7 +3103,7 @@ function DashboardPage({
                   </form>
                 </>
               ) : (
-                <div className="rounded-2xl border border-dashed border-ink/15 bg-[#F7F8FC] p-5 text-sm text-ink/55">
+                <div className="rounded-2xl border border-dashed border-white/12 bg-black/20 p-5 text-sm text-white/55">
                   Soldan bir konuşma seçerek mesajlaşmaya başlayabilirsin.
                 </div>
               )}
@@ -2880,103 +3113,113 @@ function DashboardPage({
 
         {route === "app-profile" && (
           <section className="grid gap-6">
-            <div className="relative overflow-hidden rounded-[2.5rem] border border-white/60 bg-white/88 p-8 shadow-halo backdrop-blur lg:p-10">
-              <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top_left,rgba(71,93,178,0.18),transparent_42%),radial-gradient(circle_at_75%_0%,rgba(63,177,112,0.1),transparent_28%)]" />
-              <div className="relative flex flex-col gap-8 md:flex-row md:items-center">
-                <div className="relative group">
-                  <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-4 border-primary/20 bg-ink/5">
-                    {(summary?.profile.profile_picture || currentUser?.profile_picture) ? (
-                      <img src={summary?.profile.profile_picture || currentUser?.profile_picture || ""} alt="Profil" className="h-full w-full object-cover" />
-                    ) : (
-                      <span className="text-4xl font-bold text-ink/20">{(summary?.profile.full_name || currentUser?.full_name || "?").charAt(0)}</span>
-                    )}
+            <div className="app-panel rounded-[2.5rem] p-8 lg:p-10">
+              <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr]">
+                <div className="space-y-6">
+                  <div className="flex flex-col gap-6 md:flex-row md:items-center">
+                    <div className="relative group">
+                      <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border border-white/12 bg-white/6 shadow-[0_20px_60px_rgba(0,0,0,0.28)]">
+                        {(summary?.profile.profile_picture || currentUser?.profile_picture) ? (
+                          <img src={summary?.profile.profile_picture || currentUser?.profile_picture || ""} alt="Profil" className="h-full w-full object-cover" />
+                        ) : (
+                          <span className="text-4xl font-bold text-white/72">{(summary?.profile.full_name || currentUser?.full_name || "?").charAt(0)}</span>
+                        )}
+                      </div>
+                      <label className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-black/45 opacity-0 transition group-hover:opacity-100">
+                        <span className="text-xs font-bold text-white">Fotoğrafı Güncelle</span>
+                        <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleUploadProfilePicture(e.target.files[0])} />
+                      </label>
+                    </div>
+
+                    <div className="flex-1">
+                      <p className="app-section-eyebrow text-xs font-bold uppercase tracking-[0.26em]">Profil komuta merkezi</p>
+                      <h2 className="mt-3 text-4xl font-extrabold text-white lg:text-5xl">{summary?.profile.full_name || currentUser?.full_name || "-"}</h2>
+                      <p className="mt-2 text-xl font-semibold text-[#9ab0ff]">{summary?.profile.title || currentUser?.title || "Startup üreticisi"}</p>
+                      <p className="mt-4 max-w-2xl text-sm leading-7 text-white/70">
+                        {summary?.profile.bio || currentUser?.bio || "Herkese açık profilin; güven sinyallerini, premium görünürlüğünü ve ekip kurma potansiyelini tek vitrine toplar."}
+                      </p>
+                      <div className="mt-5 flex flex-wrap gap-2">
+                        <span className={`rounded-full px-3 py-1 text-xs font-bold ${(summary?.profile.is_verified_talent || currentUser?.is_verified_talent) ? "bg-success/10 text-success" : "border border-white/10 bg-white/6 text-white/62"}`}>
+                          {(summary?.profile.is_verified_talent || currentUser?.is_verified_talent) ? "Doğrulanmış Yetenek" : "Standart Hesap"}
+                        </span>
+                        {(summary?.profile.is_premium || currentUser?.is_premium) && <span className="rounded-full bg-primary/14 px-3 py-1 text-xs font-bold text-[#9ab0ff]">Premium Üye</span>}
+                        {(summary?.profile.is_mentor || currentUser?.is_mentor) && <span className="rounded-full bg-secondary/10 px-3 py-1 text-xs font-bold text-secondary">Resmi Mentör</span>}
+                      </div>
+                    </div>
                   </div>
-                  <label className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-ink/40 opacity-0 transition group-hover:opacity-100">
-                    <span className="text-xs font-bold text-white">Değiştir</span>
-                    <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleUploadProfilePicture(e.target.files[0])} />
-                  </label>
-                </div>
-                <div className="flex-1 text-center md:text-left">
-                  <p className="text-xs font-bold uppercase tracking-[0.24em] text-primary/55">Profil komuta merkezi</p>
-                  <h2 className="mt-3 text-4xl font-extrabold text-ink">{summary?.profile.full_name || currentUser?.full_name || "-"}</h2>
-                  <p className="mt-2 text-lg font-semibold text-primary">{summary?.profile.title || currentUser?.title || "Startup üreticisi"}</p>
-                  <p className="mt-4 max-w-2xl text-sm leading-7 text-ink/62">{summary?.profile.bio || currentUser?.bio || "Herkese açık profilin; kurucu güveni, premium görünürlük ve daha güçlü takım tanışmaları için vitrinin olarak çalışır."}</p>
-                  <div className="mt-5 flex flex-wrap justify-center gap-2 md:justify-start">
-                    <span className={`rounded-full px-3 py-1 text-xs font-bold ${(summary?.profile.is_verified_talent || currentUser?.is_verified_talent) ? "bg-success/10 text-success" : "bg-ink/5 text-ink/40"}`}>
-                      {(summary?.profile.is_verified_talent || currentUser?.is_verified_talent) ? "Doğrulanmış" : "Standart Hesap"}
-                    </span>
-                    {(summary?.profile.is_premium || currentUser?.is_premium) && <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">Premium Üye</span>}
-                    {(summary?.profile.is_mentor || currentUser?.is_mentor) && <span className="rounded-full bg-secondary/10 px-3 py-1 text-xs font-bold text-secondary">Resmi Mentör</span>}
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {[
+                      ["Profil gücü", `${Math.min(100, profileStrength * 25)}%`, "Beceriler, biyografi ve görünürlük sinyalleriyle artar."],
+                      ["Görünürlük seviyesi", (summary?.profile.is_premium || currentUser?.is_premium) ? "Premium" : "Standart", "Premium üyelik daha görünür vitrin açar."],
+                      ["Ana beceriler", `${summary?.profile.skills?.length || currentUser?.skills?.length || 0}`, "Eşleşmelerde kullandığımız temel teknik sinyaller."],
+                      ["İlgi alanları", `${summary?.profile.interests?.length || currentUser?.interests?.length || 0}`, "Hedef ve proje uyumunu güçlendiren alanlar."],
+                    ].map(([label, value, note]) => (
+                      <div key={String(label)} className="app-solid-card rounded-[1.75rem] p-5">
+                        <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/42">{label}</p>
+                        <p className="mt-3 text-3xl font-extrabold text-white">{value}</p>
+                        <p className="mt-2 text-sm leading-6 text-white/58">{note}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <div className="grid min-w-[240px] gap-3 sm:grid-cols-2">
+
+                <div className="space-y-4">
                   {[
-                    ["Profil gücü", `${Math.min(100, profileStrength * 25)}%`],
-                    ["Görünürlük seviyesi", (summary?.profile.is_premium || currentUser?.is_premium) ? "Premium" : "Standart"],
-                    ["Ana beceriler", `${summary?.profile.skills?.length || currentUser?.skills?.length || 0}`],
-                    ["İlgi alanları", `${summary?.profile.interests?.length || currentUser?.interests?.length || 0}`],
+                    ["E-posta", summary?.profile.email || currentUser?.email || "-"],
+                    ["Katılım Tarihi", formatJoinedDate(summary?.profile.date_joined || currentUser?.date_joined || "")],
+                    ["Beceri haritası", (summary?.profile.skills || currentUser?.skills || []).join(", ") || "Henüz eklenmedi"],
+                    ["İlgi haritası", (summary?.profile.interests || currentUser?.interests || []).join(", ") || "Henüz eklenmedi"],
                   ].map(([label, value]) => (
-                    <div key={String(label)} className="rounded-2xl bg-[#F7F8FC] p-4">
-                      <p className="text-xs font-bold uppercase tracking-widest text-ink/42">{label}</p>
-                      <p className="mt-2 text-xl font-extrabold text-ink">{value}</p>
+                    <div key={String(label)} className="app-soft-card rounded-[1.6rem] p-5">
+                      <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/42">{label}</p>
+                      <p className="mt-3 text-sm font-semibold leading-7 text-white">{value}</p>
                     </div>
                   ))}
-                </div>
-              </div>
-            </div>
 
-            <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
-              {[
-                ["E-posta", summary?.profile.email || currentUser?.email || "-"],
-                ["Katılım Tarihi", formatJoinedDate(summary?.profile.date_joined || currentUser?.date_joined || "")],
-                ["Beceri haritası", (summary?.profile.skills || currentUser?.skills || []).join(", ") || "Henüz eklenmedi"],
-                ["İlgi haritası", (summary?.profile.interests || currentUser?.interests || []).join(", ") || "Henüz eklenmedi"],
-              ].map(([label, value]) => (
-                <div key={String(label)} className="app-panel rounded-[2rem] p-6">
-                  <p className="text-xs font-bold uppercase tracking-widest text-ink/42">{label}</p>
-                  <p className="mt-2 text-sm font-bold leading-6 text-ink">{value}</p>
+                  <div className="app-solid-card rounded-[1.9rem] p-5">
+                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/42">Herkese Açık Profil</p>
+                    <p className="mt-3 text-sm leading-7 text-white/68">
+                      Diğer kullanıcıların seni nasıl gördüğünü, güven rozetlerini ve dışa açık vitrinin nasıl durduğunu buradan kontrol et.
+                    </p>
+                    <div className="mt-5 flex flex-wrap gap-3">
+                      <button type="button" onClick={() => currentUser && openPublicProfile(currentUser.id)} className="rounded-2xl bg-primary px-6 py-3 text-sm font-bold text-white transition hover:bg-primary/90">
+                        Açık Profilimi Gör
+                      </button>
+                      {onboardingNeeded && (
+                        <button type="button" onClick={() => setOnboardingOpen(true)} className="rounded-2xl border border-white/12 bg-white/6 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10">
+                          Profil Sinyalini Güçlendir
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              ))}
-            </div>
-
-            <div className="app-panel rounded-[2rem] p-6 lg:col-span-2">
-              <p className="text-xs font-bold uppercase tracking-widest text-ink/42">Herkese Açık Profil</p>
-              <p className="mt-2 text-sm leading-6 text-ink/62">Diğer kullanıcıların seni nasıl gördüğünü, puan ve yorumlarının nasıl listelendiğini buradan kontrol edebilirsin.</p>
-              <div className="mt-4 flex flex-wrap gap-3">
-                <button type="button" onClick={() => currentUser && openPublicProfile(currentUser.id)} className="rounded-2xl bg-ink px-6 py-3 text-sm font-bold text-white transition hover:bg-ink/90">
-                  Açık Profilimi Gör
-                </button>
-                {onboardingNeeded && (
-                  <button type="button" onClick={() => setOnboardingOpen(true)} className="rounded-2xl border border-primary/20 bg-white px-6 py-3 text-sm font-bold text-primary transition hover:bg-primary/5">
-                    Profil Sinyalini Güçlendir
-                  </button>
-                )}
               </div>
             </div>
 
             {!summary?.profile.is_premium && !currentUser?.is_premium ? (
-              <div className="rounded-[2rem] border border-primary/15 bg-primary/5 p-6 shadow-halo backdrop-blur lg:col-span-2">
-                <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">Premium</p>
-                <h3 className="mt-2 text-2xl font-extrabold text-ink">YZ Ekip Kurucu ve doğrulanmış yetenek rozeti için Premium'a geç</h3>
-                <p className="mt-2 text-sm leading-6 text-ink/62">Premium hesabını aktifleştirerek YZ Ekip Kurucu, gelişmiş filtreler ve doğrulanmış yetenek başvuru akışına erişebilirsin.</p>
-                {billingFeedback && <div className="mt-4 rounded-2xl border border-primary/10 bg-white px-4 py-3 text-sm text-primary">{billingFeedback}</div>}
+              <div className="app-panel rounded-[2rem] border-primary/18 p-6 shadow-halo backdrop-blur">
+                <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#9ab0ff]">Premium</p>
+                <h3 className="mt-2 text-2xl font-extrabold text-white">YZ Ekip Kurucu, mentör kredileri ve verified başvurusu için premium'a geç</h3>
+                    <p className="mt-2 max-w-3xl text-sm leading-7 text-white/68">Premium hesabı aktive edildiğinde yapay zeka destekli aday sıralaması açılır, profil görünürlüğün yükselir ve her ay 1 ücretsiz 15 dakikalık mentör görüşmesi hakkı kazanırsın. Sonraki seanslar ödeme sistemi ile ilerler.</p>
+                {billingFeedback && <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-[#c7d3ff]">{billingFeedback}</div>}
                 <div className="mt-5 flex flex-wrap gap-3">
                   <a href="#premium" className="rounded-2xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90">Premium Sayfasına Git</a>
-                  <button type="button" onClick={() => startPremiumSimulation("monthly")} className="rounded-2xl border border-primary/20 bg-white px-6 py-3 text-sm font-bold text-primary transition hover:bg-primary/5">
+                  <button type="button" onClick={() => startPremiumSimulation("monthly")} className="rounded-2xl border border-white/12 bg-white/6 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10">
                     Hızlı Aylık Aktivasyon
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="rounded-[2rem] border border-amber-200/50 bg-amber-50/50 p-6 shadow-halo backdrop-blur lg:col-span-2">
-                <p className="text-sm font-bold uppercase tracking-[0.2em] text-amber-600/70">Doğrulanmış Yetenek Başvurusu</p>
-                <h3 className="mt-2 text-2xl font-extrabold text-ink">Yeteneklerini doğrula ve öne çık</h3>
-                <p className="mt-2 text-sm leading-6 text-ink/62">Premium üye olduğun için doğrulanmış yetenek rozetine başvurabilirsin. Bu başvuru doğrudan yönetim ekibinin inceleme havuzuna düşer ve onaylandığında profilinde görünür.</p>
+              <div className="app-panel rounded-[2rem] border-amber-300/25 p-6 shadow-halo backdrop-blur">
+                <p className="text-sm font-bold uppercase tracking-[0.2em] text-amber-300/75">Doğrulanmış Yetenek Başvurusu</p>
+                <h3 className="mt-2 text-2xl font-extrabold text-white">Yeteneklerini doğrula ve vitrinde öne çık</h3>
+                <p className="mt-2 max-w-3xl text-sm leading-7 text-white/68">Premium üye olduğun için doğrulanmış yetenek rozetine başvurabilirsin. Onaylandığında profilindeki güven sinyali daha güçlü görünür ve eşleşme kaliten yükselir.</p>
                 <form className="mt-6 space-y-4" onSubmit={handleVerifiedSubmit}>
-                  <input type="text" required placeholder="Başvurduğun Ünvan (örn: Kıdemli React Geliştiricisi)" value={verifiedForm.requested_title} onChange={(e) => setVerifiedForm({ ...verifiedForm, requested_title: e.target.value })} className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-amber-400" />
-                  <input type="url" required placeholder="Portfolyo URL (GitHub, LinkedIn vs.)" value={verifiedForm.portfolio_url} onChange={(e) => setVerifiedForm({ ...verifiedForm, portfolio_url: e.target.value })} className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-amber-400" />
-                  <textarea placeholder="Eklemek istediğin notlar..." value={verifiedForm.note} onChange={(e) => setVerifiedForm({ ...verifiedForm, note: e.target.value })} className="min-h-24 w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-amber-400" />
-                  {verifiedFeedback && <div className="rounded-2xl border border-amber-200 bg-amber-100 px-4 py-3 text-sm text-amber-700">{verifiedFeedback}</div>}
+                  <input type="text" required placeholder="Başvurduğun unvan" value={verifiedForm.requested_title} onChange={(e) => setVerifiedForm({ ...verifiedForm, requested_title: e.target.value })} className="app-input" />
+                  <input type="url" required placeholder="Portfolyo URL" value={verifiedForm.portfolio_url} onChange={(e) => setVerifiedForm({ ...verifiedForm, portfolio_url: e.target.value })} className="app-input" />
+                  <textarea placeholder="Eklemek istediğin notlar..." value={verifiedForm.note} onChange={(e) => setVerifiedForm({ ...verifiedForm, note: e.target.value })} className="app-input min-h-24" />
+                  {verifiedFeedback && <div className="rounded-2xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">{verifiedFeedback}</div>}
                   <button type="submit" className="rounded-2xl bg-amber-500 px-6 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-amber-600">Rozet Başvurusu Yap</button>
                 </form>
               </div>
@@ -2987,112 +3230,112 @@ function DashboardPage({
         {route === "app-member" && (
           <section className="space-y-6">
             {publicProfileLoading ? (
-              <div className="rounded-[2rem] border border-white/60 bg-white/88 p-8 shadow-halo backdrop-blur">
-                <p className="text-sm text-ink/60">Profil yükleniyor…</p>
+              <div className="app-panel rounded-[2rem] p-8 shadow-halo backdrop-blur">
+                <p className="text-sm text-white/60">Profil yükleniyor…</p>
               </div>
             ) : publicProfile ? (
               <>
-                <div className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-white/88 p-8 shadow-halo backdrop-blur">
+                <div className="app-panel relative overflow-hidden rounded-[2rem] p-8 shadow-halo backdrop-blur">
                   <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top_left,rgba(71,93,178,0.18),transparent_40%),radial-gradient(circle_at_80%_0%,rgba(63,177,112,0.12),transparent_26%)]" />
                   <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                     <div className="max-w-3xl">
-                      <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">Üye Profili</p>
-                      <h2 className="mt-2 text-4xl font-extrabold text-ink">{publicProfile.full_name}</h2>
-                      <p className="mt-2 text-base text-ink/62">
+                      <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#9ab0ff]">Üye Profili</p>
+                      <h2 className="mt-2 text-4xl font-extrabold text-white">{publicProfile.full_name}</h2>
+                      <p className="mt-2 text-base text-white/62">
                         {publicProfile.title}
                         {publicProfile.is_verified_talent ? " · Doğrulanmış Yetenek" : ""}
                         {publicProfile.is_premium ? " · Premium" : ""}
                       </p>
-                      <p className="mt-4 text-sm leading-7 text-ink/68">{publicProfile.bio || "Bu kullanıcı henüz biyografi eklememiş."}</p>
+                      <p className="mt-4 text-sm leading-7 text-white/68">{publicProfile.bio || "Bu kullanıcı henüz biyografi eklememiş."}</p>
                     </div>
                     <div className="grid min-w-[280px] gap-3 sm:grid-cols-2">
-                      <div className="rounded-2xl bg-[#F7F8FC] p-4">
-                        <p className="text-xs font-bold uppercase tracking-widest text-ink/42">Ortalama Puan</p>
-                        <p className="mt-2 text-2xl font-extrabold text-ink">{publicProfile.average_rating ? `${publicProfile.average_rating}/5` : "-"}</p>
+                      <div className="app-soft-card rounded-2xl p-4">
+                        <p className="text-xs font-bold uppercase tracking-widest text-white/42">Ortalama Puan</p>
+                        <p className="mt-2 text-2xl font-extrabold text-white">{publicProfile.average_rating ? `${publicProfile.average_rating}/5` : "-"}</p>
                       </div>
-                      <div className="rounded-2xl bg-[#F7F8FC] p-4">
-                        <p className="text-xs font-bold uppercase tracking-widest text-ink/42">Yorum Sayısı</p>
-                        <p className="mt-2 text-2xl font-extrabold text-ink">{publicProfile.reviews_count}</p>
+                      <div className="app-soft-card rounded-2xl p-4">
+                        <p className="text-xs font-bold uppercase tracking-widest text-white/42">Yorum Sayısı</p>
+                        <p className="mt-2 text-2xl font-extrabold text-white">{publicProfile.reviews_count}</p>
                       </div>
-                      <div className="rounded-2xl bg-[#F7F8FC] p-4 sm:col-span-2">
-                        <p className="text-xs font-bold uppercase tracking-widest text-ink/42">Katılım Tarihi</p>
-                        <p className="mt-2 text-base font-bold text-ink">{formatJoinedDate(publicProfile.date_joined)}</p>
+                      <div className="app-soft-card rounded-2xl p-4 sm:col-span-2">
+                        <p className="text-xs font-bold uppercase tracking-widest text-white/42">Katılım Tarihi</p>
+                        <p className="mt-2 text-base font-bold text-white">{formatJoinedDate(publicProfile.date_joined)}</p>
                       </div>
                     </div>
                   </div>
 
                   <div className="mt-6 grid gap-4 lg:grid-cols-2">
-                    <div className="rounded-2xl bg-[#F7F8FC] p-5">
-                      <p className="text-xs font-bold uppercase tracking-widest text-ink/42">Yetenekler</p>
+                    <div className="app-soft-card rounded-2xl p-5">
+                      <p className="text-xs font-bold uppercase tracking-widest text-white/42">Yetenekler</p>
                       <div className="mt-3 flex flex-wrap gap-2">
                         {publicProfile.skills.length ? publicProfile.skills.map((skill) => (
                           <span key={skill} className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">{skill}</span>
-                        )) : <span className="text-sm text-ink/58">Yetenek bilgisi yok.</span>}
+                        )) : <span className="text-sm text-white/58">Yetenek bilgisi yok.</span>}
                       </div>
                     </div>
-                    <div className="rounded-2xl bg-[#F7F8FC] p-5">
-                      <p className="text-xs font-bold uppercase tracking-widest text-ink/42">İlgi Alanları</p>
+                    <div className="app-soft-card rounded-2xl p-5">
+                      <p className="text-xs font-bold uppercase tracking-widest text-white/42">İlgi Alanları</p>
                       <div className="mt-3 flex flex-wrap gap-2">
                         {publicProfile.interests.length ? publicProfile.interests.map((interest) => (
                           <span key={interest} className="rounded-full bg-success/10 px-3 py-1 text-xs font-semibold text-success">{interest}</span>
-                        )) : <span className="text-sm text-ink/58">İlgi alanı bilgisi yok.</span>}
+                        )) : <span className="text-sm text-white/58">İlgi alanı bilgisi yok.</span>}
                       </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-                  <section className="rounded-[2rem] border border-white/60 bg-white/88 p-6 shadow-halo backdrop-blur">
-                    <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">Son Projeler</p>
+                  <section className="app-panel rounded-[2rem] p-6 shadow-halo backdrop-blur">
+                    <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#9ab0ff]">Son Projeler</p>
                     <div className="mt-4 space-y-3">
                       {publicProfile.recent_projects.length ? publicProfile.recent_projects.map((project) => (
-                        <article key={project.id} className="rounded-2xl border border-ink/8 bg-[#F7F8FC] p-4">
-                          <p className="font-bold text-ink">{project.title}</p>
-                          <p className="mt-2 text-sm leading-6 text-ink/62">{project.summary}</p>
+                        <article key={project.id} className="app-solid-card rounded-2xl p-4">
+                          <p className="font-bold text-white">{project.title}</p>
+                          <p className="mt-2 text-sm leading-6 text-white/62">{project.summary}</p>
                         </article>
                       )) : (
-                        <div className="rounded-2xl border border-dashed border-ink/15 bg-[#F7F8FC] p-4 text-sm text-ink/55">Görüntülenecek proje yok.</div>
+                        <div className="rounded-2xl border border-dashed border-white/12 bg-black/20 p-4 text-sm text-white/55">Görüntülenecek proje yok.</div>
                       )}
                     </div>
                   </section>
 
-                  <section className="rounded-[2rem] border border-white/60 bg-white/88 p-6 shadow-halo backdrop-blur">
-                    <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">Yorumlar ve Puanlar</p>
-                    {publicProfileFeedback && <div className="mt-4 rounded-2xl border border-primary/10 bg-primary/5 px-4 py-3 text-sm text-primary">{publicProfileFeedback}</div>}
+                  <section className="app-panel rounded-[2rem] p-6 shadow-halo backdrop-blur">
+                    <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#9ab0ff]">Yorumlar ve Puanlar</p>
+                    {publicProfileFeedback && <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-[#c7d3ff]">{publicProfileFeedback}</div>}
                     <div className="mt-4 space-y-3">
                       {publicProfile.reviews.length ? publicProfile.reviews.map((review) => (
-                        <article key={review.id} className="rounded-2xl border border-ink/8 bg-[#F7F8FC] p-4">
+                        <article key={review.id} className="app-solid-card rounded-2xl p-4">
                           <div className="flex items-start justify-between gap-4">
                             <div>
-                              <button type="button" onClick={() => openPublicProfile(review.reviewer.id)} className="font-bold text-ink transition hover:text-primary">{review.reviewer.full_name}</button>
-                              <p className="mt-1 text-xs uppercase tracking-widest text-ink/42">{review.project.title}</p>
+                              <button type="button" onClick={() => openPublicProfile(review.reviewer.id)} className="font-bold text-white transition hover:text-[#9ab0ff]">{review.reviewer.full_name}</button>
+                              <p className="mt-1 text-xs uppercase tracking-widest text-white/42">{review.project.title}</p>
                             </div>
                             <div className="text-right">
                               <p className="text-sm font-bold text-amber-500">{renderStars(review.rating)}</p>
-                              <p className="mt-1 text-xs text-ink/42">{formatJoinedDate(review.created_at)}</p>
+                              <p className="mt-1 text-xs text-white/42">{formatJoinedDate(review.created_at)}</p>
                             </div>
                           </div>
-                          <p className="mt-3 text-sm leading-6 text-ink/68">{review.comment}</p>
+                          <p className="mt-3 text-sm leading-6 text-white/68">{review.comment}</p>
                         </article>
                       )) : (
-                        <div className="rounded-2xl border border-dashed border-ink/15 bg-[#F7F8FC] p-4 text-sm text-ink/55">Bu kullanıcı için henüz yorum yok.</div>
+                        <div className="rounded-2xl border border-dashed border-white/12 bg-black/20 p-4 text-sm text-white/55">Bu kullanıcı için henüz yorum yok.</div>
                       )}
                     </div>
 
                     {currentUser && publicProfile.eligible_review_applications.length > 0 && (
-                      <form className="mt-6 space-y-4 rounded-2xl border border-primary/10 bg-primary/5 p-5" onSubmit={handleCreateReview}>
+                      <form className="mt-6 space-y-4 rounded-2xl border border-primary/20 bg-primary/10 p-5" onSubmit={handleCreateReview}>
                         <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/60">Birlikte Çalışma Yorumu</p>
-                        <select value={reviewForm.application_id} onChange={(e) => setReviewForm((current) => ({ ...current, application_id: e.target.value }))} className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary/40" required>
+                        <select value={reviewForm.application_id} onChange={(e) => setReviewForm((current) => ({ ...current, application_id: e.target.value }))} className="app-input" required>
                           {publicProfile.eligible_review_applications.map((item) => (
                             <option key={item.application_id} value={item.application_id}>{item.project_title}</option>
                           ))}
                         </select>
-                        <select value={reviewForm.rating} onChange={(e) => setReviewForm((current) => ({ ...current, rating: Number(e.target.value) }))} className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary/40">
+                        <select value={reviewForm.rating} onChange={(e) => setReviewForm((current) => ({ ...current, rating: Number(e.target.value) }))} className="app-input">
                           {[5, 4, 3, 2, 1].map((rating) => (
                             <option key={rating} value={rating}>{rating} puan</option>
                           ))}
                         </select>
-                        <textarea value={reviewForm.comment} onChange={(e) => setReviewForm((current) => ({ ...current, comment: e.target.value }))} placeholder="Birlikte çalışma deneyimini kısaca yaz." className="min-h-28 w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary/40" required />
+                        <textarea value={reviewForm.comment} onChange={(e) => setReviewForm((current) => ({ ...current, comment: e.target.value }))} placeholder="Birlikte çalışma deneyimini kısaca yaz." className="app-input min-h-28" required />
                         <button type="submit" className="rounded-2xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90">Yorumu Kaydet</button>
                       </form>
                     )}
@@ -3100,20 +3343,19 @@ function DashboardPage({
                 </div>
               </>
             ) : (
-              <div className="rounded-[2rem] border border-white/60 bg-white/88 p-8 shadow-halo backdrop-blur">
-                <p className="text-sm text-ink/60">{publicProfileFeedback || "Profil bulunamadı."}</p>
+              <div className="app-panel rounded-[2rem] p-8 shadow-halo backdrop-blur">
+                <p className="text-sm text-white/60">{publicProfileFeedback || "Profil bulunamadı."}</p>
               </div>
             )}
           </section>
         )}
 
         {route === "app-ai-builder" && (
-          <section className="relative overflow-hidden rounded-[2.25rem] border border-white/60 bg-white/88 p-8 shadow-halo backdrop-blur lg:p-10">
-            <div className="absolute inset-x-0 top-0 h-28 bg-[radial-gradient(circle_at_top_left,rgba(71,93,178,0.18),transparent_42%),radial-gradient(circle_at_80%_0%,rgba(63,177,112,0.12),transparent_28%)]" />
+          <section className="app-panel relative overflow-hidden rounded-[2.25rem] p-8 shadow-halo backdrop-blur lg:p-10">
             <div className="relative">
-              <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">Yapay Zeka</p>
-              <h2 className="mt-2 text-3xl font-extrabold text-ink">AI Takım Kurucu</h2>
-              <p className="mt-2 max-w-2xl text-base leading-7 text-ink/62">Projeniz için en uyumlu takım arkadaşlarını yapay zeka destekli analiz algoritmamızla saniyeler içinde bulun.</p>
+              <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#9ab0ff]">Yapay Zeka</p>
+              <h2 className="mt-2 text-3xl font-extrabold text-white">AI Takım Kurucu</h2>
+              <p className="mt-2 max-w-2xl text-base leading-7 text-white/68">Projen için en uyumlu takım arkadaşlarını, kayıt olurken verdiğin profil sinyalleri ve proje ihtiyaçları üzerinden saniyeler içinde bul.</p>
             </div>
 
             {(!summary?.profile.is_premium && !currentUser?.is_premium) ? (
@@ -3168,24 +3410,24 @@ function DashboardPage({
               <div className="mt-8 space-y-6">
                 <div className="grid gap-4 md:grid-cols-3">
                   {[
-                    ["Eşleşme boyutları", "Beceri, hedef, geçmiş"],
+                    ["Eşleşme boyutları", "Beceri, rol, ilgi"],
                     ["Karar hızı", "10 saniyenin altında"],
                     ["Çıktı kalitesi", "Neden eşleşti açıklamaları"],
                   ].map(([label, value]) => (
-                    <div key={String(label)} className="rounded-2xl border border-ink/8 bg-white p-5 shadow-sm">
-                      <p className="text-xs font-bold uppercase tracking-widest text-ink/42">{label}</p>
-                      <p className="mt-3 text-lg font-extrabold text-ink">{value}</p>
+                    <div key={String(label)} className="app-solid-card rounded-2xl p-5">
+                      <p className="text-xs font-bold uppercase tracking-widest text-white/42">{label}</p>
+                      <p className="mt-3 text-lg font-extrabold text-white">{value}</p>
                     </div>
                   ))}
                 </div>
 
                 {aiAnalysisState === "idle" && (
                     <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-                      <div className="rounded-[2rem] border border-primary/20 bg-primary/5 p-8">
-                        <p className="text-lg font-bold text-primary">Analiz için Proje Seçin</p>
-                      <p className="mt-2 max-w-md text-sm text-ink/62">Kendi oluşturduğunuz projelerinizden birini seçerek size en uygun yetenekleri listeleyin.</p>
+                      <div className="app-solid-card rounded-[2rem] border-primary/20 p-8">
+                        <p className="text-lg font-bold text-[#9ab0ff]">Analiz için Proje Seçin</p>
+                      <p className="mt-2 max-w-md text-sm text-white/68">Kendi oluşturduğun projelerden birini seçerek sana en uygun adayları gerekçeleriyle listele.</p>
                       <div className="mt-6 w-full text-left">
-                        <select value={aiSelectedProjectId || ""} onChange={(e) => setAiSelectedProjectId(Number(e.target.value))} className="w-full rounded-2xl border border-ink/20 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary/50">
+                        <select value={aiSelectedProjectId || ""} onChange={(e) => setAiSelectedProjectId(Number(e.target.value))} className="app-input">
                           <option value="" disabled>Proje seçiniz...</option>
                           {publicProjects.filter((p) => p.owner.id === currentUser?.id).map((p) => (
                             <option key={p.id} value={p.id}>{p.title}</option>
@@ -3195,15 +3437,15 @@ function DashboardPage({
                       <button onClick={runAiAnalysis} disabled={!aiSelectedProjectId} className="mt-6 rounded-2xl bg-primary px-8 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">
                         Analizi Başlat
                       </button>
-                      {publicProjects.filter((p) => p.owner.id === currentUser?.id).length === 0 && <p className="mt-4 text-sm font-semibold text-red-500">Önce bir proje oluşturmalısınız.</p>}
+                      {publicProjects.filter((p) => p.owner.id === currentUser?.id).length === 0 && <p className="mt-4 text-sm font-semibold text-red-300">Önce bir proje oluşturmalısın.</p>}
                     </div>
-                    <div className="rounded-[2rem] border border-ink/8 bg-[#081121] p-8 text-white shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
+                    <div className="app-solid-card rounded-[2rem] p-8 text-white">
                       <p className="text-xs font-bold uppercase tracking-[0.24em] text-white/45">Skorlama nasıl çalışır?</p>
                       <div className="mt-5 space-y-4">
                         {[
                           ["Teknik örtüşme", "Adayın beceri setinin proje ihtiyaçlarınla ne kadar uyuştuğu."],
                           ["Hedef hizalaması", "İlgi alanları ve proje niyetinin senin misyonunla ne kadar örtüştüğü."],
-                          ["İş birliği güveni", "Kurucu riskini düşüren geri bildirim ve geçmiş takım deneyimi."],
+                          ["Doğrulanmış sinyal", "Doğrulanmış yetenek rozeti ve profil gücü gibi güven arttıran sinyaller."],
                         ].map(([label, body]) => (
                           <div key={String(label)} className="rounded-2xl border border-white/10 bg-white/6 p-4">
                             <p className="font-bold text-white">{label}</p>
@@ -3227,33 +3469,33 @@ function DashboardPage({
                       <button onClick={() => setAiAnalysisState("idle")} className="text-sm font-semibold text-primary hover:underline">Farklı Proje Analiz Et</button>
                     </div>
                     {aiMatches.length === 0 ? (
-                      <div className="rounded-2xl border border-ink/8 bg-white p-5 text-center text-sm text-ink/60">Eşleşen aday bulunamadı. Lütfen projenizin yetenek gereksinimlerini detaylandırın.</div>
+                      <div className="app-solid-card rounded-2xl p-5 text-center text-sm text-white/62">Eşleşen aday bulunamadı. Proje özetini ve aradığın rolleri biraz daha netleştir.</div>
                     ) : (
                       <div className="grid gap-4 xl:grid-cols-2">
                         {aiMatches.map((match) => (
-                          <div key={match.user.id} className="rounded-[2rem] border border-ink/8 bg-white p-6 shadow-sm transition hover:border-primary/30">
+                          <div key={match.user.id} className="app-solid-card rounded-[2rem] p-6 transition hover:border-primary/30">
                             <div className="flex items-start justify-between gap-4">
                               <div>
-                                <p className="flex items-center gap-1 font-bold text-ink">
+                                <p className="flex items-center gap-1 font-bold text-white">
                                   {match.user.full_name}
                                   {match.user.is_verified_talent && <span className="text-xs text-primary" title="Doğrulanmış Yetenek">Doğrulanmış</span>}
                                 </p>
-                                <p className="text-sm text-ink/60">{match.recommended_role || match.user.title}</p>
+                                <p className="text-sm text-white/60">{match.recommended_role || match.user.title}</p>
                               </div>
                               <span className="rounded-full bg-success/10 px-3 py-1 text-xs font-bold text-success">%{Math.round(match.score)} Uyum</span>
                             </div>
-                            <p className="mt-4 text-sm leading-7 text-ink/62">{match.ai_summary}</p>
+                            <p className="mt-4 text-sm leading-7 text-white/68">{match.ai_summary}</p>
                             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                              <div className="rounded-2xl bg-[#F7F8FC] p-4">
-                                <p className="text-xs font-bold uppercase tracking-widest text-ink/40">Eşleşen beceriler</p>
-                                <p className="mt-2 text-sm font-semibold text-ink">{match.matched_skills.join(", ") || "-"}</p>
+                              <div className="app-soft-card rounded-2xl p-4">
+                                <p className="text-xs font-bold uppercase tracking-widest text-white/40">Eşleşen beceriler</p>
+                                <p className="mt-2 text-sm font-semibold text-white">{match.matched_skills.join(", ") || "-"}</p>
                               </div>
-                              <div className="rounded-2xl bg-[#F7F8FC] p-4">
-                                <p className="text-xs font-bold uppercase tracking-widest text-ink/40">Neden bu aday?</p>
-                                <p className="mt-2 text-sm font-semibold text-ink">Yüksek örtüşme, güçlü güven sinyalleri ve rol uygunluğu.</p>
+                              <div className="app-soft-card rounded-2xl p-4">
+                                <p className="text-xs font-bold uppercase tracking-widest text-white/40">Neden bu aday?</p>
+                                <p className="mt-2 text-sm font-semibold text-white">Yüksek teknik örtüşme, ilgi uyumu ve rol uygunluğu.</p>
                               </div>
                             </div>
-                            <button onClick={() => openPublicProfile(match.user.id)} className="mt-5 w-full rounded-xl bg-ink/5 py-3 text-sm font-bold text-ink transition hover:bg-ink hover:text-white">Profili İncele</button>
+                            <button onClick={() => openPublicProfile(match.user.id)} className="mt-5 w-full rounded-xl border border-white/12 bg-white/6 py-3 text-sm font-bold text-white transition hover:bg-primary hover:border-primary">Profili İncele</button>
                           </div>
                         ))}
                       </div>
@@ -3266,98 +3508,15 @@ function DashboardPage({
         )}
 
         {route === "app-networking" && (
-          <section className="rounded-[2.25rem] border border-white/60 bg-white/88 p-8 shadow-halo backdrop-blur lg:p-10 relative overflow-hidden">
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">
-              Topluluk
-            </p>
-            <h2 className="mt-2 text-3xl font-extrabold text-ink">
-              Ağ Kurma ve Etkinlikler
-            </h2>
-            <p className="mt-2 max-w-2xl text-base leading-7 text-ink/62">
-              Sadece Premium üyelere özel etkinlikler, yatırımcı buluşmaları ve kapalı Discord topluluğu.
-            </p>
-            
-            {(!summary?.profile.is_premium && !currentUser?.is_premium) ? (
-              <div className="mt-8 grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-                <section className="rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(71,93,178,0.2),transparent_34%),linear-gradient(180deg,rgba(8,14,25,0.96),rgba(6,11,20,0.98))] p-7 text-white shadow-[0_24px_80px_rgba(0,0,0,0.26)]">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/8 text-2xl">
-                      🔒
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-[0.24em] text-white/45">Premium erişim gerekli</p>
-                      <h3 className="mt-1 text-2xl font-extrabold">Ağ kurma ayrıcalıklarını aç</h3>
-                    </div>
-                  </div>
-                  <p className="mt-5 max-w-xl text-sm leading-7 text-slate-300">
-                    Standart kullanıcılar temel topluluk yüzeyini kullanır. Premium ile kapalı kurucu çevreleri, yatırımcı buluşmaları ve seçilmiş networking akışlarına erişirsin.
-                  </p>
-                  <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                    {["Kapalı kurucu odaları", "Etkinlik önceliği", "Yüksek sinyalli tanışmalar"].map((item) => (
-                      <div key={item} className="rounded-2xl border border-white/8 bg-white/6 px-4 py-4 text-sm font-semibold text-white/82 backdrop-blur">
-                        {item}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-7 flex flex-wrap gap-3">
-                    <a href="#premium" className="rounded-2xl bg-white px-6 py-3 text-sm font-bold text-[#071121] transition hover:bg-[#DDE5FF]">
-                      Premium'u Aç
-                    </a>
-                    <a href="#app-profile" className="rounded-2xl border border-white/12 bg-white/6 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
-                      Profilimi Güçlendir
-                    </a>
-                  </div>
-                </section>
-
-                <section className="rounded-[2rem] border border-white/10 bg-white/5 p-7 text-white backdrop-blur">
-                  <p className="text-xs font-bold uppercase tracking-[0.24em] text-white/42">Açılacak alanlar</p>
-                  <div className="mt-5 space-y-4">
-                    {[
-                      ["VIP topluluklar", "Kurucular, mentörler ve üreticilerle daha odaklı odalara katıl."],
-                      ["Etkinlik fırsatları", "Pitch geceleri, yatırımcı buluşmaları ve seçili etkinlikleri takip et."],
-                      ["Daha nitelikli bağlantılar", "Yüksek uyumlu iş birlikleri için görünürlüğünü artır."],
-                    ].map(([title, body]) => (
-                      <article key={String(title)} className="rounded-2xl border border-white/8 bg-black/20 p-4">
-                        <p className="font-bold text-white">{title}</p>
-                        <p className="mt-2 text-sm leading-6 text-slate-300">{body}</p>
-                      </article>
-                    ))}
-                  </div>
-                </section>
-              </div>
-            ) : (
-              <div className="mt-8 grid gap-6 lg:grid-cols-2">
-                <div className="rounded-2xl bg-[#5865F2]/10 p-6 border border-[#5865F2]/20">
-                  <h3 className="text-xl font-extrabold text-[#5865F2]">VIP Discord Topluluğu</h3>
-                  <p className="mt-2 text-sm leading-6 text-ink/70">
-                    Sadece onaylı kurucuların ve premium üyelerin yer aldığı özel kanallara katılın. Projenizi tanıtın, anında geri bildirim alın.
-                  </p>
-                  <button className="mt-5 rounded-2xl bg-[#5865F2] px-6 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-[#5865F2]/90 w-full">
-                    Discord'a Katıl (Demo)
-                  </button>
-                </div>
-                
-                <div className="rounded-2xl border border-ink/10 bg-white p-6 shadow-sm">
-                  <p className="text-xs font-bold uppercase tracking-widest text-primary">Yaklaşan Etkinlik</p>
-                  <h3 className="mt-1 text-xl font-extrabold text-ink">Yatırımcı Pitch Gecesi</h3>
-                  <p className="mt-2 text-sm leading-6 text-ink/70">
-                    Önümüzdeki hafta gerçekleşecek kapalı sunum etkinliğinde sahne almak için projenizi hazırlayın.
-                  </p>
-                  <div className="mt-5 flex gap-3">
-                    <button className="rounded-2xl bg-ink px-6 py-3 text-sm font-bold text-white transition hover:bg-ink/80 flex-1">
-                      Kayıt Ol (Demo)
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </section>
+          <EventsView events={showcaseData.events} loading={publicLoading} />
         )}
 
         {route === "app-mentors" && (
-          <MentorsView 
-            mentors={mentors} 
-            onSendRequest={handleMentorRequest} 
+          <MentorsView
+            mentors={mentors}
+            onSendRequest={handleMentorRequest}
+            onConfirmRequest={handleConfirmMentorRequest}
+            userRequests={userRequests}
             feedback={mentorFeedback}
             credits={summary?.profile.mentor_credits || 0}
             isPremium={isPremium}
@@ -3381,7 +3540,7 @@ function DashboardPage({
               Ürün sağlığı, moderasyon ve denetim
             </h2>
             <p className="app-section-copy mt-3 max-w-3xl text-sm">
-              Moderasyon, verified talent onaylari, premium durumu ve ekip akislari bu panelden tek yerden yonetilir. Demo verileriyle birlikte urun sagligini ve topluluk guvenini burada izleyebilirsin.
+              Moderasyon, verified talent onaylari, premium durumu ve ekip akislari bu panelden tek yerden yonetilir. Ürün sağlığını ve topluluk güvenini burada izleyebilirsin.
             </p>
 
             <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -3777,9 +3936,16 @@ export default function App() {
   const [route, setRoute] = useState<RouteName>(getRouteFromHash());
   const [publicProjects, setPublicProjects] = useState<ProjectCard[]>([]);
   const [publicMentors, setPublicMentors] = useState<any[]>([]);
+  const [showcaseData, setShowcaseData] = useState<ShowcaseData>({
+    projects: [],
+    users: [],
+    threads: [],
+    events: [],
+  });
   const [publicLoading, setPublicLoading] = useState(false);
   const [premiumFeedback, setPremiumFeedback] = useState("");
   const [premiumLoading, setPremiumLoading] = useState(false);
+  const [premiumSubscriptionState, setPremiumSubscriptionState] = useState<PremiumSubscriptionState | null>(null);
   const [marketingUser, setMarketingUser] = useState<CurrentUser | null>(() => {
     const stored = localStorage.getItem("foundrly_current_user");
     return stored ? (JSON.parse(stored) as CurrentUser) : null;
@@ -3788,12 +3954,24 @@ export default function App() {
   const loadPublicData = async () => {
     setPublicLoading(true);
     try {
-      const [projectsRes, mentorsRes] = await Promise.all([
-        fetch("/api/projects/"),
-        fetch("/api/mentors/"),
-      ]);
-      if (projectsRes.ok) setPublicProjects(await projectsRes.json());
-      if (mentorsRes.ok) setPublicMentors(await mentorsRes.json());
+      const requests: Promise<Response>[] = [fetch("/api/showcase/")];
+      if (marketingAccessToken) {
+        requests.push(
+          fetch("/api/mentors/", {
+            headers: {
+              Authorization: `Bearer ${marketingAccessToken}`,
+            },
+          }),
+        );
+      }
+
+      const [showcaseResponse, mentorsResponse] = await Promise.all(requests);
+      if (showcaseResponse.ok) {
+        setShowcaseData((await showcaseResponse.json()) as ShowcaseData);
+      }
+      if (mentorsResponse?.ok) {
+        setPublicMentors(await mentorsResponse.json());
+      }
     } catch (e) {
     } finally {
       setPublicLoading(false);
@@ -3801,10 +3979,27 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (route === "home" || route === "discover" || route === "mentors") {
+    if (["discover", "teammates", "events", "community", "mentors"].includes(route)) {
       loadPublicData();
     }
   }, [route]);
+
+  const loadPremiumSubscription = async () => {
+    if (!marketingAccessToken) {
+      setPremiumSubscriptionState(null);
+      return;
+    }
+    try {
+      const response = await fetch("/api/premium/subscription/", {
+        headers: {
+          Authorization: `Bearer ${marketingAccessToken}`,
+        },
+      });
+      if (!response.ok) return;
+      setPremiumSubscriptionState(await response.json());
+    } catch {
+    }
+  };
 
   useEffect(() => {
     const onHashChange = () => setRoute(getRouteFromHash());
@@ -3818,19 +4013,27 @@ export default function App() {
 
   const marketingAccessToken = getStoredAccessToken();
   const isMember = Boolean(marketingAccessToken || marketingUser);
-  const visibleNavLinks = isMember
-    ? NAV_LINKS
-    : NAV_LINKS.filter((link) => !MEMBERS_ONLY_NAV_HREFS.has(link.href));
+  const visibleNavLinks = NAV_LINKS;
 
   useEffect(() => {
+    if (route === "premium" && !isMember) {
+      window.location.hash = "#login?next=premium";
+      return;
+    }
     if (!isMember && MEMBERS_ONLY_ROUTES.has(route)) {
       window.location.hash = "#login";
     }
   }, [isMember, route]);
 
+  useEffect(() => {
+    if (route === "premium" && marketingAccessToken) {
+      loadPremiumSubscription();
+    }
+  }, [route, marketingAccessToken]);
+
   const runPremiumSimulation = async (plan: "monthly" | "yearly") => {
     if (!marketingAccessToken) {
-      window.location.hash = "#login";
+      window.location.hash = "#login?next=premium";
       return;
     }
 
@@ -3862,10 +4065,50 @@ export default function App() {
         localStorage.setItem("foundrly_current_user", JSON.stringify(me));
       }
 
-      setPremiumFeedback("Premium erişimin başarıyla aktif edildi.");
+      await loadPremiumSubscription();
+      setPremiumFeedback("Ödeme alındı. Premium erişimin başarıyla aktif edildi.");
     } catch (error) {
       setPremiumFeedback(
         error instanceof Error ? error.message : "Premium aktivasyonu başlatılamadı.",
+      );
+    } finally {
+      setPremiumLoading(false);
+    }
+  };
+
+  const cancelPremiumSubscription = async () => {
+    if (!marketingAccessToken) return;
+    setPremiumLoading(true);
+    setPremiumFeedback("");
+    try {
+      const response = await fetch("/api/premium/subscription/", {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${marketingAccessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(await parseError(response));
+      }
+
+      const meResponse = await fetch("/api/users/me/", {
+        headers: {
+          Authorization: `Bearer ${marketingAccessToken}`,
+        },
+      });
+
+      if (meResponse.ok) {
+        const me = await meResponse.json();
+        setMarketingUser(me);
+        localStorage.setItem("foundrly_current_user", JSON.stringify(me));
+      }
+
+      await loadPremiumSubscription();
+      setPremiumFeedback("Premium üyeliğin iptal edildi. Hesabın standart plana döndü.");
+    } catch (error) {
+      setPremiumFeedback(
+        error instanceof Error ? error.message : "Premium üyeliği iptal edilemedi.",
       );
     } finally {
       setPremiumLoading(false);
@@ -3890,7 +4133,7 @@ export default function App() {
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(71,93,178,0.25),transparent_30%),radial-gradient(circle_at_80%_18%,rgba(63,177,112,0.15),transparent_25%)]" />
           <header className="sticky top-0 z-50 border-b border-white/10 bg-[#050B18]/72 backdrop-blur-xl relative z-10">
             <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
-              <a href="#" className="flex flex-col leading-none">
+              <a href={marketingUser ? "#app-home" : "#home"} className="flex flex-col leading-none">
                 <span className="text-2xl font-extrabold tracking-tight text-white">Foundrly</span>
                 <span className="text-[11px] font-medium tracking-widest text-[#9ab0ff]/80">
                   FİKİRLERİ EKİPLERE DÖNÜŞTÜR
@@ -3918,7 +4161,9 @@ export default function App() {
             <PremiumSimulationPage
               authenticated={Boolean(marketingAccessToken)}
               currentUser={marketingUser}
+              subscriptionState={premiumSubscriptionState}
               onStartSimulation={runPremiumSimulation}
+              onCancelSubscription={cancelPremiumSubscription}
               feedback={premiumLoading ? "Premium erişimin hazırlanıyor…" : premiumFeedback}
             />
           </div>
@@ -3943,17 +4188,17 @@ export default function App() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(71,93,178,0.25),transparent_30%),radial-gradient(circle_at_80%_18%,rgba(63,177,112,0.15),transparent_25%)]" />
         <header className="sticky top-0 z-50 border-b border-white/10 bg-[#050B18]/72 backdrop-blur-xl relative z-10">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
-            <a href="#" className="flex flex-col leading-none">
+            <a href="#home" className="flex items-center gap-4 leading-none">
+              <img src="/f.jpg" alt="Foundrly" className="h-10 w-10 rounded-lg object-cover" />
               <span className="text-2xl font-extrabold tracking-tight text-white">Foundrly</span>
-              <span className="text-[11px] font-medium tracking-widest text-[#9ab0ff]/80">FİKİRLERİ EKİPLERE DÖNÜŞTÜR</span>
             </a>
-            <a href="#" className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-semibold text-white/90 backdrop-blur transition hover:border-white/22 hover:bg-white/10">Ana Sayfa</a>
+            <a href="#home" className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-semibold text-white/90 backdrop-blur transition hover:border-white/22 hover:bg-white/10">Ana Sayfa</a>
           </div>
         </header>
         <InfoPage
           eyebrow="Şirket"
           title="Foundrly hakkında"
-          lead="Foundrly, proje fikri olan kişileri doğru ekip arkadaşlarıyla bir araya getiren, ürün odaklı ve güven temelli bir ekip kurma platformudur. Üniversite projelerinden startup ekiplerine kadar farklı üretim senaryolarında daha iyi eşleşmeler kurmayı hedefler."
+          lead="Foundrly, proje fikri olan kişileri doğru ekip arkadaşlarıyla bir araya getiren, ürün odaklı ve güven temelli bir ekip kurma platformudur. Üniversite projelerinden kurumsal ekiplere kadar farklı üretim senaryolarında daha iyi eşleşmeler kurmayı hedefler."
           sections={[
             {
               title: "Misyonumuz",
@@ -3961,7 +4206,7 @@ export default function App() {
             },
             {
               title: "Yaklaşımımız",
-              body: "Dağınık topluluklar, cevapsız mesajlar ve belirsiz beceri profilleri yerine; proje bazlı keşif, doğrulanabilir profiller, premium görünürlük ve yapay zeka destekli eşleşme ile daha kontrollü bir ekip kurma deneyimi sunuyoruz.",
+              body: "Karmaşık süreçler, cevapsız mesajlar ve belirsiz beceri profilleri yerine; proje bazlı keşif, doğrulanabilir profiller, premium görünürlük ve yapay zeka destekli eşleşme ile daha kontrollü bir ekip kurma deneyimi sunuyoruz.",
             },
           ]}
         />
@@ -3976,11 +4221,11 @@ export default function App() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(71,93,178,0.25),transparent_30%),radial-gradient(circle_at_80%_18%,rgba(63,177,112,0.15),transparent_25%)]" />
         <header className="sticky top-0 z-50 border-b border-white/10 bg-[#050B18]/72 backdrop-blur-xl relative z-10">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
-            <a href="#" className="flex flex-col leading-none">
+            <a href="#home" className="flex items-center gap-4 leading-none">
+              <img src="/f.jpg" alt="Foundrly" className="h-10 w-10 rounded-lg object-cover" />
               <span className="text-2xl font-extrabold tracking-tight text-white">Foundrly</span>
-              <span className="text-[11px] font-medium tracking-widest text-[#9ab0ff]/80">FİKİRLERİ EKİPLERE DÖNÜŞTÜR</span>
             </a>
-            <a href="#" className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-semibold text-white/90 backdrop-blur transition hover:border-white/22 hover:bg-white/10">Ana Sayfa</a>
+            <a href="#home" className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-semibold text-white/90 backdrop-blur transition hover:border-white/22 hover:bg-white/10">Ana Sayfa</a>
           </div>
         </header>
         <InfoPage
@@ -3990,7 +4235,7 @@ export default function App() {
           sections={[
             {
               title: "Toplanan bilgiler",
-              body: "Platform üzerinde oluşturulan hesap bilgileri, profil verileri, yetenek alanları, ilgi alanları, proje içerikleri ve başvuru mesajları; ekip eşleşmesi, proje yönetimi ve moderasyon süreçlerini desteklemek amacıyla kullanılır.",
+              body: "Platform üzerinde oluşturulan hesap bilgileri, profil verileri, yetenek alanları, ilgi alanları, proje içerikleri ve başvuru mesajları; ekip eşleşmesi, proje yönetimi ve denetim süreçlerini desteklemek amacıyla kullanılır.",
             },
             {
               title: "Koruma ve erişim",
@@ -4009,25 +4254,25 @@ export default function App() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(71,93,178,0.25),transparent_30%),radial-gradient(circle_at_80%_18%,rgba(63,177,112,0.15),transparent_25%)]" />
         <header className="sticky top-0 z-50 border-b border-white/10 bg-[#050B18]/72 backdrop-blur-xl relative z-10">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
-            <a href="#" className="flex flex-col leading-none">
+            <a href="#home" className="flex items-center gap-4 leading-none">
+              <img src="/f.jpg" alt="Foundrly" className="h-10 w-10 rounded-lg object-cover" />
               <span className="text-2xl font-extrabold tracking-tight text-white">Foundrly</span>
-              <span className="text-[11px] font-medium tracking-widest text-[#9ab0ff]/80">FİKİRLERİ EKİPLERE DÖNÜŞTÜR</span>
             </a>
-            <a href="#" className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-semibold text-white/90 backdrop-blur transition hover:border-white/22 hover:bg-white/10">Ana Sayfa</a>
+            <a href="#home" className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-semibold text-white/90 backdrop-blur transition hover:border-white/22 hover:bg-white/10">Ana Sayfa</a>
           </div>
         </header>
         <InfoPage
           eyebrow="Bize Katıl"
           title="Foundrly ile birlikte büyümek ister misin?"
-          lead="Foundrly, ürün düşüncesi güçlü, topluluk kurmayı önemseyen ve ekip kurma deneyimini daha iyi hale getirmek isteyen insanlarla birlikte büyümeyi hedefler."
+          lead="Foundrly, ürün düşüncesi güçlü, ekipleri bir araya getirmeyi önemseyen ve ekip kurma deneyimini daha iyi hale getirmek isteyen insanlarla birlikte büyümeyi hedefler."
           sections={[
             {
               title: "Birlikte çalışmak istediğimiz profiller",
-              body: "Ürün tasarımı, frontend, backend, mobil geliştirme, içerik, growth ve topluluk yönetimi alanlarında katkı sunabilecek; ürün kalitesine ve kullanıcı deneyimine önem veren üretken ekip arkadaşlarıyla çalışmak istiyoruz.",
+              body: "Ürün tasarımı, frontend, backend, mobil geliştirme, içerik, growth ve iş geliştirme alanlarında katkı sunabilecek; ürün kalitesine ve kullanıcı deneyimine önem veren üretken ekip arkadaşlarıyla çalışmak istiyoruz.",
             },
             {
               title: "Nasıl ulaşılır?",
-              body: "Kendini, deneyimini ve Foundrly ile neden ilgilendiğini anlatan kısa bir tanıtım metnini hello@joinfoundrly.com adresine göndererek ekiple iletişime geçebilirsin.",
+              body: "Kendini, deneyimini ve Foundrly ile neden ilgilendiğini anlatan kısa bir tanıtım metnini hello@joinfoundrly.com adresine göndererek ekitle iletişime geçebilirsin.",
             },
           ]}
         />
@@ -4042,11 +4287,11 @@ export default function App() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(71,93,178,0.25),transparent_30%),radial-gradient(circle_at_80%_18%,rgba(63,177,112,0.15),transparent_25%)]" />
         <header className="sticky top-0 z-50 border-b border-white/10 bg-[#050B18]/72 backdrop-blur-xl relative z-10">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
-            <a href="#" className="flex flex-col leading-none">
+            <a href="#home" className="flex flex-col leading-none">
               <span className="text-2xl font-extrabold tracking-tight text-white">Foundrly</span>
               <span className="text-[11px] font-medium tracking-widest text-[#9ab0ff]/80">FİKİRLERİ EKİPLERE DÖNÜŞTÜR</span>
             </a>
-            <a href="#" className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-semibold text-white/90 backdrop-blur transition hover:border-white/22 hover:bg-white/10">Ana Sayfa</a>
+            <a href="#home" className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-semibold text-white/90 backdrop-blur transition hover:border-white/22 hover:bg-white/10">Ana Sayfa</a>
           </div>
         </header>
         <InfoPage
@@ -4079,11 +4324,11 @@ export default function App() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(71,93,178,0.25),transparent_30%),radial-gradient(circle_at_80%_18%,rgba(63,177,112,0.15),transparent_25%)]" />
         <header className="sticky top-0 z-50 border-b border-white/10 bg-[#050B18]/72 backdrop-blur-xl relative z-10">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
-            <a href="#" className="flex flex-col leading-none">
+            <a href="#home" className="flex flex-col leading-none">
               <span className="text-2xl font-extrabold tracking-tight text-white">Foundrly</span>
               <span className="text-[11px] font-medium tracking-widest text-[#9ab0ff]/80">FİKİRLERİ EKİPLERE DÖNÜŞTÜR</span>
             </a>
-            <a href="#" className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-semibold text-white/90 backdrop-blur transition hover:border-white/22 hover:bg-white/10">Ana Sayfa</a>
+            <a href="#home" className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-semibold text-white/90 backdrop-blur transition hover:border-white/22 hover:bg-white/10">Ana Sayfa</a>
           </div>
         </header>
         <InfoPage
@@ -4122,45 +4367,45 @@ export default function App() {
             : "border-white/40 bg-white/70 text-ink"
         }`}
       >
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
-          <a href="#" className="flex flex-col leading-none">
+        <div className="mx-auto flex max-w-7xl items-center px-6 py-4 lg:px-10">
+          <a href="#home" className="flex items-center gap-4 leading-none mr-auto">
+            <img src="/f.jpg" alt="Foundrly" className="h-16 w-16 rounded-xl object-cover shadow-sm" />
             <span className={`text-2xl font-extrabold tracking-tight ${isDarkMarketingSurface ? "text-white" : "text-ink"}`}>
               Foundrly
             </span>
-            <span className={`text-[11px] font-medium tracking-widest ${isDarkMarketingSurface ? "text-[#9ab0ff]/80" : "text-primary/70"}`}>
-              TURN IDEAS INTO TEAMS
-            </span>
           </a>
 
-          <nav className="hidden gap-8 md:flex">
-            {visibleNavLinks.map((l) => (
-              <a
-                key={l.href}
-                href={l.href}
-                className={`text-sm font-medium transition ${isDarkMarketingSurface ? "text-white/68 hover:text-white" : "text-ink/70 hover:text-primary"}`}
-              >
-                {l.label}
-              </a>
-            ))}
-          </nav>
+          <div className="hidden items-center gap-10 md:flex">
+            <nav className="flex gap-8">
+              {visibleNavLinks.filter(l => l.label !== "Topluluk").map((l) => (
+                <a
+                  key={l.href}
+                  href={l.href}
+                  className={`text-sm font-medium transition ${isDarkMarketingSurface ? "text-white/68 hover:text-white" : "text-ink/70 hover:text-primary"}`}
+                >
+                  {l.label}
+                </a>
+              ))}
+            </nav>
 
-          <div className="hidden items-center gap-3 md:flex">
-            <span className={`inline-flex h-2 w-2 rounded-full ${dot}`} />
-            {ENTRY_LINKS.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                className={`rounded-full px-5 py-2 text-sm font-semibold transition hover:-translate-y-0.5 ${
-                isDarkMarketingSurface && link.label === "Giriş Yap"
-                  ? "border border-white/12 bg-white/6 text-white hover:border-white/22 hover:bg-white/10"
-                  : isDarkMarketingSurface && link.label === "Takımını Kur"
-                    ? "bg-[linear-gradient(135deg,#5b73db_0%,#475DB2_45%,#3FB170_100%)] text-white shadow-[0_16px_45px_rgba(71,93,178,0.42)]"
-                    : link.className
-              }`}
-              >
-                {link.label}
-              </a>
-            ))}
+            <div className="flex items-center gap-3">
+              <span className={`inline-flex h-2 w-2 rounded-full ${dot}`} />
+              {ENTRY_LINKS.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  className={`rounded-full px-5 py-2 text-sm font-semibold transition hover:-translate-y-0.5 ${
+                  isDarkMarketingSurface && link.label === "Giriş Yap"
+                    ? "border border-white/12 bg-white/6 text-white hover:border-white/22 hover:bg-white/10"
+                    : isDarkMarketingSurface && link.label === "Kayıt Ol"
+                      ? "bg-[linear-gradient(135deg,#5b73db_0%,#475DB2_45%,#3FB170_100%)] text-white shadow-[0_16px_45px_rgba(71,93,178,0.42)]"
+                      : link.className
+                }`}
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
           </div>
 
           <button
@@ -4220,11 +4465,10 @@ export default function App() {
       <main className="bg-[#050B18] text-white">
         {route === "home" && <LandingHomeView />}
         {route === "mentors" && <PublicMentorsView mentors={publicMentors} />}
-        {route === "discover" && <DiscoverView />}
-        {route === "teammates" && <TeammatesView />}
+        {route === "discover" && <DiscoverView projects={showcaseData.projects} loading={publicLoading} />}
+        {route === "teammates" && <TeammatesView teammates={showcaseData.users} loading={publicLoading} />}
         {route === "hub" && <HubView />}
-        {route === "events" && <EventsView />}
-        {route === "community" && <CommunityView />}
+        {route === "events" && <EventsView events={showcaseData.events} loading={publicLoading} />}
       </main>
       <SiteFooter />
     </div>
@@ -4234,138 +4478,6 @@ export default function App() {
 function LandingHomeView({ onSearchUser }: { onSearchUser?: (query: string) => void }) {
   return <FoundrlyLanding onSearchUser={onSearchUser} />;
 }
-
-const DISCOVER_COLLECTION = [
-  {
-    title: "Hackathonlar İçin Foundrly Yardımcısı",
-    summary:
-      "48 saatlik sprint ekipleri ve startup hafta sonları için en güçlü üretici kombinasyonlarını sıralayan hızlı bir takım çalışma alanı.",
-    role: "Frontend Geliştirici",
-    stage: "Hackathon sürecinde",
-    matchScore: 96,
-    momentum: "48 saatte 12 nitelikli başvuru",
-    stack: ["React", "TypeScript", "Supabase"],
-    owner: "Ece Aydin",
-  },
-  {
-    title: "Öğrenci Girişimleri İçin Kampüs İşletim Sistemi",
-    summary:
-      "Üniversiteli kurucuların proje başlatması, ekip arkadaşı bulması ve üretim kanıtı geri bildirimi toplaması için iş birliği katmanı.",
-    role: "Ürün Tasarımcısı",
-    stage: "Ön tohum geliştirme",
-    matchScore: 92,
-    momentum: "3 kuluçka mentörü tarafından destekleniyor",
-    stack: ["Figma", "Framer", "Notion API"],
-    owner: "Kaan Gurel",
-  },
-  {
-    title: "İklim Rota Zekası",
-    summary:
-      "Veri ve operasyon sezgisine sahip üreticiler arayan sürdürülebilir lojistik ekipleri için optimizasyon motoru.",
-    role: "Makine Öğrenmesi Mühendisi",
-    stage: "Pilot müşteriler",
-    matchScore: 89,
-    momentum: "2 lojistik pilotu aktif",
-    stack: ["Python", "PostgreSQL", "TensorFlow"],
-    owner: "Defne Sari",
-  },
-  {
-    title: "MedLens Yapay Zeka Triage Stüdyosu",
-    summary:
-      "Tıp araştırmacıları, backend geliştiriciler ve gizliliği önceleyen ürün ekipleri için tasarlanan yapay zeka destekli teşhis akışı.",
-    role: "Backend Geliştirici",
-    stage: "Araştırma sprinti",
-    matchScore: 94,
-    momentum: "Klinik danışma kurulu aktif",
-    stack: ["Django", "Docker", "OpenAPI"],
-    owner: "Mina Yalcin",
-  },
-  {
-    title: "Üretici Gelir Radarı",
-    summary:
-      "Bağımsız üreticiler için güçlü ürün analitiği ve büyüme deneyleri sağlayan analiz ve öneri altyapısı.",
-    role: "Büyüme Uzmanı",
-    stage: "MVP yayında",
-    matchScore: 87,
-    momentum: "1.8 bin kişilik üretici bekleme listesi",
-    stack: ["Next.js", "Stripe", "Mixpanel"],
-    owner: "Aras Keskin",
-  },
-  {
-    title: "Kurucular İçin Hukuk Operasyon Akışı",
-    summary:
-      "Sözleşmeler, ortaklık koordinasyonu ve hukuki süreç görünürlüğü için erken aşama ekiplere yönelik startup operasyon katmanı.",
-    role: "Operasyon Uzmanı",
-    stage: "Beta grubu",
-    matchScore: 84,
-    momentum: "26 startup ekibi tarafından kullanılıyor",
-    stack: ["React", "Node.js", "Postgres"],
-    owner: "Selin Tuna",
-  },
-];
-
-const TEAMMATE_COLLECTION = [
-  {
-    name: "Aren Korkmaz",
-    role: "Kurucu Full-stack Mühendisi",
-    zone: "Fintek ve yapay zeka ürünleri geliştiriyor",
-    verified: true,
-    fit: 98,
-    availability: "Tek ciddi ekip için açık",
-    skills: ["React", "Node.js", "Ürün sezgisi"],
-  },
-  {
-    name: "Lina Cevik",
-    role: "Ürün Tasarımcısı",
-    zone: "Sıfırdan bire ürün sistemleri",
-    verified: true,
-    fit: 94,
-    availability: "Hackathonlar ve startup MVP'leri",
-    skills: ["Figma", "Motion", "Kullanıcı araştırması"],
-  },
-  {
-    name: "Batu Erden",
-    role: "Yapay Zeka Mühendisi",
-    zone: "Operasyon ürünleri için uygulamalı ML",
-    verified: false,
-    fit: 91,
-    availability: "Yarı zamanlı kurucu desteği",
-    skills: ["Python", "LLMs", "MLOps"],
-  },
-  {
-    name: "Nisa Ozturk",
-    role: "Büyüme Uzmanı",
-    zone: "Kullanıcı kazanımı ve pazara çıkış",
-    verified: true,
-    fit: 88,
-    availability: "Seed aşaması sprintleri",
-    skills: ["Büyüme", "Analitik", "Mesajlaşma"],
-  },
-];
-
-const COMMUNITY_COLLECTION = [
-  {
-    author: "Can Suer",
-    role: "Kurucu, B2B Yapay Zeka",
-    topic: "MVP aşamasında kurucu ortaklık payını nasıl yapılandırıyorsunuz?",
-    stats: "29 yanıt · 4 yatırımcı yorumu",
-    signal: "Öne çıkan başlık",
-  },
-  {
-    author: "Ipek Sayan",
-    role: "Tasarım Lideri, iklim girişimi",
-    topic: "İlk haftada ekip üyelerini gerçekten aktif hâle getiren onboarding örnekleri arıyorum.",
-    stats: "16 yanıt · 7 kaydetme",
-    signal: "Topluluktan isteniyor",
-  },
-  {
-    author: "Mert Acar",
-    role: "Operasyon Yöneticisi, hackathon topluluğu",
-    topic: "Takım arkadaşlarını yalnızca teknik yığına değil, çalışma temposuna göre eşleştirmek için en iyi yönteminiz ne?",
-    stats: "21 yanıt · 3 mentör görüşü",
-    signal: "YZ eşleşmesi",
-  },
-];
 
 const ONBOARDING_TRACKS = [
   {
@@ -4398,7 +4510,6 @@ const ONBOARDING_SKILLS = [
   "Veri Analizi",
   "iOS",
   "Yapay Zeka",
-  "Topluluk",
 ];
 
 const ONBOARDING_GOALS = [
@@ -4408,16 +4519,32 @@ const ONBOARDING_GOALS = [
   "Nitelikli üreticilerle tanışmak",
 ];
 
-function DiscoverView() {
+function DiscoverView({
+  projects,
+  loading,
+}: {
+  projects: ShowcaseProject[];
+  loading: boolean;
+}) {
   const searchTerm = getHashSearchParam("search").toLocaleLowerCase("tr-TR");
   const filteredProjects = searchTerm
-    ? DISCOVER_COLLECTION.filter((project) =>
-        [project.title, project.role, project.summary, project.stack.join(" "), project.stage, project.owner]
+    ? projects.filter((project) =>
+        [
+          project.title,
+          project.summary,
+          project.problem_statement,
+          project.tech_stack.join(" "),
+          project.needed_roles.join(" "),
+          project.owner.full_name,
+          project.owner.title,
+        ]
           .join(" ")
           .toLocaleLowerCase("tr-TR")
           .includes(searchTerm)
       )
-    : DISCOVER_COLLECTION;
+    : projects;
+  const premiumProjects = filteredProjects.filter((project) => project.is_premium_highlighted).length;
+  const activeFounders = new Set(filteredProjects.map((project) => project.owner.id)).size;
 
   return (
     <section className="bg-[#050B18] text-white">
@@ -4442,8 +4569,8 @@ function DiscoverView() {
             <div className="grid gap-4 sm:grid-cols-3">
               {[
                 ["Açık ilan", filteredProjects.length],
-                ["Medyan uyum skoru", "91%"],
-                ["Ortalama yanıt hızı", "5 saat"],
+                ["Premium öne çıkan", premiumProjects],
+                ["Aktif kurucu", activeFounders],
               ].map(([label, value]) => (
                 <div key={String(label)} className="rounded-[1.75rem] border border-white/10 bg-white/6 p-5 backdrop-blur">
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/40">{label}</p>
@@ -4458,35 +4585,46 @@ function DiscoverView() {
           <div className="grid gap-6 md:grid-cols-2">
             {filteredProjects.map((project) => (
               <article
-                key={project.title}
+                key={project.id}
                 className="group rounded-[2rem] border border-white/10 bg-white/6 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.22)] backdrop-blur transition hover:-translate-y-1 hover:border-white/18 hover:bg-white/8"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/38">{project.stage}</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/38">
+                      {new Date(project.created_at).toLocaleDateString("tr-TR", {
+                        day: "2-digit",
+                        month: "long",
+                      })}
+                    </p>
                     <h3 className="mt-3 text-2xl font-bold text-white">{project.title}</h3>
-                    <p className="mt-2 text-sm text-slate-300">{project.owner}</p>
+                    <p className="mt-2 text-sm text-slate-300">
+                      {project.owner.full_name} · {project.owner.title}
+                    </p>
                   </div>
-                  <span className="rounded-full border border-success/20 bg-success/12 px-3 py-1 text-xs font-bold text-success">
-                    %{project.matchScore} uyum
+                  <span className={`rounded-full px-3 py-1 text-xs font-bold ${project.is_premium_highlighted ? "border border-primary/20 bg-primary/12 text-[#AFC0FF]" : "border border-success/20 bg-success/12 text-success"}`}>
+                    {project.is_premium_highlighted ? "Premium öne çıkan" : "Açık ekip"}
                   </span>
                 </div>
                 <p className="mt-4 text-sm leading-7 text-slate-300">{project.summary}</p>
                 <div className="mt-5 flex flex-wrap gap-2">
-                  <span className="rounded-full border border-primary/20 bg-primary/12 px-3 py-1 text-xs font-semibold text-[#AFC0FF]">
-                    Açık rol: {project.role}
-                  </span>
-                  {project.stack.map((item) => (
+                  {project.needed_roles.slice(0, 2).map((role) => (
+                    <span key={role} className="rounded-full border border-primary/20 bg-primary/12 px-3 py-1 text-xs font-semibold text-[#AFC0FF]">
+                      Açık rol: {role}
+                    </span>
+                  ))}
+                  {project.tech_stack.slice(0, 3).map((item) => (
                     <span key={item} className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-xs font-semibold text-white/72">
                       {item}
                     </span>
                   ))}
                 </div>
                 <div className="mt-6 flex items-center justify-between border-t border-white/10 pt-5">
-                  <p className="text-sm text-white/54">{project.momentum}</p>
-                  <button className="rounded-full bg-white px-4 py-2 text-sm font-bold text-[#08101F] transition group-hover:bg-[#DDE5FF]">
-                    Projeyi Aç
-                  </button>
+                  <p className="text-sm text-white/54">
+                    {project.problem_statement || "Kurucu bu projeyi aktif olarak ekiplendirmek istiyor."}
+                  </p>
+                  <a href="#app-discover" className="rounded-full bg-white px-4 py-2 text-sm font-bold text-[#08101F] transition group-hover:bg-[#DDE5FF]">
+                    Uygulamada İncele
+                  </a>
                 </div>
               </article>
             ))}
@@ -4524,7 +4662,7 @@ function DiscoverView() {
           </aside>
         </div>
 
-        {filteredProjects.length === 0 && (
+        {!loading && filteredProjects.length === 0 && (
           <div className="mt-8 rounded-[2rem] border border-white/10 bg-white/6 p-8 text-center text-slate-300 shadow-[0_20px_70px_rgba(0,0,0,0.18)] backdrop-blur">
             Bu aramayla eşleşen proje bulunamadı. Rol, teknoloji, kurucu ünvanı veya ürün kategorisi deneyebilirsin.
           </div>
@@ -4534,7 +4672,14 @@ function DiscoverView() {
   );
 }
 
-function TeammatesView() {
+function TeammatesView({
+  teammates,
+  loading,
+}: {
+  teammates: ShowcaseUser[];
+  loading: boolean;
+}) {
+  const verifiedCount = teammates.filter((teammate) => teammate.is_verified_talent).length;
   return (
     <section className="bg-[#06101F] text-white">
       <div className="mx-auto max-w-7xl px-6 py-16 lg:px-10">
@@ -4548,34 +4693,36 @@ function TeammatesView() {
           </div>
           <div className="rounded-[1.75rem] border border-white/10 bg-white/6 px-5 py-4 backdrop-blur">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/40">Ağ sinyali</p>
-            <p className="mt-2 text-3xl font-black">4.9/5</p>
-            <p className="text-sm text-white/56">ortalama ekip arkadaşı geri bildirimi</p>
+            <p className="mt-2 text-3xl font-black">{verifiedCount}</p>
+            <p className="text-sm text-white/56">doğrulanmış yetenek profili</p>
           </div>
         </div>
 
         <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-          {TEAMMATE_COLLECTION.map((teammate) => (
+          {teammates.map((teammate) => (
             <article
-              key={teammate.name}
+              key={teammate.id}
               className="rounded-[2rem] border border-white/10 bg-white/6 p-6 text-left shadow-[0_22px_70px_rgba(0,0,0,0.2)] backdrop-blur transition hover:-translate-y-1 hover:border-white/18"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,rgba(71,93,178,0.9),rgba(63,177,112,0.7))] text-lg font-black text-white">
-                  {teammate.name.charAt(0)}
+                  {teammate.full_name.charAt(0)}
                 </div>
                 <span className="rounded-full border border-success/20 bg-success/12 px-3 py-1 text-xs font-bold text-success">
-                  %{teammate.fit} uyum
+                  {teammate.recent_projects_count} proje
                 </span>
               </div>
               <h3 className="mt-5 text-xl font-bold text-white">
-                {teammate.name}
-                {teammate.verified && <span className="ml-2 text-sm text-[#AFC0FF]">Doğrulanmış</span>}
+                {teammate.full_name}
+                {teammate.is_verified_talent && <span className="ml-2 text-sm text-[#AFC0FF]">Doğrulanmış</span>}
               </h3>
-              <p className="mt-1 text-sm text-white/72">{teammate.role}</p>
-              <p className="mt-4 text-sm leading-7 text-slate-300">{teammate.zone}</p>
-              <p className="mt-4 text-xs font-semibold uppercase tracking-[0.24em] text-white/40">{teammate.availability}</p>
+              <p className="mt-1 text-sm text-white/72">{teammate.title}</p>
+              <p className="mt-4 text-sm leading-7 text-slate-300">{teammate.bio}</p>
+              <p className="mt-4 text-xs font-semibold uppercase tracking-[0.24em] text-white/40">
+                {teammate.average_rating ? `${teammate.average_rating}/5 ekip puanı` : "Yeni profil"}
+              </p>
               <div className="mt-4 flex flex-wrap gap-2">
-                {teammate.skills.map((skill) => (
+                {teammate.skills.slice(0, 3).map((skill) => (
                   <span key={skill} className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-xs font-semibold text-white/74">
                     {skill}
                   </span>
@@ -4584,12 +4731,96 @@ function TeammatesView() {
             </article>
           ))}
         </div>
+        {!loading && teammates.length === 0 && (
+          <div className="mt-8 rounded-[2rem] border border-white/10 bg-white/6 p-8 text-center text-slate-300 shadow-[0_20px_70px_rgba(0,0,0,0.18)] backdrop-blur">
+            Henüz listelenecek ekip arkadaşı yok.
+          </div>
+        )}
       </div>
     </section>
   );
 }
 
 function HubView() {
+  const [selectedGuide, setSelectedGuide] = useState<null | {
+    id: string;
+    title: string;
+    read: string;
+    tone: string;
+    summary: string;
+    bullets: string[];
+  }>(null);
+  const guides = [
+    {
+      id: "mvp-guide",
+      title: "İlk MVP'nizi 1 Haftada Nasıl Çıkarırsınız?",
+      read: "5 dk okuma",
+      tone: "Yürütme",
+      summary:
+        "Bir haftalık sprintte doğru kapsamı seçmek, temel kullanıcı akışını ayağa kaldırmak ve ilk geri bildirimi almak için odaklı bir plan.",
+      bullets: [
+        "1. Gün: Problemi ve Değer Önerisini Netleştirin. Kullanıcı hangi acısını dindirmek istiyor? Tek bir cümle ile bu probleme nasıl çözüm getirdiğinizi yazın. Bu aşamada 'nice-to-have' özellikleri tamamen listenin dışına atın.",
+        "2. Gün: Akış ve Wireframe. Kullanıcının kayıt olmasından hedefe ulaşmasına kadar geçen en kısa yolu çizin. Teknik karmaşıklığı en aza indirmek için hazır UI kitleri veya standart bileşenler kullanmayı tercih edin.",
+        "3. ve 4. Gün: Temel Fonksiyonların İnşası. Sadece çalışması zorunlu olan 'core' mantığı kodlayın. Veritabanı yapısını basit tutun, gerekirse bazı süreçleri manuel yönetin (Concierge MVP yaklaşımı).",
+        "5. Gün: Test ve Hata Ayıklama. Ürünü kendi başınıza ve bir arkadaşınıza kullandırarak kritik hataları bulun. Mükemmellik aramayın, sadece ürünün ana vaadini yerine getirdiğinden emin olun.",
+        "6. Gün: Yayına Alım ve Dağıtım. Vercel, Fly.io veya benzeri hızlı platformlarla yayına çıkın. İlk 10 kullanıcıyı bulmak için Twitter, LinkedIn veya topluluk gruplarına kişiselleştirilmiş mesajlar gönderin.",
+        "7. Gün: Geri Bildirim ve İterasyon. Gelen ilk tepkileri not alın. Kullanıcılar nerede takılıyor? Hangi özelliği hiç kullanmadılar? Bu verilerle ikinci hafta sprintinizi planlayın.",
+      ],
+    },
+    {
+      id: "cofounder-guide",
+      title: "Doğru Kurucu Ortak Seçiminde Dikkat Edilmesi Gerekenler",
+      read: "8 dk okuma",
+      tone: "Kurucu uyumu",
+      summary:
+        "Kurucu ortak seçiminde yalnızca teknik yetkinliğe değil, karar alma biçimine, tempo uyumuna ve kriz anındaki davranışlara da bakmak gerekir.",
+      bullets: [
+        "Vizyon ve Hedef Hizalaması: Şirketin 5 yıl sonra nerede olmasını istiyorsunuz? Biri exit yapmak isterken diğeri ömür boyu yönetmek istiyorsa kriz kaçınılmazdır. Beklentileri en başta senkronize edin.",
+        "Tamamlayıcı Beceriler: İki tane harika kod yazan yerine, biri ürünü inşa eden diğeri satışı yöneten bir ikili çok daha güçlüdür. Kendi eksiklerinizi dürüstçe listeleyin ve bu boşlukları dolduracak birini arayın.",
+        "Değerler ve Çalışma Etiği: Hafta sonu çalışma, risk alma kapasitesi ve dürüstlük gibi konularda aynı frekansta mısınız? Teknik beceriler öğrenilir ancak karakter ve çalışma disiplini uyumsuzluğu startup'ları bitiren en büyük sebeptir.",
+        "Rol Paylaşımı ve Yetki: Kim hangi alanda son sözü söyleyecek? CEO/CTO ayrımını ve hisse (equity) dağılımını 'sonra konuşuruz' demeden, en başta şeffaf ve adil bir şekilde karara bağlayın.",
+        "Dönemsel Deneme Süreci: Hemen 'evlenmeyin'. Önce 1 aylık bir proje veya MVP üzerinde birlikte çalışın. Stres altında nasıl davrandığınızı, fikir ayrılıklarını nasıl çözdüğünüzü görün.",
+        "Zor Konuşmaları Ertelemeyin: Para, zaman taahhüdü ve olası ayrılık senaryolarını (vesting) en başta konuşun. Kurucu ortak sözleşmesi hazırlamak sadece hukuki değil, psikolojik bir güvencedir.",
+      ],
+    },
+    {
+      id: "pitch-guide",
+      title: "Yatırımcı Sunumu (Pitch Deck) Hazırlama Rehberi",
+      read: "12 dk okuma",
+      tone: "Yatırım hazırlığı",
+      summary:
+        "İyi bir pitch deck; problemi, çözümü, pazarı, çekişimi ve neden bu ekibin kazanacağını kısa ve güçlü bir anlatıyla göstermelidir.",
+      bullets: [
+        "1. Problem Slaydı: Acıyı hissettirin. Çözmeye çalıştığınız sorun neden büyük ve neden şu anki çözümler yetersiz? Hikayeleştirerek yatırımcının empati kurmasını sağlayın.",
+        "2. Çözüm Slaydı: Ürününüzün sihrini gösterin. Karmaşık teknik detaylara boğulmadan, problemin nasıl ortadan kalktığını ve kullanıcıya sağladığı net faydayı anlatın.",
+        "3. Pazar ve Fırsat: Hedef kitleniz kim ve bu pazar ne kadar büyük (TAM, SAM, SOM)? Pazarın büyüme hızı ve sizin bu pastadan neden pay alabileceğinizi kanıtlayın.",
+        "4. İş Modeli: Nasıl para kazanacaksınız? Birim ekonomi, müşteri kazanım maliyeti (CAC) ve ömür boyu değer (LTV) gibi metrikleri (eğer varsa) buraya ekleyin.",
+        "5. Çekişim (Traction): Bugüne kadar neler başardınız? Kullanıcı sayısı, gelir, bekleme listesi veya stratejik ortaklıklar. Yatırımcı hareket halindeki bir trene binmek ister.",
+        "6. Rekabet Analizi: Rakiplerinizden sizi ayıran 'haksız avantajınız' (unfair advantage) nedir? Neden rakipler sizi kolayca kopyalayamaz?",
+        "7. Ekip: Neden bu işi başarmak için dünyadaki en iyi ekip sizsiniz? Geçmiş tecrübeleriniz, teknik yetkinliğiniz ve birbirinizle olan çalışma geçmişinizden bahsedin.",
+        "8. Yol Haritası (Roadmap): Yatırımdan sonraki 12-18 ayda neler yapacaksınız? Hangi özellikler eklenecek, hangi pazarlara girilecek ve hangi aşamaya ulaşılacak?",
+        "9. Yatırım Talebi: Ne kadar para arıyorsunuz ve bu parayı tam olarak nerelerde kullanacaksınız? Başarı kriterleriniz (milestones) neler?",
+        "10. Görsel Tasarım: Az yazı, çok görsel kullanın. Her slaytın tek bir ana fikri olsun ve bu fikir 5 saniyede anlaşılsın. Profesyonel ve tutarlı bir tasarım güven verir.",
+      ],
+    },
+    {
+      id: "portfolio-guide",
+      title: "Açık Kaynak Projelerle Portföy Oluşturmak",
+      read: "6 dk okuma",
+      tone: "Kariyer sermayesi",
+      summary:
+        "Açık kaynak katkıları, profil güvenini artırmanın ve gerçek üretim disiplinini görünür hale getirmenin güçlü yollarından biridir.",
+      bullets: [
+        "Doğru Proje Seçimi: Popüler ama çok karmaşık projeler yerine, aktif olarak kullandığınız veya geliştirmek istediğiniz orta ölçekli kütüphanelere odaklanın. 'Good first issue' etiketli işlerle başlayın.",
+        "Dokümantasyon ve README: Kod yazmak kadar, projenin nasıl çalıştığını anlatmak da önemlidir. İyi bir dokümantasyon, sizin iletişim becerilerinizin ve titizliğinizin göstergesidir.",
+        "Düzenli Katkı (Consistency): Bir günde 1000 satır kod yazıp kaybolmak yerine, haftalık düzenli küçük iyileştirmeler yapın. GitHub grafiğinizdeki süreklilik, disiplininizi kanıtlar.",
+        "İletişim ve Topluluk Etkileşimi: Pull Request (PR) gönderirken neden bu değişikliği yaptığınızı net bir şekilde açıklayın. Gelen yorumları yapıcı karşılayın ve kod kalitesini artırmak için tartışın.",
+        "Kendi Yan Projelerinizi Açın: Sadece başkalarına katkı vermekle kalmayın, kendi küçük araçlarınızı da açık kaynak olarak yayınlayın. Başkalarının sizin kodunuzu kullanması en büyük referanstır.",
+        "Profilinizle Entegre Edin: Açık kaynak başarılarınızı Foundrly, LinkedIn ve portföy sitenizde hikayeleştirerek paylaşın. Hangi problemi çözdüğünüzü ve ne öğrendiğinizi anlatın.",
+      ],
+    },
+  ];
+
   return (
     <section className="bg-[#06101F] text-white">
       <div className="mx-auto max-w-7xl px-6 py-16 lg:px-10">
@@ -4605,9 +4836,8 @@ function HubView() {
             </div>
             <div className="grid gap-4 sm:grid-cols-3">
               {[
-                ["Canlı rehber", "24+"],
-                ["Ortalama okuma", "7 dk"],
-                ["Uygulamalı içerik", "%92"],
+                ["Yayınlanan rehber", String(guides.length)],
+                ["Okuma aralığı", "5-12 dk"],
               ].map(([label, value]) => (
                 <div key={String(label)} className="rounded-[1.75rem] border border-white/10 bg-white/6 p-5 backdrop-blur">
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/40">{label}</p>
@@ -4619,12 +4849,7 @@ function HubView() {
         </div>
 
         <div className="mt-8 grid gap-6 md:grid-cols-2">
-          {[
-            { title: "İlk MVP'nizi 1 Haftada Nasıl Çıkarırsınız?", read: "5 dk okuma", tone: "Yürütme" },
-            { title: "Doğru Kurucu Ortak Seçiminde Dikkat Edilmesi Gerekenler", read: "8 dk okuma", tone: "Kurucu uyumu" },
-            { title: "Yatırımcı Sunumu (Pitch Deck) Hazırlama Rehberi", read: "12 dk okuma", tone: "Yatırım hazırlığı" },
-            { title: "Açık Kaynak Projelerle Portföy Oluşturmak", read: "6 dk okuma", tone: "Kariyer sermayesi" },
-          ].map((h) => (
+          {guides.map((h) => (
             <article
               key={h.title}
               className="group rounded-[2rem] border border-white/10 bg-white/6 p-6 shadow-[0_24px_70px_rgba(0,0,0,0.2)] backdrop-blur transition hover:-translate-y-1 hover:border-white/18 hover:bg-white/8"
@@ -4634,18 +4859,69 @@ function HubView() {
                 {h.tone}
               </p>
               <h3 className="mt-4 text-2xl font-extrabold text-white">{h.title}</h3>
-              <a href="#" className="mt-6 inline-flex rounded-full border border-white/10 bg-white px-5 py-2.5 text-sm font-bold text-[#071121] transition hover:bg-[#DDE5FF]">
+              <p className="mt-4 text-sm leading-7 text-slate-300">{h.summary}</p>
+              <button
+                type="button"
+                onClick={() => setSelectedGuide(h)}
+                className="mt-6 inline-flex rounded-full border border-white/10 bg-white px-5 py-2.5 text-sm font-bold text-[#071121] transition hover:bg-[#DDE5FF]"
+              >
                 Makaleyi Oku
-              </a>
+              </button>
             </article>
           ))}
         </div>
+
+        {selectedGuide && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[#020611]/82 px-6 backdrop-blur-sm">
+            <div className="max-h-[85vh] w-full max-w-4xl overflow-y-auto rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(16,24,42,0.98),rgba(8,13,24,0.98))] p-7 shadow-[0_32px_120px_rgba(0,0,0,0.45)]">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#9ab0ff]">{selectedGuide.tone} · {selectedGuide.read}</p>
+                  <h2 className="mt-3 text-3xl font-extrabold text-white">{selectedGuide.title}</h2>
+                  <p className="mt-4 max-w-3xl text-base leading-8 text-slate-300">{selectedGuide.summary}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedGuide(null)}
+                  className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
+                >
+                  Kapat
+                </button>
+              </div>
+              <div className="mt-6 grid gap-3">
+                {selectedGuide.bullets.map((bullet) => (
+                  <div key={bullet} className="rounded-[1.5rem] border border-white/10 bg-black/20 px-5 py-4 text-sm leading-7 text-white/82">
+                    {bullet}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
 }
 
-function EventsView() {
+function EventsView({
+  events,
+  loading,
+}: {
+  events: CommunityEventItem[];
+  loading: boolean;
+}) {
+  const [registeredEvent, setRegisteredEvent] = useState<number | null>(null);
+  
+  const handleRegister = (eventId: number) => {
+    setRegisteredEvent(eventId);
+  };
+
+  const nextThirtyDayEvents = events.filter((event) => {
+    const today = new Date();
+    const target = new Date(event.event_date);
+    const diffDays = (target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
+    return diffDays >= 0 && diffDays <= 30;
+  });
   return (
     <section className="bg-[#06101F] text-white">
       <div className="mx-auto max-w-7xl px-6 py-16 lg:px-10">
@@ -4659,117 +4935,76 @@ function EventsView() {
           </div>
           <div className="rounded-[1.75rem] border border-white/10 bg-white/6 px-5 py-4 backdrop-blur">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/40">Önümüzdeki 30 gün</p>
-            <p className="mt-2 text-3xl font-black">9 etkinlik</p>
+            <p className="mt-2 text-3xl font-black">{nextThirtyDayEvents.length}</p>
             <p className="text-sm text-white/56">yüksek sinyalli buluşma akışı</p>
           </div>
         </div>
 
         <div className="mt-8 space-y-4">
-          {[
-            { date: "15 Haziran", title: "Foundrly Yapay Zeka Hackathonu", loc: "Çevrim içi", tag: "Hackathon" },
-            { date: "22 Haziran", title: "Yatırımcı Sunum Gecesi", loc: "İstanbul, TR", tag: "Sunum gecesi" },
-            { date: "05 Temmuz", title: "Web3 Geliştirici Buluşması", loc: "Ankara, TR", tag: "Buluşma" },
-          ].map((event) => (
+          {events.map((event) => (
             <article
-              key={event.title}
+              key={event.id}
               className="flex flex-col gap-5 rounded-[2rem] border border-white/10 bg-white/6 p-6 shadow-[0_22px_70px_rgba(0,0,0,0.2)] backdrop-blur transition hover:-translate-y-1 hover:border-white/18 sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="flex items-center gap-6">
                 <div className="flex w-20 flex-shrink-0 flex-col items-center justify-center rounded-[1.5rem] border border-white/10 bg-black/20 px-3 py-4 text-center">
-                  <span className="block text-2xl font-black text-[#9ab0ff]">{event.date.split(" ")[0]}</span>
-                  <span className="text-xs font-bold uppercase tracking-[0.2em] text-white/45">{event.date.split(" ")[1]}</span>
+                  <span className="block text-2xl font-black text-[#9ab0ff]">
+                    {new Date(event.event_date).toLocaleDateString("tr-TR", { day: "2-digit" })}
+                  </span>
+                  <span className="text-xs font-bold uppercase tracking-[0.2em] text-white/45">
+                    {new Date(event.event_date).toLocaleDateString("tr-TR", { month: "long" })}
+                  </span>
                 </div>
                 <div>
                   <span className="rounded-full border border-primary/20 bg-primary/12 px-3 py-1 text-xs font-bold text-[#AFC0FF]">
                     {event.tag}
                   </span>
                   <h3 className="mt-4 text-xl font-bold text-white">{event.title}</h3>
-                  <p className="mt-2 text-sm text-slate-300">{event.loc}</p>
+                  <p className="mt-2 text-sm text-slate-300">
+                    📍 {event.location} {event.is_online ? "· Çevrim içi katılım" : ""}
+                  </p>
+                  <p className="mt-2 text-sm text-slate-400">{event.description}</p>
                 </div>
               </div>
-              <button className="rounded-full border border-white/10 bg-white px-6 py-2.5 text-sm font-bold text-[#071121] transition hover:bg-[#DDE5FF]">
-                Kaydol
-              </button>
+
+              {registeredEvent === event.id ? (
+                <div className="rounded-2xl border border-success/20 bg-success/10 px-6 py-3 text-sm font-bold text-success animate-fadeIn">
+                  ✓ Kayıt alındı. Detaylar mail adresine iletilmiştir.
+                </div>
+              ) : (
+                <button
+                  onClick={() => handleRegister(event.id)}
+                  className="rounded-full border border-white/10 bg-white px-8 py-3 text-sm font-bold text-[#071121] transition hover:bg-[#DDE5FF]"
+                >
+                  Kayıt Ol
+                </button>
+              )}
             </article>
           ))}
         </div>
-      </div>
-    </section>
-  );
-}
-
-function CommunityView() {
-  return (
-    <section className="bg-[#06101F] text-white">
-      <div className="mx-auto max-w-7xl px-6 py-16 lg:px-10">
-        <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-          <div>
-            <div className="border-b border-white/10 pb-8">
-              <p className="text-xs font-semibold uppercase tracking-[0.34em] text-white/45">Topluluk sinyali</p>
-              <h1 className="mt-4 text-4xl font-extrabold tracking-tight">Girişimleri gerçekten ileri taşıyan konuşmalar.</h1>
-              <p className="mt-3 max-w-2xl text-base leading-8 text-slate-300">
-                Foundrly topluluğu; üretim, işe alım, lansman ve işi gerçekten yapan insanlardan öğrenme etrafında şekillenir.
-              </p>
-            </div>
-            <div className="mt-8 space-y-5">
-              {COMMUNITY_COLLECTION.map((thread) => (
-                <article key={thread.topic} className="rounded-[2rem] border border-white/10 bg-white/6 p-6 shadow-[0_24px_70px_rgba(0,0,0,0.18)] backdrop-blur">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-bold text-white">{thread.author}</p>
-                      <p className="mt-1 text-sm text-white/54">{thread.role}</p>
-                    </div>
-                    <span className="rounded-full border border-primary/20 bg-primary/12 px-3 py-1 text-xs font-bold text-[#AFC0FF]">
-                      {thread.signal}
-                    </span>
-                  </div>
-                  <h3 className="mt-5 text-2xl font-bold text-white">{thread.topic}</h3>
-                  <p className="mt-4 text-sm text-slate-300">{thread.stats}</p>
-                  <button className="mt-5 rounded-full bg-white px-5 py-2 text-sm font-bold text-[#071121] transition hover:bg-[#DDE5FF]">
-                    Tartışmaya Katıl
-                  </button>
-                </article>
-              ))}
-            </div>
+        {!loading && events.length === 0 && (
+          <div className="mt-8 rounded-[2rem] border border-white/10 bg-white/6 p-8 text-center text-slate-300 shadow-[0_20px_70px_rgba(0,0,0,0.18)] backdrop-blur">
+            Yayında etkinlik verisi bulunamadı.
           </div>
-
-          <aside className="space-y-6">
-            <div className="rounded-[2rem] border border-white/10 bg-white/6 p-6 backdrop-blur">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/40">Topluluk odaları</p>
-              <div className="mt-4 space-y-3">
-                {["Kurucu ofis saatleri", "Hackathon ekip bulucu", "Tasarım geri bildirim panosu", "Büyüme deneyleri"].map((room) => (
-                  <div key={room} className="rounded-2xl border border-white/8 bg-black/20 px-4 py-3 text-sm text-slate-300">
-                    {room}
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="rounded-[2rem] border border-success/20 bg-[linear-gradient(180deg,rgba(63,177,112,0.18),rgba(8,14,25,0.92))] p-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/55">Yükseltme sinyali</p>
-              <h3 className="mt-3 text-2xl font-bold text-white">Premium kurucu çevrelerine katıl</h3>
-              <p className="mt-3 text-sm leading-7 text-slate-300">
-                Kapalı kurucu kanallarını, mentör liderliğindeki odaları ve yüksek sinyalli iş birlikleri için özenle seçilmiş tanışmaları aç.
-              </p>
-              <a href="#premium" className="mt-5 inline-flex rounded-full bg-white px-5 py-3 text-sm font-bold text-success transition hover:bg-white/90">
-                Premium erişimi gör
-              </a>
-            </div>
-          </aside>
-        </div>
+        )}
       </div>
     </section>
   );
 }
 
-function MentorsView({ 
-  mentors, 
-  onSendRequest, 
-  feedback, 
+function MentorsView({
+  mentors,
+  onSendRequest,
+  onConfirmRequest,
+  userRequests,
+  feedback,
   credits,
   isPremium
-}: { 
-  mentors: any[], 
-  onSendRequest: (id: number, msg: string) => void, 
+}: {
+  mentors: any[],
+  onSendRequest: (id: number, msg: string) => void,
+  onConfirmRequest: (id: number) => void,
+  userRequests: any[],
   feedback: string,
   credits: number,
   isPremium: boolean
@@ -4777,28 +5012,60 @@ function MentorsView({
   const [selectedMentor, setSelectedMentor] = useState<any | null>(null);
   const [message, setMessage] = useState("");
 
+  const pendingConfirmation = userRequests.filter(r => r.status === 'accepted' && !r.user_confirmed);
+
   return (
-    <section className="rounded-[2.25rem] border border-ink/10 bg-white p-8 shadow-sm lg:p-10 relative overflow-hidden">
+    <section className="app-panel rounded-[2.25rem] p-8 lg:p-10 relative overflow-hidden">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/55">
+          <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#9ab0ff]">
             Uzman Desteği
           </p>
-          <h2 className="mt-2 text-3xl font-extrabold text-ink">
+          <h2 className="mt-2 text-3xl font-extrabold text-white">
             Mentörlük Programı
           </h2>
-          <p className="mt-2 max-w-2xl text-base leading-7 text-ink/62">
-            Projenizi bir üst seviyeye taşımak için alanında uzman mentörlerimizden birebir destek alın.
+          <p className="mt-2 max-w-2xl text-base leading-7 text-white/68">
+            Projeni bir üst seviyeye taşımak için alanında uzman mentörlerden birebir yönlendirme al. Premium üyelerin her ay 1 ücretsiz 15 dakikalık görüşme hakkı vardır; sonraki seanslar ödeme sistemi ile açılır.
           </p>
         </div>
         {isPremium && (
-          <div className="rounded-2xl border border-primary/20 bg-primary/5 px-6 py-4 text-center">
-            <p className="text-xs font-bold uppercase tracking-widest text-primary/60">Kalan Hak</p>
+          <div className="app-soft-card rounded-2xl px-6 py-4 text-center">
+            <p className="text-xs font-bold uppercase tracking-widest text-[#9ab0ff]/80">Kalan Hak</p>
             <p className="text-3xl font-black text-primary">{credits}</p>
-            <p className="text-[10px] font-bold text-primary/40 uppercase">Görüşme / Ay</p>
+            <p className="text-[10px] font-bold text-white/45 uppercase">Görüşme / Ay</p>
           </div>
         )}
       </div>
+
+      {pendingConfirmation.length > 0 && (
+        <div className="mt-10 space-y-4">
+          <p className="text-xs font-bold uppercase tracking-widest text-secondary">Onay Bekleyen Görüşmeler</p>
+          {pendingConfirmation.map(req => (
+            <article key={req.id} className="rounded-2xl border border-secondary/20 bg-secondary/10 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-white/10 flex items-center justify-center font-bold">
+                  {req.mentor_details?.full_name.charAt(0)}
+                </div>
+                <div>
+                  <p className="font-bold text-white">{req.mentor_details?.full_name}</p>
+                  <p className="text-xs text-white/60">
+                    Zaman: <span className="text-secondary">{req.meeting_time ? new Date(req.meeting_time).toLocaleString('tr-TR') : 'Belirtilmedi'}</span>
+                  </p>
+                  <p className="text-xs text-white/60">
+                    Teklif: <span className="text-secondary">{req.offered_price > 0 ? `$${req.offered_price}` : 'Ücretsiz (Hak Kullanımı)'}</span>
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => onConfirmRequest(req.id)}
+                className="rounded-xl bg-secondary px-6 py-2 text-sm font-bold text-white shadow-halo transition hover:bg-secondary/90"
+              >
+                Zamanı ve Görüşmeyi Onayla
+              </button>
+            </article>
+          ))}
+        </div>
+      )}
 
       {!isPremium ? (
         <div className="mt-10 grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
@@ -4813,10 +5080,10 @@ function MentorsView({
               </div>
             </div>
             <p className="mt-5 max-w-xl text-sm leading-7 text-slate-300">
-              Standart planda mentör havuzunu görebilir, ancak birebir görüşme talebi oluşturamazsın. Premium ile uzman yönlendirmesi, aylık görüşme hakkı ve öncelikli destek akışları açılır.
+              Standart planda mentör havuzunu görebilir, ancak birebir görüşme talebi oluşturamazsın. Premium ile her ay 1 ücretsiz 15 dakikalık görüşme hakkı açılır. İlk görüşmeden sonraki ek seanslar ödeme sistemi ile ilerler.
             </p>
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
-              {["Aylık mentör kredisi", "Öncelikli geri dönüş", "Kurucu odaklı rehberlik"].map((item) => (
+              {["Her ay 1 ücretsiz görüşme", "İlk seans 15 dakika", "Sonrası ödeme sistemi"].map((item) => (
                 <div key={item} className="rounded-2xl border border-white/8 bg-white/6 px-4 py-4 text-sm font-semibold text-white/82 backdrop-blur">
                   {item}
                 </div>
@@ -4838,7 +5105,7 @@ function MentorsView({
               {[
                 ["Birebir mentör görüşmeleri", "Projene göre doğru uzmanla daha hızlı eşleş."],
                 ["Daha net yönlendirme", "Teknik, ürün ve büyüme tarafında somut geri bildirim al."],
-                ["Premium görünürlük", "Mentör taleplerinde daha güçlü profil sinyali ver."],
+                ["Görüşme modeli", "İlk 15 dakikalık görüşme ücretsizdir; devam eden veya yeni seanslar ödeme sistemi ile açılır."],
               ].map(([title, body]) => (
                 <article key={String(title)} className="rounded-2xl border border-white/8 bg-black/20 p-4">
                   <p className="font-bold text-white">{title}</p>
@@ -4857,10 +5124,10 @@ function MentorsView({
           )}
 
           {selectedMentor ? (
-            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6 lg:p-8">
-              <button onClick={() => setSelectedMentor(null)} className="text-sm font-bold text-primary hover:underline mb-4">← Mentör Listesine Dön</button>
+            <div className="app-solid-card rounded-2xl border-primary/20 p-6 lg:p-8">
+              <button onClick={() => setSelectedMentor(null)} className="mb-4 text-sm font-bold text-[#9ab0ff] hover:underline">← Mentör Listesine Dön</button>
               <div className="flex items-start gap-4">
-                <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center text-2xl font-bold text-primary overflow-hidden">
+                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-primary/20 text-2xl font-bold text-primary">
                   {selectedMentor.profile_picture ? (
                     <img src={selectedMentor.profile_picture} className="h-full w-full object-cover" />
                   ) : (
@@ -4868,17 +5135,20 @@ function MentorsView({
                   )}
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-ink">{selectedMentor.full_name}</h3>
-                  <p className="text-sm text-ink/60">{selectedMentor.title}</p>
+                  <h3 className="text-xl font-bold text-white">{selectedMentor.full_name}</h3>
+                  <p className="text-sm text-white/60">{selectedMentor.title}</p>
+                  <p className="mt-2 text-sm text-white/68">
+                    İlk 15 dakikalık ücretsiz görüşme hakkın burada kullanılır. Sonraki seanslar için ödeme adımına yönlendirilirsin.
+                  </p>
                 </div>
               </div>
               <div className="mt-6">
-                <label className="block text-sm font-bold text-ink/70 mb-2">Mesajınız (Projenizi ve ne konuda destek aradığınızı belirtin)</label>
+                <label className="mb-2 block text-sm font-bold text-white/72">Mesajınız (Projenizi ve ne konuda destek aradığınızı belirtin)</label>
                 <textarea 
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Merhaba, projemin ölçeklenebilirliği konusunda tavsiyeye ihtiyacım var..."
-                  className="w-full min-h-32 rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm outline-none focus:border-primary/50"
+                  className="app-input min-h-32"
                 />
                 <button 
                   onClick={() => {
@@ -4889,17 +5159,21 @@ function MentorsView({
                   disabled={credits <= 0 || !message.trim()}
                   className="mt-4 rounded-2xl bg-primary px-8 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90 disabled:opacity-50"
                 >
-                  Talebi Gönder (1 Hak)
+                  15 Dakikalık Görüşmeyi Başlat
                 </button>
-                {credits <= 0 && <p className="mt-2 text-xs text-red-500 font-bold">Kullanılabilir mentörlük hakkınız kalmamıştır.</p>}
+                {credits <= 0 && (
+                  <div className="mt-3 rounded-2xl border border-amber-300/20 bg-amber-400/10 px-4 py-3 text-xs font-bold text-amber-100">
+                    Ücretsiz görüşme hakkın kullanıldı. Ek mentör seansı için <a href="#premium" className="underline">ödeme sistemine</a> geç.
+                  </div>
+                )}
               </div>
             </div>
           ) : (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {mentors.map((m) => (
-                <article key={m.id} className="rounded-2xl border border-ink/10 bg-white p-6 shadow-sm transition hover:border-primary/30">
+                <article key={m.id} className="app-solid-card rounded-2xl p-6 transition hover:border-primary/30">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="h-12 w-12 rounded-full bg-ink/5 flex items-center justify-center text-lg font-bold text-ink/40 overflow-hidden">
+                    <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white/8 text-lg font-bold text-white/70">
                       {m.profile_picture ? (
                         <img src={m.profile_picture} className="h-full w-full object-cover" />
                       ) : (
@@ -4907,24 +5181,27 @@ function MentorsView({
                       )}
                     </div>
                     <div>
-                      <h3 className="font-bold text-ink">{m.full_name}</h3>
-                      <p className="text-xs text-ink/50">{m.title}</p>
+                      <h3 className="font-bold text-white">{m.full_name}</h3>
+                      <p className="text-xs text-white/50">{m.title}</p>
                     </div>
                   </div>
                   <div className="flex justify-between items-center mb-4">
-                    <p className="text-xs text-ink/60 line-clamp-2 leading-relaxed flex-1">{m.bio}</p>
-                    <span className="ml-3 text-lg font-black text-secondary whitespace-nowrap">
+                    <p className="flex-1 text-xs leading-relaxed text-white/64 line-clamp-2">{m.bio}</p>
+                    <span className="ml-3 whitespace-nowrap text-lg font-black text-secondary">
                       {m.mentor_price > 0 ? `$${m.mentor_price}` : "Ücretsiz"}
                     </span>
                   </div>
+                  <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/38">
+                    Premium üyeler için ilk 15 dakika ücretsizdir. Ek seanslar ödeme sistemi ile açılır.
+                  </p>
                   <div className="flex flex-wrap gap-1 mb-6">
                     {m.skills.slice(0, 3).map((s: string) => (
-                      <span key={s} className="text-[10px] font-bold bg-[#F7F8FC] px-2 py-0.5 rounded text-ink/40">{s}</span>
+                      <span key={s} className="rounded bg-white/8 px-2 py-0.5 text-[10px] font-bold text-white/58">{s}</span>
                     ))}
                   </div>
                   <button 
                     onClick={() => setSelectedMentor(m)}
-                    className="w-full rounded-xl bg-primary/10 py-2 text-sm font-bold text-primary transition hover:bg-primary hover:text-white"
+                    className="w-full rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white transition hover:bg-primary/90"
                   >
                     Görüşme Talep Et
                   </button>
@@ -4938,13 +5215,13 @@ function MentorsView({
   );
 }
 
-function MentorPanelView({ 
-  requests, 
+function MentorPanelView({
+  requests,
   onStatusUpdate,
   mentor
-}: { 
-  requests: any[], 
-  onStatusUpdate: (id: number, status: string, price?: number) => void,
+}: {
+  requests: any[],
+  onStatusUpdate: (id: number, status: string, price?: number, time?: string) => void,
   mentor: CurrentUser | null
 }) {
   const [newPrice, setNewPrice] = useState(mentor?.mentor_price || 0);
@@ -5023,31 +5300,45 @@ function MentorPanelView({
                     <p className="text-xs text-ink/40">{formatJoinedDate(req.created_at)}</p>
                   </div>
                   <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${req.status === 'pending' ? 'bg-amber-500/10 text-amber-600' : req.status === 'accepted' ? 'bg-primary/10 text-primary' : 'bg-success/10 text-success'}`}>
-                    {req.status}
+                    {req.status} {req.status === 'accepted' && !req.user_confirmed && '(Onay Bekliyor)'} {req.status === 'accepted' && req.user_confirmed && '(Onaylandı)'}
                   </span>
                 </div>
                 <p className="mt-4 text-sm text-ink/70 leading-relaxed italic">"{req.message}"</p>
+                {req.meeting_time && (
+                  <p className="mt-2 text-xs font-bold text-primary uppercase">Önerilen Zaman: {new Date(req.meeting_time).toLocaleString('tr-TR')}</p>
+                )}
                 <div className="mt-6 flex gap-3">
                   {req.status === 'pending' && (
                     <div className="flex flex-col w-full gap-3">
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs font-bold text-ink/40 uppercase">Teklif Et ($):</span>
-                        <input 
-                          type="number" 
-                          placeholder="Ücret" 
-                          className="w-24 rounded-lg border border-ink/10 px-3 py-1 text-sm bg-white"
-                          id={`offer-${req.id}`}
-                        />
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs font-bold text-ink/40 uppercase">Ücret Teklifi ($):</span>
+                          <input 
+                            type="number" 
+                            placeholder="Ücret" 
+                            className="w-24 rounded-lg border border-ink/10 px-3 py-1 text-sm bg-white"
+                            id={`offer-${req.id}`}
+                          />
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs font-bold text-ink/40 uppercase">Görüşme Zamanı:</span>
+                          <input 
+                            type="datetime-local" 
+                            className="rounded-lg border border-ink/10 px-3 py-1 text-sm bg-white"
+                            id={`time-${req.id}`}
+                          />
+                        </div>
                       </div>
                       <div className="flex gap-3">
                         <button 
                           onClick={() => {
                             const val = (document.getElementById(`offer-${req.id}`) as HTMLInputElement)?.value;
-                            onStatusUpdate(req.id, 'accepted', Number(val) || 0);
+                            const timeVal = (document.getElementById(`time-${req.id}`) as HTMLInputElement)?.value;
+                            onStatusUpdate(req.id, 'accepted', Number(val) || 0, timeVal);
                           }} 
                           className="rounded-xl bg-primary px-6 py-2 text-xs font-bold text-white shadow-halo"
                         >
-                          Teklif Ver ve Kabul Et
+                          Zaman ve Ücret Öner
                         </button>
                         <button onClick={() => onStatusUpdate(req.id, 'completed')} className="rounded-xl border border-ink/10 bg-white px-6 py-2 text-xs font-bold text-ink">Reddet</button>
                       </div>

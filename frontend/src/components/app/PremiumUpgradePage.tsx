@@ -4,7 +4,7 @@ const BENEFITS = [
   {
     icon: "🤖",
     title: "YZ Takım Eşleşmesi",
-    desc: "Beceri, hedef ve kişilik uyumuna göre sana en uygun ekip üyelerini saniyeler içinde bul.",
+    desc: "Beceri, ilgi alanı, rol uyumu ve semantik benzerlik sinyallerine göre sana en uygun ekip üyelerini daha hızlı bul.",
   },
   {
     icon: "✅",
@@ -63,7 +63,7 @@ export default function PremiumUpgradePage({
             {STATS.map((s) => (
               <div key={s.label} className="rounded-2xl border border-white/10 bg-white/5 p-5">
                 <p className="text-3xl font-black text-[#D7B56D]">{s.value}</p>
-                <p className="mt-1 text-xs font-semibold text-white/50">{s.label}</p>
+                <p className="mt-1 text-xs font-semibold text-white/75">{s.label}</p>
               </div>
             ))}
           </div>
@@ -75,8 +75,8 @@ export default function PremiumUpgradePage({
           
           {/* Üyelik Yönetimi */}
           <div className="mt-10 border-t border-white/10 pt-8 max-w-md mx-auto">
-            <h4 className="text-sm font-bold text-white/40 uppercase tracking-widest">Abonelik Yönetimi</h4>
-            <p className="mt-2 text-xs text-white/50 leading-relaxed">
+            <h4 className="text-sm font-bold text-white/75 uppercase tracking-widest">Abonelik Yönetimi</h4>
+            <p className="mt-2 text-xs text-white/75 leading-relaxed">
               Mevcut aboneliğiniz yıllık planda aktiftir. Dilediğiniz zaman üyeliğinizi sonlandırabilirsiniz.
             </p>
             <button
@@ -111,7 +111,7 @@ export default function PremiumUpgradePage({
               daha güçlü görün.
             </span>
           </h2>
-          <p className="mt-4 max-w-xl text-base leading-7 text-white/68">
+          <p className="mt-4 max-w-xl text-base leading-7 text-white/80">
             YZ eşleştirme, verified rozet ve sınırsız başvuru ile platformdaki potansiyelini maksimuma çıkar.
           </p>
 
@@ -120,7 +120,7 @@ export default function PremiumUpgradePage({
             {STATS.map((s) => (
               <div key={s.label} className="rounded-2xl border border-white/10 bg-white/6 px-5 py-3.5 backdrop-blur">
                 <p className="text-2xl font-black text-white">{s.value}</p>
-                <p className="text-xs text-white/50">{s.label}</p>
+                <p className="text-xs text-white/75">{s.label}</p>
               </div>
             ))}
           </div>
@@ -133,7 +133,7 @@ export default function PremiumUpgradePage({
           <div key={b.title} className="rounded-[1.75rem] border border-white/10 bg-white/5 p-6 backdrop-blur hover:bg-white/8 transition duration-200">
             <div className="text-3xl">{b.icon}</div>
             <h3 className="mt-4 text-lg font-bold text-white">{b.title}</h3>
-            <p className="mt-2 text-sm leading-6 text-white/60">{b.desc}</p>
+            <p className="mt-2 text-sm leading-6 text-white/75">{b.desc}</p>
           </div>
         ))}
       </div>
@@ -154,9 +154,9 @@ export default function PremiumUpgradePage({
                 : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/8 text-white"
             }`}
           >
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">Aylık</p>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/75">Aylık</p>
             <p className="mt-2 text-3xl font-extrabold text-white">$5</p>
-            <p className="mt-1 text-sm text-white/50">Aylık ödeme, istediğin zaman iptal</p>
+            <p className="mt-1 text-sm text-white/75">Aylık ödeme, istediğin zaman iptal</p>
             {selectedPlan === "monthly" && (
               <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-primary/20 px-3 py-1 text-xs font-bold text-primary">
                 ✓ Seçildi
@@ -179,9 +179,9 @@ export default function PremiumUpgradePage({
                 2 Ay Bedava
               </span>
             </div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">Yıllık</p>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/75">Yıllık</p>
             <p className="mt-2 text-3xl font-extrabold text-white">$48</p>
-            <p className="mt-1 text-sm text-white/50">$4/ay — Yıllık ödeme</p>
+            <p className="mt-1 text-sm text-white/75">$4/ay — Yıllık ödeme</p>
             {selectedPlan === "yearly" && (
               <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-success/20 px-3 py-1 text-xs font-bold text-success">
                 ✓ Seçildi
@@ -204,7 +204,7 @@ export default function PremiumUpgradePage({
         >
           {loading ? "İşleniyor..." : "Premium'ı Aktif Et"}
         </button>
-        <p className="mt-3 text-center text-xs text-white/45">Demo mod — gerçek ödeme sistemi bağlanmamıştır</p>
+        <p className="mt-3 text-center text-xs text-white/75">Demo mod — gerçek ödeme sistemi bağlanmamıştır</p>
       </div>
     </section>
   );

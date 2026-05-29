@@ -5,45 +5,51 @@ struct AppShellView: View {
     @StateObject private var viewModel = AppShellViewModel()
 
     var body: some View {
-        TabView {
-            HomeView(viewModel: viewModel)
-                .tabItem {
-                    Label("Ana Sayfa", systemImage: "house.fill")
-                }
+        ZStack {
+            FoundrlyTheme.background.ignoresSafeArea()
 
-            DiscoverView(viewModel: viewModel)
-                .tabItem {
-                    Label("Keşfet", systemImage: "sparkles.rectangle.stack.fill")
-                }
+            TabView {
+                HomeView(viewModel: viewModel)
+                    .tabItem {
+                        Label("Ana Sayfa", systemImage: "house.fill")
+                    }
 
-            MessagesView(viewModel: viewModel)
-                .tabItem {
-                    Label("Mesajlar", systemImage: "message.fill")
-                }
+                DiscoverView(viewModel: viewModel)
+                    .tabItem {
+                        Label("Keşfet", systemImage: "sparkles.rectangle.stack.fill")
+                    }
 
-            AIBuilderView(viewModel: viewModel)
-                .tabItem {
-                    Label("AI", systemImage: "sparkles")
-                }
+                MessagesView(viewModel: viewModel)
+                    .tabItem {
+                        Label("Mesajlar", systemImage: "message.fill")
+                    }
 
-            MentorsView(viewModel: viewModel)
-                .tabItem {
-                    Label("Mentörler", systemImage: "person.3.fill")
-                }
+                AIBuilderView(viewModel: viewModel)
+                    .tabItem {
+                        Label("AI", systemImage: "sparkles")
+                    }
 
-            CommunityView()
-                .tabItem {
-                    Label("Topluluk", systemImage: "bubble.left.and.bubble.right.fill")
-                }
+                MentorsView(viewModel: viewModel)
+                    .tabItem {
+                        Label("Mentörler", systemImage: "person.3.fill")
+                    }
 
-            ProfileView(viewModel: viewModel)
-                .tabItem {
-                    Label("Profilim", systemImage: "person.crop.circle.fill")
-                }
+                CommunityView(viewModel: viewModel)
+                    .tabItem {
+                        Label("Topluluk", systemImage: "bubble.left.and.bubble.right.fill")
+                    }
+
+                ProfileView(viewModel: viewModel)
+                    .tabItem {
+                        Label("Profilim", systemImage: "person.crop.circle.fill")
+                    }
+            }
+            .tint(FoundrlyTheme.primaryBright)
         }
-        .tint(FoundrlyTheme.primary)
         .task {
-            await viewModel.load(session: session)
+            if viewModel.summary == nil {
+                await viewModel.load(session: session)
+            }
         }
     }
 }

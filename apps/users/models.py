@@ -132,6 +132,8 @@ class MentorRequest(models.Model):
         ],
         default="pending",
     )
+    meeting_time = models.DateTimeField(null=True, blank=True)
+    user_confirmed = models.BooleanField(default=False)
     price_at_request = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     offered_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     commission_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0.20)
@@ -200,3 +202,39 @@ class FriendRequest(models.Model):
 
     def __str__(self) -> str:
         return f"{self.sender.email} -> {self.receiver.email} ({self.status})"
+
+
+class CommunityThread(models.Model):
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="community_threads",
+    )
+    topic = models.CharField(max_length=255)
+    stats_label = models.CharField(max_length=120, blank=True)
+    signal_label = models.CharField(max_length=80, blank=True)
+    is_featured = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return self.topic
+
+
+class CommunityEvent(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    location = models.CharField(max_length=120)
+    tag = models.CharField(max_length=80)
+    event_date = models.DateField()
+    is_online = models.BooleanField(default=False)
+    is_featured = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["event_date", "-created_at"]
+
+    def __str__(self) -> str:
+        return self.title

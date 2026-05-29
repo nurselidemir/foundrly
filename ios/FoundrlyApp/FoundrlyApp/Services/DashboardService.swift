@@ -11,6 +11,10 @@ struct DashboardService {
         try await client.send(path: "api/projects/", token: token)
     }
 
+    func loadProjectDetail(token: String, projectId: Int) async throws -> ProjectCard {
+        try await client.send(path: "api/projects/\(projectId)/", token: token)
+    }
+
     func loadRecommendedProjects(token: String) async throws -> [RecommendedProjectMatch] {
         try await client.send(path: "api/dashboard/recommended-projects/", token: token)
     }
@@ -21,6 +25,10 @@ struct DashboardService {
 
     func loadReceivedApplications(token: String) async throws -> [TeamApplication] {
         try await client.send(path: "api/applications/?received=true", token: token)
+    }
+
+    func loadSentApplications(token: String) async throws -> [TeamApplication] {
+        try await client.send(path: "api/applications/?mine=true", token: token)
     }
 
     func updateApplicationStatus(token: String, applicationId: Int, status: String) async throws {
@@ -116,5 +124,45 @@ struct DashboardService {
             token: token,
             body: body
         )
+    }
+
+    func createFriendRequest(token: String, receiverId: Int) async throws {
+        let body = try JSONSerialization.data(withJSONObject: ["receiver": receiverId])
+        try await client.sendWithoutResponse(
+            path: "api/friend-requests/",
+            method: "POST",
+            token: token,
+            body: body
+        )
+    }
+
+    func updateFriendRequest(token: String, requestId: Int, status: String) async throws {
+        let body = try JSONSerialization.data(withJSONObject: ["status": status])
+        try await client.sendWithoutResponse(
+            path: "api/friend-requests/\(requestId)/",
+            method: "PATCH",
+            token: token,
+            body: body
+        )
+    }
+
+    func loadCommunityMembers(token: String, search: String = "", verifiedOnly: Bool = false) async throws -> [PublicUserSummary] {
+        var path = "api/users/"
+        var queryItems: [String] = []
+
+        if !search.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+           let encodedSearch = search.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
+            queryItems.append("search=\(encodedSearch)")
+        }
+
+        if verifiedOnly {
+            queryItems.append("verified_only=true")
+        }
+
+        if !queryItems.isEmpty {
+            path += "?" + queryItems.joined(separator: "&")
+        }
+
+        return try await client.send(path: path, token: token)
     }
 }

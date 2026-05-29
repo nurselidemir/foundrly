@@ -22,13 +22,16 @@ from apps.users.views import (
     MentorRequestListCreateView,
     MentorMyRequestsView,
     MentorRequestStatusUpdateView,
+    MentorRequestConfirmView,
     FriendRequestListCreateView,
     FriendRequestUpdateView,
     ProfilePictureUploadView,
+    ShowcaseDataView,
 )
 
 urlpatterns = [
     path("health/", HealthCheckView.as_view(), name="health-check"),
+    path("showcase/", ShowcaseDataView.as_view(), name="showcase-data"),
     path("users/", UserListView.as_view(), name="user-list"),
     path("users/me/", CurrentUserView.as_view(), name="current-user"),
     path("users/me/profile-picture/", ProfilePictureUploadView.as_view(), name="profile-picture-upload"),
@@ -47,6 +50,7 @@ urlpatterns = [
     path("mentors/", MentorListView.as_view(), name="mentor-list"),
     path("mentors/requests/", MentorRequestListCreateView.as_view(), name="mentor-request-list-create"),
     path("mentors/requests/<int:pk>/status/", MentorRequestStatusUpdateView.as_view(), name="mentor-request-status-update"),
+    path("mentors/requests/<int:pk>/confirm/", MentorRequestConfirmView.as_view(), name="mentor-request-confirm"),
     path("mentors/my-requests/", MentorMyRequestsView.as_view(), name="mentor-my-requests"),
     path("friend-requests/", FriendRequestListCreateView.as_view(), name="friend-request-list-create"),
     path("friend-requests/<int:pk>/", FriendRequestUpdateView.as_view(), name="friend-request-update"),

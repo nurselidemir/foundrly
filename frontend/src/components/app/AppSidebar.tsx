@@ -148,7 +148,7 @@ export default function AppSidebar({
           onClick={() => setCollapsed((v) => !v)}
           className={`
             flex items-center justify-center w-7 h-7 rounded-md transition-all duration-200
-            hover:bg-white/10 text-white/40 hover:text-white/80
+            hover:bg-white/10 text-white/70 hover:text-white
             ${collapsed ? "absolute -right-3 top-[18px] bg-[#2A3D60] border border-white/10 shadow-lg w-6 h-6 rounded-full" : ""}
           `}
           title={collapsed ? "Menüyü Genişlet" : "Menüyü Daralt"}
@@ -201,8 +201,8 @@ export default function AppSidebar({
                     : isGold
                     ? "text-aurum/80 hover:bg-aurum/10 hover:text-aurum"
                     : isAdminBadge
-                    ? "text-white/60 hover:bg-white/8 hover:text-white/90"
-                    : "text-white/60 hover:bg-white/8 hover:text-white/90"
+                    ? "text-white/75 hover:bg-white/8 hover:text-white"
+                    : "text-white/75 hover:bg-white/8 hover:text-white"
                 }
               `}
               title={collapsed ? item.label : undefined}
@@ -315,7 +315,7 @@ export default function AppSidebar({
                     <span className="ml-1.5 text-[9px] font-bold text-primary/80 uppercase">PRO</span>
                   )}
                   {isCountBadge && unreadMessages > 0 && (
-                    <span className="ml-1.5 text-[9px] font-bold text-white/60">
+                    <span className="ml-1.5 text-[9px] font-bold text-white/80">
                       ({unreadMessages})
                     </span>
                   )}
@@ -401,7 +401,7 @@ export default function AppSidebar({
               <p className="text-sm font-semibold text-white/90 truncate leading-tight">
                 {currentUser?.full_name ?? "Kullanıcı"}
               </p>
-              <p className="text-xs text-white/40 truncate leading-tight mt-0.5">
+              <p className="text-xs text-white/70 truncate leading-tight mt-0.5">
                 {currentUser?.title ?? "Kurucu"}
               </p>
             </div>
@@ -414,7 +414,7 @@ export default function AppSidebar({
             onClick={onLogout}
             className="
               mt-1 w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium
-              text-white/40 hover:text-white/80 hover:bg-white/8
+              text-white/70 hover:text-white hover:bg-white/8
               transition-all duration-200 group
             "
           >
@@ -438,7 +438,7 @@ export default function AppSidebar({
             onClick={onLogout}
             className="
               flex items-center justify-center w-9 h-9 rounded-xl
-              text-white/40 hover:text-white/80 hover:bg-white/8
+              text-white/70 hover:text-white hover:bg-white/8
               transition-all duration-200
             "
             title="Çıkış Yap"
@@ -458,7 +458,7 @@ export default function AppSidebar({
 
         {/* Version tag */}
         {!collapsed && (
-          <p className="mt-2 text-center text-[10px] text-white/18 font-medium tracking-widest uppercase">
+          <p className="mt-2 text-center text-[10px] text-white/65 font-medium tracking-widest uppercase">
             Foundrly v1.0
           </p>
         )}

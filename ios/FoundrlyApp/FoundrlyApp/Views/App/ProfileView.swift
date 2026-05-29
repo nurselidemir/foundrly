@@ -9,85 +9,12 @@ struct ProfileView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
+            ScrollView(showsIndicators: false) {
                 VStack(spacing: 18) {
                     if let user = session.currentUser {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text(user.full_name)
-                                .font(.system(size: 30, weight: .black, design: .rounded))
-                            Text(user.title)
-                                .foregroundStyle(FoundrlyTheme.textSecondary)
-                            Text(user.bio)
-                                .foregroundStyle(FoundrlyTheme.textSecondary)
-
-                            HStack(spacing: 8) {
-                                badge(user.is_premium ? "Premium" : "Standart", tint: user.is_premium ? FoundrlyTheme.primary : .white.opacity(0.16))
-                                badge(user.is_verified_talent ? "Doğrulanmış" : "Rozet Yok", tint: user.is_verified_talent ? FoundrlyTheme.accent : .white.opacity(0.16))
-                            }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .foundrlyCard()
-
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Yetenekler")
-                                .font(.headline)
-                            skillWrap(user.skills)
-                            Text("İlgi Alanları")
-                                .font(.headline)
-                            skillWrap(user.interests)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .foundrlyCard()
-
-                        if !user.is_premium {
-                            VStack(alignment: .leading, spacing: 10) {
-                                Text("Premium'a Yükselt")
-                                    .font(.headline)
-                                Text("AI ekip eşleşmeleri, verified talent başvurusu ve daha yüksek görünürlük için premiumu aktive et.")
-                                    .foregroundStyle(FoundrlyTheme.textSecondary)
-                                HStack(spacing: 12) {
-                                    Button("Aylık Premium") {
-                                        Task { await viewModel.activatePremium(session: session, plan: "monthly") }
-                                    }
-                                    .premiumButtonStyle()
-
-                                    Button("Yıllık Premium") {
-                                        Task { await viewModel.activatePremium(session: session, plan: "yearly") }
-                                    }
-                                    .premiumButtonStyle()
-                                }
-                            }
-                            .foundrlyCard()
-                        } else if !user.is_verified_talent {
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text("Doğrulanmış Yetenek Başvurusu")
-                                    .font(.headline)
-                                Text("Premium hesabın açık. Profiline rozet eklenmesi için başvurunu yönetim ekibine ilet.")
-                                    .foregroundStyle(FoundrlyTheme.textSecondary)
-
-                                Group {
-                                    TextField("Başvuru ünvanı", text: $verificationTitle)
-                                    TextField("Portfolyo URL", text: $verificationPortfolio)
-                                    TextField("Kısa not", text: $verificationNote, axis: .vertical)
-                                }
-                                .padding()
-                                .background(FoundrlyTheme.surfaceRaised)
-                                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-
-                                Button("Başvuruyu Gönder") {
-                                    Task {
-                                        await viewModel.submitVerification(
-                                            session: session,
-                                            requestedTitle: verificationTitle,
-                                            portfolioURL: verificationPortfolio,
-                                            note: verificationNote
-                                        )
-                                    }
-                                }
-                                .premiumButtonStyle()
-                            }
-                            .foundrlyCard()
-                        }
+                        profileHero(user)
+                        expertise(user)
+                        premiumArea(user)
 
                         if !viewModel.feedbackMessage.isEmpty {
                             Text(viewModel.feedbackMessage)
@@ -100,54 +27,184 @@ struct ProfileView: View {
                         Button("Çıkış Yap") {
                             session.clear()
                         }
-                        .fontWeight(.bold)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(.white.opacity(0.08))
-                        .foregroundStyle(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .foundrlySecondaryButton()
                     }
                 }
                 .padding(20)
+                .padding(.bottom, 40)
             }
-            .background(FoundrlyTheme.background.ignoresSafeArea())
+            .foundrlyScreen()
             .navigationTitle("Profilim")
         }
     }
 
-    private func badge(_ title: String, tint: Color) -> some View {
-        Text(title)
-            .font(.caption.bold())
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(tint)
-            .clipShape(Capsule())
+    private func profileHero(_ user: CurrentUser) -> some View {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(alignment: .top, spacing: 16) {
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [FoundrlyTheme.primaryBright, FoundrlyTheme.accent],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 74, height: 74)
+                    Text(initials(from: user.full_name))
+                        .font(.title.bold())
+                        .foregroundStyle(.white)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(user.full_name)
+                        .font(.system(size: 30, weight: .black, design: .rounded))
+                    Text(user.title)
+                        .font(.headline)
+                        .foregroundStyle(FoundrlyTheme.textSecondary)
+                }
+                Spacer()
+            }
+
+            Text(user.bio)
+                .font(.subheadline)
+                .foregroundStyle(FoundrlyTheme.textSecondary)
+
+            HStack(spacing: 8) {
+                FoundrlyPill(
+                    title: user.is_premium ? "Premium" : "Standart",
+                    tint: user.is_premium ? FoundrlyTheme.gold.opacity(0.22) : FoundrlyTheme.surfaceSoft,
+                    textColor: user.is_premium ? FoundrlyTheme.gold : .white
+                )
+                FoundrlyPill(
+                    title: user.is_verified_talent ? "Doğrulanmış Yetenek" : "Rozet Bekliyor",
+                    tint: user.is_verified_talent ? FoundrlyTheme.accent.opacity(0.18) : FoundrlyTheme.surfaceSoft,
+                    textColor: user.is_verified_talent ? FoundrlyTheme.accent : .white
+                )
+            }
+
+            HStack(spacing: 12) {
+                spotlight("Katılım", String(user.date_joined.prefix(10)))
+                spotlight("Mentör Kredi", "\(user.mentor_credits ?? 0)")
+                spotlight("Görünürlük", user.is_premium ? "Yüksek" : "Temel")
+            }
+        }
+        .foundrlyCard()
     }
 
-    private func skillWrap(_ items: [String]) -> some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
-                ForEach(items, id: \.self) { item in
-                    Text(item)
-                        .font(.caption.bold())
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(FoundrlyTheme.surfaceRaised)
-                        .clipShape(Capsule())
+    private func expertise(_ user: CurrentUser) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            FoundrlySectionHeader(
+                eyebrow: "Uzmanlık",
+                title: "Profil sinyallerin",
+                subtitle: "Mobil uygulamada da web’deki premium vitrin hissini veren alanlar."
+            )
+
+            labelRow("Yetenekler", user.skills)
+            labelRow("İlgi Alanları", user.interests)
+        }
+        .foundrlyCard()
+    }
+
+    private func premiumArea(_ user: CurrentUser) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            if !user.is_premium {
+                FoundrlySectionHeader(
+                    eyebrow: "Yükselt",
+                    title: "Premium görünürlüğü aç",
+                    subtitle: "AI eşleşmeleri, mentör alanları ve daha güçlü keşif kartları için üyeliğini yükselt."
+                )
+
+                HStack(spacing: 12) {
+                    Button("Aylık Premium") {
+                        Task { await viewModel.activatePremium(session: session, plan: "monthly") }
+                    }
+                    .foundrlyPrimaryButton()
+
+                    Button("Yıllık Premium") {
+                        Task { await viewModel.activatePremium(session: session, plan: "yearly") }
+                    }
+                    .foundrlySecondaryButton()
+                }
+            } else if !user.is_verified_talent {
+                FoundrlySectionHeader(
+                    eyebrow: "Rozet",
+                    title: "Doğrulanmış yetenek başvurusu",
+                    subtitle: "Premium hesabın açık. Şimdi profilini daha prestijli hale getirmek için başvurunu tamamla."
+                )
+
+                entryField("Başvuru ünvanı", text: $verificationTitle)
+                entryField("Portfolyo URL", text: $verificationPortfolio)
+                entryField("Kısa not", text: $verificationNote)
+
+                Button("Başvuruyu Gönder") {
+                    Task {
+                        await viewModel.submitVerification(
+                            session: session,
+                            requestedTitle: verificationTitle,
+                            portfolioURL: verificationPortfolio,
+                            note: verificationNote
+                        )
+                    }
+                }
+                .foundrlyPrimaryButton()
+            } else {
+                FoundrlySectionHeader(
+                    eyebrow: "Durum",
+                    title: "Profilin premium seviyede",
+                    subtitle: "Rozetin aktif, premium görünürlüğün açık ve topluluk içinde daha güçlü konumdasın."
+                )
+            }
+        }
+        .foundrlyCard()
+    }
+
+    private func spotlight(_ title: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title.uppercased())
+                .font(.caption.weight(.bold))
+                .foregroundStyle(FoundrlyTheme.textMuted)
+            Text(value)
+                .font(.headline.bold())
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(FoundrlyTheme.surfaceSoft.opacity(0.92))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private func labelRow(_ title: String, _ items: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.headline)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(items, id: \.self) { item in
+                        Text(item)
+                            .font(.caption.bold())
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(FoundrlyTheme.surfaceSoft.opacity(0.92))
+                            .clipShape(Capsule())
+                    }
                 }
             }
         }
     }
-}
 
-private extension View {
-    func premiumButtonStyle() -> some View {
-        self
-            .fontWeight(.bold)
-            .frame(maxWidth: .infinity)
+    private func entryField(_ placeholder: String, text: Binding<String>) -> some View {
+        TextField(placeholder, text: text, axis: .vertical)
             .padding()
-            .background(FoundrlyTheme.primary)
-            .foregroundStyle(.white)
+            .background(FoundrlyTheme.surfaceSoft.opacity(0.92))
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private func initials(from fullName: String) -> String {
+        fullName
+            .split(separator: " ")
+            .prefix(2)
+            .map { String($0.prefix(1)) }
+            .joined()
+            .uppercased()
     }
 }

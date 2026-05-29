@@ -170,7 +170,7 @@ export default function DiscoverPage({ isLoggedIn = false }: { isLoggedIn?: bool
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Proje adı, teknoloji, rol ara..."
-              className="flex-1 rounded-2xl border border-white/10 bg-white/6 px-5 py-3.5 text-sm text-white outline-none placeholder:text-white/32 focus:border-primary/40 focus:bg-white/8 backdrop-blur"
+              className="flex-1 rounded-2xl border border-white/10 bg-white/6 px-5 py-3.5 text-sm text-white outline-none placeholder:text-white/55 focus:border-primary/40 focus:bg-white/8 backdrop-blur"
             />
             <button
               type="button"
@@ -211,7 +211,7 @@ export default function DiscoverPage({ isLoggedIn = false }: { isLoggedIn?: bool
                 Giriş Yap
               </a>
             </div>
-            <p className="mt-5 text-xs text-white/35">Kredi kartı gerekmez · 10 saniyede hazır</p>
+            <p className="mt-5 text-xs text-white/65">Kredi kartı gerekmez · 10 saniyede hazır</p>
           </div>
         ) : (
           <div className="flex gap-10 flex-col lg:flex-row">
@@ -220,7 +220,7 @@ export default function DiscoverPage({ isLoggedIn = false }: { isLoggedIn?: bool
             <div className="sticky top-24 space-y-6">
               {/* Category */}
               <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
-                <p className="text-xs font-bold uppercase tracking-[0.28em] text-white/45">Kategori</p>
+                <p className="text-xs font-bold uppercase tracking-[0.28em] text-white/75">Kategori</p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {CATEGORIES.map((cat) => (
                     <button
@@ -230,7 +230,7 @@ export default function DiscoverPage({ isLoggedIn = false }: { isLoggedIn?: bool
                       className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
                         selectedCategory === cat
                           ? "bg-primary text-white"
-                          : "border border-white/10 bg-white/5 text-white/68 hover:border-white/20 hover:bg-white/8"
+                          : "border border-white/10 bg-white/5 text-white/80 hover:border-white/20 hover:bg-white/8"
                       }`}
                     >
                       {cat}
@@ -241,7 +241,7 @@ export default function DiscoverPage({ isLoggedIn = false }: { isLoggedIn?: bool
 
               {/* Deneyim */}
               <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
-                <p className="text-xs font-bold uppercase tracking-[0.28em] text-white/45">Deneyim Seviyesi</p>
+                <p className="text-xs font-bold uppercase tracking-[0.28em] text-white/75">Deneyim Seviyesi</p>
                 <div className="mt-4 space-y-2">
                   {EXPERIENCE_LEVELS.map((level) => (
                     <button
@@ -251,7 +251,7 @@ export default function DiscoverPage({ isLoggedIn = false }: { isLoggedIn?: bool
                       className={`w-full rounded-xl px-4 py-2.5 text-left text-sm font-semibold transition ${
                         selectedExperience === level
                           ? "bg-primary/20 text-primary border border-primary/30"
-                          : "border border-white/5 bg-white/3 text-white/60 hover:border-white/10 hover:bg-white/6"
+                          : "border border-white/5 bg-white/3 text-white/75 hover:border-white/10 hover:bg-white/6"
                       }`}
                     >
                       {level}
@@ -262,7 +262,7 @@ export default function DiscoverPage({ isLoggedIn = false }: { isLoggedIn?: bool
 
               {/* Çalışma Tipi */}
               <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
-                <p className="text-xs font-bold uppercase tracking-[0.28em] text-white/45">Çalışma Tipi</p>
+                <p className="text-xs font-bold uppercase tracking-[0.28em] text-white/75">Çalışma Tipi</p>
                 <div className="mt-4 space-y-2">
                   {WORK_TYPES.map((type) => (
                     <button
@@ -272,7 +272,7 @@ export default function DiscoverPage({ isLoggedIn = false }: { isLoggedIn?: bool
                       className={`w-full rounded-xl px-4 py-2.5 text-left text-sm font-semibold transition ${
                         selectedWorkType === type
                           ? "bg-success/20 text-success border border-success/30"
-                          : "border border-white/5 bg-white/3 text-white/60 hover:border-white/10 hover:bg-white/6"
+                          : "border border-white/5 bg-white/3 text-white/75 hover:border-white/10 hover:bg-white/6"
                       }`}
                     >
                       {type}
@@ -283,7 +283,7 @@ export default function DiscoverPage({ isLoggedIn = false }: { isLoggedIn?: bool
 
               {/* Teknoloji */}
               <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
-                <p className="text-xs font-bold uppercase tracking-[0.28em] text-white/45">Teknoloji</p>
+                <p className="text-xs font-bold uppercase tracking-[0.28em] text-white/75">Teknoloji</p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {TECH_STACK_OPTIONS.map((tech) => (
                     <button
@@ -293,7 +293,7 @@ export default function DiscoverPage({ isLoggedIn = false }: { isLoggedIn?: bool
                       className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
                         selectedTech.includes(tech)
                           ? "bg-[#D7B56D]/30 text-[#D7B56D] border border-[#D7B56D]/30"
-                          : "border border-white/10 bg-white/5 text-white/68 hover:border-white/20"
+                          : "border border-white/10 bg-white/5 text-white/80 hover:border-white/20"
                       }`}
                     >
                       {tech}
@@ -304,7 +304,7 @@ export default function DiscoverPage({ isLoggedIn = false }: { isLoggedIn?: bool
                   <button
                     type="button"
                     onClick={() => setSelectedTech([])}
-                    className="mt-3 text-xs font-semibold text-white/40 hover:text-white/60"
+                    className="mt-3 text-xs font-semibold text-white/70 hover:text-white/90"
                   >
                     Temizle
                   </button>
@@ -316,7 +316,7 @@ export default function DiscoverPage({ isLoggedIn = false }: { isLoggedIn?: bool
           {/* Project Cards */}
           <main className="flex-1">
             <div className="mb-5 flex items-center justify-between">
-              <p className="text-sm text-white/55">
+              <p className="text-sm text-white/80">
                 {isLoggedIn ? (
                   <><span className="font-bold text-white">{filtered.length}</span> proje bulundu</>
                 ) : (
@@ -329,7 +329,7 @@ export default function DiscoverPage({ isLoggedIn = false }: { isLoggedIn?: bool
               <div className="rounded-[2rem] border border-white/10 bg-white/5 p-16 text-center backdrop-blur">
                 <div className="text-5xl">🔍</div>
                 <h3 className="mt-4 text-xl font-bold text-white">Proje bulunamadı</h3>
-                <p className="mt-2 text-sm text-white/55">Farklı filtreler veya arama terimleri deneyin.</p>
+                <p className="mt-2 text-sm text-white/75">Farklı filtreler veya arama terimleri deneyin.</p>
                 <button
                   type="button"
                   onClick={() => { setSearch(""); setSelectedCategory("Tümü"); setSelectedExperience("Tümü"); setSelectedWorkType("Tümü"); setSelectedTech([]); }}
@@ -362,17 +362,17 @@ export default function DiscoverPage({ isLoggedIn = false }: { isLoggedIn?: bool
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="text-lg font-bold text-white truncate pr-20">{project.name}</h3>
-                          <p className="mt-0.5 text-xs text-white/45">{project.owner} tarafından</p>
+                          <p className="mt-0.5 text-xs text-white/75">{project.owner} tarafından</p>
                         </div>
                       </div>
 
                       {/* Description */}
-                      <p className="mt-4 text-sm leading-6 text-white/68 line-clamp-2">{project.description}</p>
+                      <p className="mt-4 text-sm leading-6 text-white/80 line-clamp-2">{project.description}</p>
 
                       {/* Tech stack */}
                       <div className="mt-4 flex flex-wrap gap-1.5">
                         {project.tech.slice(0, 4).map((t) => (
-                          <span key={t} className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-semibold text-white/65">
+                          <span key={t} className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-semibold text-white/80">
                             {t}
                           </span>
                         ))}
@@ -380,7 +380,7 @@ export default function DiscoverPage({ isLoggedIn = false }: { isLoggedIn?: bool
 
                       {/* Roles */}
                       <div className="mt-3">
-                        <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/35">Aranan Roller</p>
+                        <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/70">Aranan Roller</p>
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
                           {project.roles.map((r) => (
                             <span key={r} className="rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-[#9ab0ff]">
@@ -393,18 +393,18 @@ export default function DiscoverPage({ isLoggedIn = false }: { isLoggedIn?: bool
                       {/* Footer */}
                       <div className="mt-5 flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <span className="text-xs text-white/45">{project.teamSize} üye</span>
-                          <span className="text-white/20">·</span>
-                          <span className="text-xs text-white/45">{project.workType}</span>
-                          <span className="text-white/20">·</span>
-                          <span className="text-xs text-white/45">{project.experience}</span>
+                          <span className="text-xs text-white/75">{project.teamSize} üye</span>
+                          <span className="text-white/45">·</span>
+                          <span className="text-xs text-white/75">{project.workType}</span>
+                          <span className="text-white/45">·</span>
+                          <span className="text-xs text-white/75">{project.experience}</span>
                         </div>
                         <span className={`rounded-full px-3 py-1 text-xs font-bold ${
                           project.match >= 90
                             ? "bg-success/15 text-success"
                             : project.match >= 80
                             ? "bg-primary/15 text-[#9ab0ff]"
-                            : "bg-white/8 text-white/55"
+                            : "bg-white/8 text-white/75"
                         }`}>
                           %{project.match} Uyum
                         </span>
@@ -462,7 +462,7 @@ export default function DiscoverPage({ isLoggedIn = false }: { isLoggedIn?: bool
                           giriş yap veya üye ol
                         </span>
                       </h3>
-                      <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-white/60">
+                      <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-white/75">
                         Uyum skorları, başvuru sistemi ve akıllı filtreler için ücretsiz hesap oluştur.
                       </p>
 
@@ -481,7 +481,7 @@ export default function DiscoverPage({ isLoggedIn = false }: { isLoggedIn?: bool
                         </a>
                       </div>
 
-                      <p className="mt-4 text-xs text-white/35">Kredi kartı gerekmez · Saniyeler içinde hazır</p>
+                      <p className="mt-4 text-xs text-white/65">Kredi kartı gerekmez · Saniyeler içinde hazır</p>
                     </div>
                   </div>
                 )}

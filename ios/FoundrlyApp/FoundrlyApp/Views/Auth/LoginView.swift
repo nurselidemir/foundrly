@@ -7,45 +7,51 @@ struct LoginView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text("Giriş Yap")
-                .font(.system(size: 28, weight: .black, design: .rounded))
-                .foregroundStyle(FoundrlyTheme.textPrimary)
+            FoundrlySectionHeader(
+                eyebrow: "Giriş",
+                title: "Hesabına dön",
+                subtitle: "Proje keşfi, AI eşleşmeleri ve topluluk alanın seni bekliyor."
+            )
 
-            TextField("E-posta", text: $viewModel.email)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .padding()
-                .background(FoundrlyTheme.surfaceRaised)
-                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-
-            SecureField("Şifre", text: $viewModel.password)
-                .padding()
-                .background(FoundrlyTheme.surfaceRaised)
-                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            field("E-posta", text: $viewModel.email, isSecure: false)
+            field("Şifre", text: $viewModel.password, isSecure: true)
 
             if !viewModel.errorMessage.isEmpty {
                 Text(viewModel.errorMessage)
                     .font(.footnote)
                     .foregroundStyle(.red.opacity(0.92))
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(FoundrlyTheme.danger.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
 
-            Button {
+            Button(viewModel.isLoading ? "Giriş yapılıyor..." : "Giriş Yap") {
                 Task { await viewModel.login(session: session) }
-            } label: {
-                Text(viewModel.isLoading ? "Giriş yapılıyor..." : "Giriş Yap")
-                    .fontWeight(.bold)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(FoundrlyTheme.primary)
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
             }
+            .foundrlyPrimaryButton()
 
             Button("Hesabın yok mu? Kayıt ol", action: onSwitch)
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(FoundrlyTheme.accent)
         }
         .foundrlyCard()
-        .foregroundStyle(FoundrlyTheme.textPrimary)
+    }
+
+    @ViewBuilder
+    private func field(_ placeholder: String, text: Binding<String>, isSecure: Bool) -> some View {
+        if isSecure {
+            SecureField(placeholder, text: text)
+                .padding()
+                .background(FoundrlyTheme.surfaceSoft.opacity(0.92))
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        } else {
+            TextField(placeholder, text: text)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .padding()
+                .background(FoundrlyTheme.surfaceSoft.opacity(0.92))
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        }
     }
 }

@@ -3,6 +3,8 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from apps.users.models import (
+    CommunityEvent,
+    CommunityThread,
     FriendRequest,
     MentorRequest,
     PremiumSubscription,
@@ -213,9 +215,96 @@ class PremiumSubscribeSerializer(serializers.Serializer):
         )
 
         user.is_premium = True
-        user.mentor_credits = 3
+        user.mentor_credits = 1
         user.save(update_fields=["is_premium", "mentor_credits"])
         return subscription
+
+
+class ShowcaseProjectSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    title = serializers.CharField(read_only=True)
+    summary = serializers.CharField(read_only=True)
+    problem_statement = serializers.CharField(read_only=True)
+    tech_stack = serializers.ListField(child=serializers.CharField(), read_only=True)
+    needed_roles = serializers.ListField(child=serializers.CharField(), read_only=True)
+    is_premium_highlighted = serializers.BooleanField(read_only=True)
+    created_at = serializers.DateTimeField(read_only=True)
+    owner = serializers.SerializerMethodField()
+
+    def get_owner(self, obj):
+        return {
+            "id": obj.owner.id,
+            "full_name": obj.owner.full_name,
+            "title": obj.owner.title,
+            "is_verified_talent": obj.owner.is_verified_talent,
+            "is_premium": obj.owner.is_premium,
+        }
+
+
+class ShowcaseUserSerializer(serializers.ModelSerializer):
+    average_rating = serializers.SerializerMethodField()
+    recent_projects_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "full_name",
+            "title",
+            "bio",
+            "skills",
+            "interests",
+            "profile_picture",
+            "is_verified_talent",
+            "is_premium",
+            "average_rating",
+            "recent_projects_count",
+            "date_joined",
+        ]
+
+    def get_average_rating(self, obj):
+        value = obj.received_reviews.aggregate(avg=Avg("rating"))["avg"]
+        return round(value, 1) if value is not None else None
+
+    def get_recent_projects_count(self, obj):
+        return obj.projects.count()
+
+
+class CommunityThreadSerializer(serializers.ModelSerializer):
+    author = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CommunityThread
+        fields = [
+            "id",
+            "author",
+            "topic",
+            "stats_label",
+            "signal_label",
+            "created_at",
+        ]
+
+    def get_author(self, obj):
+        return {
+            "id": obj.author.id,
+            "full_name": obj.author.full_name,
+            "title": obj.author.title,
+            "is_verified_talent": obj.author.is_verified_talent,
+        }
+
+
+class CommunityEventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CommunityEvent
+        fields = [
+            "id",
+            "title",
+            "description",
+            "location",
+            "tag",
+            "event_date",
+            "is_online",
+        ]
 
 
 class VerificationRequestSerializer(serializers.ModelSerializer):
@@ -506,6 +595,8 @@ class MentorRequestSerializer(serializers.ModelSerializer):
             "user_details",
             "message",
             "status",
+            "meeting_time",
+            "user_confirmed",
             "price_at_request",
             "offered_price",
             "commission_rate",

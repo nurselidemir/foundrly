@@ -5,6 +5,9 @@ struct ProjectCard: Codable, Identifiable {
     let owner: PublicUserSummary
     let title: String
     let summary: String
+    let problem_statement: String?
+    let tech_stack: [String]?
+    let needed_roles: [String]?
     let is_premium_highlighted: Bool
     let created_at: String
     let updated_at: String
@@ -34,6 +37,8 @@ struct DashboardSummary: Codable {
     let metrics: DashboardMetrics
     let recent_projects: [ProjectCard]
     let friend_requests: [FriendRequestSummary]?
+    let recent_received_applications: [TeamApplication]?
+    let recent_sent_applications: [TeamApplication]?
 }
 
 struct TeamApplication: Codable, Identifiable {

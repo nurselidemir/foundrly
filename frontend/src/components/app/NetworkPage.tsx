@@ -79,7 +79,7 @@ export default function NetworkPage({ onStartChat, onViewProfile }: NetworkPageP
           <div key={s.label} className="rounded-2xl border border-white/5 bg-white/3 p-6 shadow-sm">
             <div className="text-2xl">{s.icon}</div>
             <p className="mt-2 text-3xl font-extrabold text-white">{s.value}</p>
-            <p className="mt-1 text-xs font-bold uppercase tracking-wider text-white/40">{s.label}</p>
+            <p className="mt-1 text-xs font-bold uppercase tracking-wider text-white/75">{s.label}</p>
           </div>
         ))}
       </div>
@@ -119,16 +119,16 @@ export default function NetworkPage({ onStartChat, onViewProfile }: NetworkPageP
                     {user.initials}
                   </div>
                   <h3 className="mt-4 font-bold text-white leading-tight">{user.name}</h3>
-                  <p className="text-xs text-white/40">@{user.username}</p>
+                  <p className="text-xs text-white/75">@{user.username}</p>
                   <p className="mt-1 text-xs font-semibold text-[#9ab0ff]">{user.role}</p>
                 </div>
 
-                <div className="mt-4 rounded-xl border border-white/5 bg-white/3 px-3 py-2.5 text-xs font-semibold text-white/60 text-center">
+                <div className="mt-4 rounded-xl border border-white/5 bg-white/3 px-3 py-2.5 text-xs font-semibold text-white/80 text-center">
                   🔗 {user.common}
                 </div>
 
                 <div className="mt-4 flex items-center justify-between">
-                  <span className="text-xs text-white/40">{user.match}% uyum</span>
+                  <span className="text-xs text-white/75">{user.match}% uyum</span>
                   <div className="h-1.5 w-24 rounded-full bg-white/5 overflow-hidden">
                     <div className="h-1.5 rounded-full bg-primary" style={{ width: `${user.match}%` }} />
                   </div>
@@ -165,8 +165,8 @@ export default function NetworkPage({ onStartChat, onViewProfile }: NetworkPageP
         <div className="space-y-3">
           {connected.length === 0 ? (
             <div className="rounded-[2rem] border border-white/10 bg-white/5 p-12 text-center backdrop-blur">
-              <p className="text-lg text-white/50 font-semibold">Aktif bağlantınız bulunmuyor.</p>
-              <p className="text-sm text-white/40 mt-1">Yeni bağlantılar kurmak için "Keşfet" sekmesini ziyaret edin.</p>
+              <p className="text-lg text-white/75 font-semibold">Aktif bağlantınız bulunmuyor.</p>
+              <p className="text-sm text-white/70 mt-1">Yeni bağlantılar kurmak için "Keşfet" sekmesini ziyaret edin.</p>
             </div>
           ) : (
             connected.map((user) => (
@@ -180,7 +180,7 @@ export default function NetworkPage({ onStartChat, onViewProfile }: NetworkPageP
                   </div>
                   <div>
                     <p className="font-bold text-white">{user.name}</p>
-                    <p className="text-xs text-white/40">
+                    <p className="text-xs text-white/75">
                       {user.role} · <span className="text-[#9ab0ff]">@{user.username}</span>
                     </p>
                     <p className="mt-0.5 text-[10px] font-bold text-success uppercase tracking-wider flex items-center gap-1">

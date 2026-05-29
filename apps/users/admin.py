@@ -1,7 +1,14 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from apps.users.models import PremiumSubscription, User, UserReview, VerificationRequest
+from apps.users.models import (
+    CommunityEvent,
+    CommunityThread,
+    PremiumSubscription,
+    User,
+    UserReview,
+    VerificationRequest,
+)
 
 
 @admin.register(User)
@@ -47,3 +54,17 @@ class VerificationRequestAdmin(admin.ModelAdmin):
 class UserReviewAdmin(admin.ModelAdmin):
     list_display = ("reviewer", "reviewee", "application", "rating", "created_at")
     search_fields = ("reviewer__email", "reviewee__email", "application__project__title")
+
+
+@admin.register(CommunityThread)
+class CommunityThreadAdmin(admin.ModelAdmin):
+    list_display = ("topic", "author", "signal_label", "is_featured", "created_at")
+    list_filter = ("is_featured",)
+    search_fields = ("topic", "author__full_name", "author__email")
+
+
+@admin.register(CommunityEvent)
+class CommunityEventAdmin(admin.ModelAdmin):
+    list_display = ("title", "tag", "location", "event_date", "is_online", "is_featured")
+    list_filter = ("is_online", "is_featured", "tag")
+    search_fields = ("title", "location", "tag")

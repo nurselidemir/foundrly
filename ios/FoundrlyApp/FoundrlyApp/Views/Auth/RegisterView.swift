@@ -7,48 +7,57 @@ struct RegisterView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Kayıt Ol")
-                .font(.system(size: 28, weight: .black, design: .rounded))
-                .foregroundStyle(FoundrlyTheme.textPrimary)
+            FoundrlySectionHeader(
+                eyebrow: "Kayıt",
+                title: "Profilini kur",
+                subtitle: "Eşleşme mantığı bu bilgiler üzerinden çalışacak; o yüzden güçlü ve net bir başlangıç yap."
+            )
 
             Group {
-                TextField("Ad Soyad", text: $viewModel.fullName)
-                TextField("Ünvan", text: $viewModel.title)
-                TextField("E-posta", text: $viewModel.email)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                SecureField("Şifre", text: $viewModel.password)
-                TextField("Kısa bio", text: $viewModel.bio, axis: .vertical)
-                TextField("Yetenekler (virgülle)", text: $viewModel.skills)
-                TextField("İlgi alanları (virgülle)", text: $viewModel.interests)
+                input("Ad Soyad", text: $viewModel.fullName)
+                input("Ünvan", text: $viewModel.title)
+                input("E-posta", text: $viewModel.email, autoCaps: false)
+                secureInput("Şifre", text: $viewModel.password)
+                input("Kısa bio", text: $viewModel.bio)
+                input("Yetenekler (virgülle)", text: $viewModel.skills)
+                input("İlgi alanları (virgülle)", text: $viewModel.interests)
             }
-            .padding()
-            .background(FoundrlyTheme.surfaceRaised)
-            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
 
             if !viewModel.errorMessage.isEmpty {
                 Text(viewModel.errorMessage)
                     .font(.footnote)
                     .foregroundStyle(.red.opacity(0.92))
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(FoundrlyTheme.danger.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
 
-            Button {
+            Button(viewModel.isLoading ? "Hesap oluşturuluyor..." : "Hesap Oluştur") {
                 Task { await viewModel.register(session: session) }
-            } label: {
-                Text(viewModel.isLoading ? "Hesap oluşturuluyor..." : "Hesap Oluştur")
-                    .fontWeight(.bold)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(FoundrlyTheme.primary)
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
             }
+            .foundrlyPrimaryButton()
 
             Button("Zaten hesabın var mı? Giriş yap", action: onSwitch)
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(FoundrlyTheme.accent)
         }
         .foundrlyCard()
-        .foregroundStyle(FoundrlyTheme.textPrimary)
+    }
+
+    private func input(_ placeholder: String, text: Binding<String>, autoCaps: Bool = true) -> some View {
+        TextField(placeholder, text: text, axis: .vertical)
+            .textInputAutocapitalization(autoCaps ? .sentences : .never)
+            .autocorrectionDisabled(!autoCaps)
+            .padding()
+            .background(FoundrlyTheme.surfaceSoft.opacity(0.92))
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private func secureInput(_ placeholder: String, text: Binding<String>) -> some View {
+        SecureField(placeholder, text: text)
+            .padding()
+            .background(FoundrlyTheme.surfaceSoft.opacity(0.92))
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 }

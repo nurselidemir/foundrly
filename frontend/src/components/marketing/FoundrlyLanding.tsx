@@ -10,20 +10,6 @@ const fadeUp = {
   }),
 };
 
-const trustStats = [
-  { value: "12K+", label: "Kurucu, geliştirici ve tasarımcı bekleme listesinde" },
-  { value: "420+", label: "Hackathon ve startup ekibi kuruldu" },
-  { value: "91%", label: "Eşleşme sonrası daha güçlü ekip uyumu rapor edildi" },
-  { value: "$0", label: "Gürültülü topluluk gruplarında harcanan para" },
-];
-
-const trustProfiles = [
-  { name: "Aylin", role: "Kurucu, İklim SaaS", badge: "Seri Hazır", initials: "AY" },
-  { name: "Bora", role: "iOS Geliştirici, Hackathon", badge: "Doğrulanmış Yetenek", initials: "BO" },
-  { name: "Duru", role: "Ürün Tasarımcısı, YZ Araçları", badge: "En İyi İş Birlikçi", initials: "DR" },
-  { name: "Mert", role: "Full-Stack Geliştirici", badge: "Ekip Kaptanı", initials: "ME" },
-];
-
 const featureCards = [
   {
     icon: "🤖",
@@ -113,7 +99,6 @@ const pricing = [
       "Kurucu profili",
       "Proje keşfi",
       "Temel başvurular",
-      "Topluluk erişimi",
       "Temel mesajlaşma",
     ],
     locked: ["YZ takım eşleşmesi", "Doğrulanmış profil", "Premium görünürlük"],
@@ -145,7 +130,7 @@ const faqs = [
   },
   {
     q: "YZ Ekip Kurucu nasıl çalışır?",
-    a: "TF-IDF tabanlı semantik eşleştirme motorumuz, projenizin ihtiyaçlarını ve kullanıcı becerilerini analiz ederek en uygun ekip üyelerini önerir. Beceri uyumu, hedef hizalaması ve işbirliği geçmişini dikkate alır.",
+    a: "YZ Ekip Kurucu; teknik beceriler, ilgi alanları, rol eşleşmesi ve TF-IDF tabanlı semantik benzerlik sinyallerini birlikte değerlendirerek en uygun ekip üyelerini önerir.",
   },
   {
     q: "Doğrulanmış Yetenek rozeti nasıl alınır?",
@@ -153,7 +138,7 @@ const faqs = [
   },
   {
     q: "Ücretsiz plan ne kadar sürelidir?",
-    a: "Ücretsiz plan sonsuza kadar ücretsizdir. Profil oluşturma, proje keşfi, temel başvurular ve topluluk erişimi hiçbir ücret olmadan kullanabilirsiniz.",
+    a: "Ücretsiz plan sonsuza kadar ücretsizdir. Profil oluşturma, proje keşfi ve temel başvuruları hiçbir ücret olmadan kullanabilirsiniz.",
   },
   {
     q: "İptal edebilir miyim?",
@@ -181,7 +166,7 @@ function SectionHeading({
 }) {
   return (
     <div className="max-w-3xl">
-      <p className={`text-xs font-semibold uppercase tracking-[0.34em] ${light ? "text-primary/60" : "text-white/45"}`}>{eyebrow}</p>
+      <p className={`text-xs font-semibold uppercase tracking-[0.34em] ${light ? "text-primary/75" : "text-white/75"}`}>{eyebrow}</p>
       <h2 className={`mt-4 text-4xl font-extrabold tracking-tight md:text-5xl ${light ? "text-ink" : "text-white"}`}>{title}</h2>
       <p className={`mt-5 text-lg leading-8 ${light ? "text-ink/65" : "text-slate-300"}`}>{body}</p>
     </div>
@@ -198,7 +183,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
         className="flex w-full items-center justify-between px-6 py-5 text-left transition hover:bg-white/4"
       >
         <span className="text-base font-semibold text-white pr-4">{q}</span>
-        <span className={`flex-shrink-0 text-white/60 transition-transform duration-300 ${open ? "rotate-45" : ""}`}>
+        <span className={`flex-shrink-0 text-white/80 transition-transform duration-300 ${open ? "rotate-45" : ""}`}>
           +
         </span>
       </button>
@@ -249,7 +234,7 @@ export default function FoundrlyLanding({
               <h1 className="max-w-4xl text-6xl font-black leading-[0.95] tracking-[-0.05em] md:text-7xl lg:text-[5.5rem] text-center">
                 Yapay zeka ile
                 <span className="block bg-[linear-gradient(135deg,#ffffff_0%,#9ab0ff_55%,#56d08c_100%)] bg-clip-text text-transparent mt-2">
-                  startup ekibini kur.
+                  ekibini kur.
                 </span>
               </h1>
               <p className="max-w-2xl text-lg leading-8 text-slate-300 md:text-xl text-center">
@@ -273,7 +258,7 @@ export default function FoundrlyLanding({
                   }
                 }}
                 placeholder="YZ mühendisi, ürün tasarımcısı, backend geliştirici ara..."
-                className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/20 px-5 py-4 text-sm text-white outline-none placeholder:text-white/32 focus:border-white/25"
+                className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/20 px-5 py-4 text-sm text-white outline-none placeholder:text-white/55 focus:border-white/25"
               />
               <div className="flex gap-3 justify-center">
                 <button
@@ -285,12 +270,6 @@ export default function FoundrlyLanding({
                 >
                   Ekibini Kur
                 </button>
-                <a
-                  href="#discover"
-                  className="rounded-2xl border border-white/12 bg-white/7 px-6 py-4 text-sm font-semibold text-white/88 transition hover:border-white/22 hover:bg-white/10"
-                >
-                  Projeleri Keşfet
-                </a>
               </div>
             </motion.div>
 
@@ -356,79 +335,22 @@ export default function FoundrlyLanding({
         </div>
       </section>
 
-      {/* ── GÜVEN & COMMUNITY ─────────────────────────── */}
-      <section className="border-b border-white/10 bg-[linear-gradient(180deg,#060D1B_0%,#081225_100%)]">
-        <div className="mx-auto max-w-7xl px-6 py-20 lg:px-10">
-          <SectionHeading
-            eyebrow="Güvenilir topluluk"
-            title="Rastgele gruplar için değil, ciddi startup insanları için."
-            body="Kurucu çevrelerinden hackathon ekiplerine ve üniversite yapıcılarına kadar Foundrly, yatırımcı hazırlığı enerjisiyle daha keskin bir topluluk grafiği oluşturur."
-          />
-
-          <div className="mt-12 grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
-            <div className="grid gap-4 md:grid-cols-2">
-              {trustProfiles.map((profile, index) => (
-                <motion.article
-                  key={profile.name}
-                  className="rounded-[28px] border border-white/10 bg-white/6 p-5 backdrop-blur"
-                  initial="hidden"
-                  whileInView="show"
-                  viewport={{ once: true, amount: 0.3 }}
-                  custom={index * 0.06}
-                  variants={fadeUp}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#475DB2,#3FB170)] text-base font-black">
-                      {profile.initials}
-                    </div>
-                    <div>
-                      <p className="text-lg font-bold">{profile.name}</p>
-                      <p className="mt-1 text-sm text-white/52">{profile.role}</p>
-                    </div>
-                  </div>
-                  <div className="mt-6 rounded-2xl border border-white/10 bg-black/16 px-4 py-3 text-xs font-semibold uppercase tracking-[0.22em] text-[#9ab0ff]">
-                    {profile.badge}
-                  </div>
-                </motion.article>
-              ))}
-            </div>
-
-            <div className="grid gap-4">
-              {trustStats.map((item, index) => (
-                <motion.div
-                  key={item.label}
-                  className="rounded-[28px] border border-white/10 bg-white/6 p-6 backdrop-blur"
-                  initial="hidden"
-                  whileInView="show"
-                  viewport={{ once: true, amount: 0.3 }}
-                  custom={index * 0.05}
-                  variants={fadeUp}
-                >
-                  <p className="text-4xl font-black tracking-tight text-white">{item.value}</p>
-                  <p className="mt-2 max-w-sm text-sm leading-7 text-slate-300">{item.label}</p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ── YZ TAKIM EŞLEŞMESİ ────────────────────────── */}
       <section className="border-b border-white/10">
         <div className="mx-auto grid max-w-7xl gap-14 px-6 py-20 lg:grid-cols-[0.9fr_1.1fr] lg:px-10">
           <SectionHeading
             eyebrow="YZ Takım Kurucu"
             title="Sadece teknoloji yığınından fazlasını gören eşleştirme."
-            body="Foundrly; teknik becerileri, ilgi alanlarını, işbirliği geçmişini, proje hedeflerini ve kişilik uyumunu daha yüksek yürütme potansiyeli olan ekipler oluşturmak için analiz eder."
+            body="Foundrly; teknik becerileri, ilgi alanlarını, rol beklentilerini ve proje özetini birlikte analiz ederek daha isabetli ekip eşleşmeleri üretir."
           />
 
           <div className="grid gap-4">
             <div className="rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-6 backdrop-blur">
               <div className="grid gap-4 md:grid-cols-[0.8fr_1.2fr]">
                 <div className="rounded-[24px] border border-white/10 bg-black/18 p-5">
-                  <p className="text-xs uppercase tracking-[0.24em] text-white/42">Girdi grafiği</p>
+                  <p className="text-xs uppercase tracking-[0.24em] text-white/75">Girdi grafiği</p>
                   <div className="mt-5 space-y-4">
-                    {["Teknik beceriler", "İlgi alanları", "İşbirliği geçmişi", "Proje hedefleri", "Kişilik uyumu"].map((item) => (
+                    {["Teknik beceriler", "İlgi alanları", "Rol beklentileri", "Proje özeti", "Doğrulanmış sinyaller"].map((item) => (
                       <div key={item} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80">
                         {item}
                       </div>
@@ -436,13 +358,13 @@ export default function FoundrlyLanding({
                   </div>
                 </div>
                 <div className="rounded-[24px] border border-white/10 bg-black/18 p-5">
-                  <p className="text-xs uppercase tracking-[0.24em] text-white/42">Karar motoru</p>
+                  <p className="text-xs uppercase tracking-[0.24em] text-white/75">Karar motoru</p>
                   <div className="mt-5 grid gap-4 md:grid-cols-2">
                     {[
                       ["Semantik uyum", "TF-IDF + ağırlıklı skorlama"],
-                      ["Güven skoru", "Doğrulanmış + geri bildirim zekası"],
-                      ["Yürütme hızı", "Müsaitlik + rol aciliyeti"],
-                      ["Ekip kimyası", "Uyumluluk sinyali"],
+                      ["Rol eşleşmesi", "Ünvan ve ihtiyaç duyulan rol örtüşmesi"],
+                      ["Güven sinyali", "Doğrulanmış yetenek ve premium görünürlük katkısı"],
+                      ["Eksik beceri analizi", "Tamamlayıcı yetkinlik boşluklarını gösterir"],
                     ].map(([title, body]) => (
                       <div key={title} className="rounded-2xl border border-white/10 bg-white/6 p-4">
                         <p className="font-semibold text-white">{title}</p>
@@ -528,13 +450,13 @@ export default function FoundrlyLanding({
         </div>
       </section>
 
-      {/* ── TOPLULUK VE ETKİNLİKLER ───────────────────── */}
+      {/* ── ETKİNLİKLER ───────────────────── */}
       <section className="border-b border-white/10">
         <div className="mx-auto max-w-7xl px-6 py-20 lg:px-10">
           <SectionHeading
-            eyebrow="Topluluk & Etkinlikler"
+            eyebrow="Etkinlikler"
             title="Binlerce builder ile aynı çatı altında."
-            body="Hackathonlar, networking etkinlikleri, online meetuplar ve startup challenge'larla sürekli büyüyen bir ekosistem."
+            body="Hackathonlar, sunum geceleri ve üretici buluşmalarıyla sürekli büyüyen bir ekosistem."
           />
           <div className="mt-12 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
             {communityHighlights.map((item, index) => (
@@ -557,9 +479,6 @@ export default function FoundrlyLanding({
           <div className="mt-8 flex flex-wrap gap-3">
             <a href="#events" className="rounded-full border border-white/10 bg-white/6 px-5 py-2.5 text-sm font-semibold text-white/82 backdrop-blur transition hover:border-white/20 hover:bg-white/10">
               Tüm Etkinlikleri Gör →
-            </a>
-            <a href="#community" className="rounded-full border border-white/10 bg-white/6 px-5 py-2.5 text-sm font-semibold text-white/82 backdrop-blur transition hover:border-white/20 hover:bg-white/10">
-              Topluluğa Katıl →
             </a>
           </div>
         </div>
@@ -591,7 +510,7 @@ export default function FoundrlyLanding({
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.26em] text-white/45">{plan.name}</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.26em] text-white/75">{plan.name}</p>
                     <p className="mt-4 text-5xl font-black tracking-tight">{plan.price}</p>
                     <p className="mt-3 text-sm text-slate-300">{plan.note}</p>
                   </div>
@@ -610,7 +529,7 @@ export default function FoundrlyLanding({
                     </div>
                   ))}
                   {plan.locked.map((item) => (
-                    <div key={item} className="flex items-center gap-3 rounded-2xl border border-white/5 bg-black/8 px-4 py-3.5 text-sm text-white/30 line-through">
+                    <div key={item} className="flex items-center gap-3 rounded-2xl border border-white/5 bg-black/8 px-4 py-3.5 text-sm text-white/65 line-through">
                       <span>✗</span>
                       {item}
                     </div>
@@ -662,7 +581,7 @@ export default function FoundrlyLanding({
                   </div>
                   <div>
                     <p className="font-semibold text-white">{item.name}</p>
-                    <p className="mt-1 text-sm text-white/46">{item.title}</p>
+                    <p className="mt-1 text-sm text-white/75">{item.title}</p>
                   </div>
                 </div>
               </motion.article>
@@ -677,7 +596,7 @@ export default function FoundrlyLanding({
           <SectionHeading
             eyebrow="Sıkça Sorulan Sorular"
             title="Merak ettiğin her şey burada."
-            body="Hâlâ sorun mu var? Discord topluluğumuza katıl ya da hello@joinfoundrly.com adresine yaz."
+            body="Hâlâ sorun mu var? hello@joinfoundrly.com adresine yaz."
           />
           <div className="mt-12 space-y-3">
             {faqs.map((faq) => (
@@ -692,7 +611,7 @@ export default function FoundrlyLanding({
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_10%,rgba(71,93,178,0.25),transparent_30%),radial-gradient(circle_at_50%_100%,rgba(63,177,112,0.16),transparent_28%)]" />
         <div className="relative mx-auto max-w-7xl px-6 py-24 text-center lg:px-10">
           <motion.div initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.4 }} variants={fadeUp}>
-            <p className="text-xs font-semibold uppercase tracking-[0.34em] text-white/45">Hemen Başla</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.34em] text-white/75">Hemen Başla</p>
             <h2 className="mx-auto mt-6 max-w-4xl text-5xl font-black leading-[0.95] tracking-[-0.04em] md:text-6xl">
               Hayalindeki ekibi bugün kur.
             </h2>

@@ -20,13 +20,62 @@ enum APIError: LocalizedError {
 struct APIClient {
     var baseURL = URL(string: "http://localhost:8000")!
 
+    private func makeURL(path: String) throws -> URL {
+        guard var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) else {
+            throw APIError.invalidURL
+        }
+
+        let normalizedPath = path.hasPrefix("/") ? String(path.dropFirst()) : path
+        let pieces = normalizedPath.split(separator: "?", maxSplits: 1, omittingEmptySubsequences: false)
+        let cleanPath = String(pieces[0])
+        components.path = "/" + cleanPath
+
+        if pieces.count > 1 {
+            components.percentEncodedQuery = String(pieces[1])
+        }
+
+        guard let url = components.url else {
+            throw APIError.invalidURL
+        }
+
+        return url
+    }
+
+    private func parseServerMessage(data: Data, statusCode: Int) -> String {
+        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            if let detail = json["detail"] as? String {
+                return detail
+            }
+            if let detail = json["detail"] as? [String] {
+                return detail.joined(separator: "\n")
+            }
+            if let firstError = json.values.compactMap({ value -> String? in
+                if let stringValue = value as? String {
+                    return stringValue
+                }
+                if let listValue = value as? [String] {
+                    return listValue.joined(separator: "\n")
+                }
+                return nil
+            }).first {
+                return firstError
+            }
+        }
+
+        if let rawBody = String(data: data, encoding: .utf8), !rawBody.isEmpty {
+            return rawBody
+        }
+
+        return "İşlem tamamlanamadı. (\(statusCode))"
+    }
+
     func send<T: Decodable>(
         path: String,
         method: String = "GET",
         token: String? = nil,
         body: Data? = nil
     ) async throws -> T {
-        var request = URLRequest(url: baseURL.appendingPathComponent(path))
+        var request = URLRequest(url: try makeURL(path: path))
         request.httpMethod = method
         request.httpBody = body
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -48,14 +97,7 @@ struct APIClient {
             }
         }
 
-        if
-            let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-            let detail = json["detail"] as? String
-        {
-            throw APIError.server(detail)
-        }
-
-        throw APIError.server("İşlem tamamlanamadı.")
+        throw APIError.server(parseServerMessage(data: data, statusCode: httpResponse.statusCode))
     }
 
     func sendWithoutResponse(
@@ -64,7 +106,7 @@ struct APIClient {
         token: String,
         body: Data? = nil
     ) async throws {
-        var request = URLRequest(url: baseURL.appendingPathComponent(path))
+        var request = URLRequest(url: try makeURL(path: path))
         request.httpMethod = method
         request.httpBody = body
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -75,13 +117,7 @@ struct APIClient {
             throw APIError.invalidResponse
         }
         guard (200..<300).contains(httpResponse.statusCode) else {
-            if
-                let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                let detail = json["detail"] as? String
-            {
-                throw APIError.server(detail)
-            }
-            throw APIError.server("İşlem tamamlanamadı.")
+            throw APIError.server(parseServerMessage(data: data, statusCode: httpResponse.statusCode))
         }
     }
 
@@ -91,7 +127,7 @@ struct APIClient {
         token: String? = nil,
         body: Data? = nil
     ) async throws -> [String: Any] {
-        var request = URLRequest(url: baseURL.appendingPathComponent(path))
+        var request = URLRequest(url: try makeURL(path: path))
         request.httpMethod = method
         request.httpBody = body
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -105,13 +141,7 @@ struct APIClient {
         }
 
         guard (200..<300).contains(httpResponse.statusCode) else {
-            if
-                let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                let detail = json["detail"] as? String
-            {
-                throw APIError.server(detail)
-            }
-            throw APIError.server("İşlem tamamlanamadı.")
+            throw APIError.server(parseServerMessage(data: data, statusCode: httpResponse.statusCode))
         }
 
         guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {

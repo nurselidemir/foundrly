@@ -11,17 +11,28 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.users.models import VerificationRequest, User, MentorRequest, FriendRequest
+from apps.users.models import (
+    CommunityEvent,
+    CommunityThread,
+    VerificationRequest,
+    User,
+    MentorRequest,
+    FriendRequest,
+)
 from apps.users.serializers import (
     AdminUserDetailSerializer,
     AdminUserModerationSerializer,
     AdminUserRoleSerializer,
     AdminVerificationRequestSerializer,
+    CommunityEventSerializer,
+    CommunityThreadSerializer,
     PublicUserReviewSerializer,
     PublicUserProfileSerializer,
     PremiumSubscribeSerializer,
     PremiumSubscriptionSerializer,
     RegisterSerializer,
+    ShowcaseProjectSerializer,
+    ShowcaseUserSerializer,
     UserSerializer,
     UserReviewCreateSerializer,
     VerificationRequestSerializer,
@@ -91,6 +102,45 @@ class UserListView(generics.ListAPIView):
         return queryset
 
 
+class ShowcaseDataView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        from apps.projects.models import Project
+
+        projects = (
+            Project.objects.select_related("owner")
+            .filter(owner__is_active=True)
+            .order_by("-is_premium_highlighted", "-created_at")[:12]
+        )
+        users = (
+            User.objects.filter(is_active=True, is_staff=False, is_superuser=False)
+            .exclude(title="")
+            .filter(
+                Q(projects__isnull=False)
+                | Q(community_threads__isnull=False)
+                | Q(applications__isnull=False)
+                | Q(mentor_sessions__isnull=False)
+                | Q(mentor_requests__isnull=False)
+            )
+            .distinct()
+            .order_by("-is_verified_talent", "-is_premium", "-date_joined")[:12]
+        )
+        threads = (
+            CommunityThread.objects.select_related("author")
+            .filter(is_featured=True)[:8]
+        )
+        events = CommunityEvent.objects.filter(is_featured=True)[:8]
+
+        data = {
+            "projects": ShowcaseProjectSerializer(projects, many=True).data,
+            "users": ShowcaseUserSerializer(users, many=True).data,
+            "threads": CommunityThreadSerializer(threads, many=True).data,
+            "events": CommunityEventSerializer(events, many=True).data,
+        }
+        return Response(data)
+
+
 class MentorListView(generics.ListAPIView):
     queryset = User.objects.filter(is_mentor=True)
     serializer_class = MentorSerializer
@@ -156,18 +206,29 @@ class MentorRequestStatusUpdateView(generics.UpdateAPIView):
         old_status = self.get_object().status
         instance = serializer.save()
         
-        # If status changed to accepted, mentor might have provided an offered_price
-        # (Usually handled via serializer's partial update)
-
         # If status changed to completed, give money to mentor
         if old_status != "completed" and instance.status == "completed":
             mentor = instance.mentor
-            # Use price_at_request if it was a pre-paid/credit thing, 
-            # otherwise use offered_price
             base_price = instance.offered_price if instance.price_at_request == -1 else instance.price_at_request
             earned = base_price * (1 - instance.commission_rate)
             mentor.mentor_balance += earned
             mentor.save(update_fields=["mentor_balance"])
+
+
+class MentorRequestConfirmView(generics.UpdateAPIView):
+    queryset = MentorRequest.objects.all()
+    serializer_class = MentorRequestSerializer
+    permission_classes = [IsAuthenticated]
+    http_method_names = ["patch"]
+
+    def get_object(self):
+        obj = super().get_object()
+        if obj.user_id != self.request.user.id:
+            raise PermissionDenied("Sadece talebi olusturan kullanici onay verebilir.")
+        return obj
+
+    def perform_update(self, serializer):
+        serializer.save(user_confirmed=True)
 
 
 class CurrentUserView(generics.RetrieveUpdateAPIView):
@@ -267,6 +328,24 @@ class PremiumSubscriptionView(APIView):
                 "subscription": PremiumSubscriptionSerializer(subscription).data,
             },
             status=201,
+        )
+
+    def delete(self, request):
+        subscription = getattr(request.user, "premium_subscription", None)
+        if subscription:
+            subscription.status = subscription.STATUS_CANCELED
+            subscription.save(update_fields=["status"])
+
+        request.user.is_premium = False
+        request.user.mentor_credits = 0
+        request.user.save(update_fields=["is_premium", "mentor_credits"])
+
+        return Response(
+            {
+                "message": "Premium uyelik iptal edildi.",
+                "is_premium": request.user.is_premium,
+                "subscription": PremiumSubscriptionSerializer(subscription).data if subscription else None,
+            }
         )
 
 

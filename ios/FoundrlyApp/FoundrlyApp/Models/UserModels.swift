@@ -101,6 +101,67 @@ struct CurrentUser: Codable, Identifiable {
         is_superuser = dictionary["is_superuser"] as? Bool
         date_joined = dictionary["date_joined"] as? String ?? ""
     }
+
+    func merged(with fallback: CurrentUser?) -> CurrentUser {
+        guard let fallback else { return self }
+        return CurrentUser(
+            id: id == 0 ? fallback.id : id,
+            email: email.isEmpty ? fallback.email : email,
+            full_name: full_name.isEmpty ? fallback.full_name : full_name,
+            title: title.isEmpty ? fallback.title : title,
+            bio: bio.isEmpty ? fallback.bio : bio,
+            skills: skills.isEmpty ? fallback.skills : skills,
+            interests: interests.isEmpty ? fallback.interests : interests,
+            profile_picture: profile_picture ?? fallback.profile_picture,
+            is_verified_talent: is_verified_talent || fallback.is_verified_talent,
+            is_premium: is_premium || fallback.is_premium,
+            is_mentor: is_mentor ?? fallback.is_mentor,
+            mentor_credits: mentor_credits ?? fallback.mentor_credits,
+            mentor_price: mentor_price ?? fallback.mentor_price,
+            mentor_balance: mentor_balance ?? fallback.mentor_balance,
+            is_staff: is_staff ?? fallback.is_staff,
+            is_superuser: is_superuser ?? fallback.is_superuser,
+            date_joined: date_joined.isEmpty ? fallback.date_joined : date_joined
+        )
+    }
+
+    init(
+        id: Int,
+        email: String,
+        full_name: String,
+        title: String,
+        bio: String,
+        skills: [String],
+        interests: [String],
+        profile_picture: String?,
+        is_verified_talent: Bool,
+        is_premium: Bool,
+        is_mentor: Bool?,
+        mentor_credits: Int?,
+        mentor_price: Double?,
+        mentor_balance: Double?,
+        is_staff: Bool?,
+        is_superuser: Bool?,
+        date_joined: String
+    ) {
+        self.id = id
+        self.email = email
+        self.full_name = full_name
+        self.title = title
+        self.bio = bio
+        self.skills = skills
+        self.interests = interests
+        self.profile_picture = profile_picture
+        self.is_verified_talent = is_verified_talent
+        self.is_premium = is_premium
+        self.is_mentor = is_mentor
+        self.mentor_credits = mentor_credits
+        self.mentor_price = mentor_price
+        self.mentor_balance = mentor_balance
+        self.is_staff = is_staff
+        self.is_superuser = is_superuser
+        self.date_joined = date_joined
+    }
 }
 
 struct PublicUserSummary: Codable, Identifiable {
@@ -108,6 +169,10 @@ struct PublicUserSummary: Codable, Identifiable {
     let email: String?
     let full_name: String
     let title: String
+    let bio: String?
+    let skills: [String]?
+    let interests: [String]?
+    let profile_picture: String?
     let is_verified_talent: Bool
     let is_premium: Bool?
 }

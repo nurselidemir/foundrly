@@ -150,7 +150,7 @@ export default function TeammatesPage({ isLoggedIn = false }: { isLoggedIn?: boo
               onChange={(e) => setSearch(e.target.value)}
               disabled={!isLoggedIn}
               placeholder={isLoggedIn ? "İsim, beceri veya kullanıcı adı ara..." : "Arama yapmak için giriş yapmalısınız..."}
-              className="flex-1 rounded-2xl border border-white/10 bg-white/6 px-5 py-3.5 text-sm text-white outline-none placeholder:text-white/32 focus:border-primary/40 backdrop-blur disabled:opacity-50"
+              className="flex-1 rounded-2xl border border-white/10 bg-white/6 px-5 py-3.5 text-sm text-white outline-none placeholder:text-white/55 focus:border-primary/40 backdrop-blur disabled:opacity-50"
             />
             {/* Verified toggle */}
             <button
@@ -191,7 +191,7 @@ export default function TeammatesPage({ isLoggedIn = false }: { isLoggedIn?: boo
       {/* Users Grid */}
       <div className="mx-auto max-w-7xl px-6 py-10 lg:px-10">
         <div className="mb-5 flex items-center justify-between">
-          <p className="text-sm text-white/55">
+          <p className="text-sm text-white/80">
             {isLoggedIn ? (
               <>
                 <span className="font-bold text-white">{filtered.length}</span> kullanıcı bulundu
@@ -208,7 +208,7 @@ export default function TeammatesPage({ isLoggedIn = false }: { isLoggedIn?: boo
           <div className="rounded-[2rem] border border-white/10 bg-white/5 p-16 text-center backdrop-blur">
             <div className="text-5xl">👥</div>
             <h3 className="mt-4 text-xl font-bold">Kullanıcı bulunamadı</h3>
-            <p className="mt-2 text-sm text-white/55">Farklı filtreler deneyin.</p>
+            <p className="mt-2 text-sm text-white/75">Farklı filtreler deneyin.</p>
           </div>
         ) : (
           <div className="relative">
@@ -230,14 +230,14 @@ export default function TeammatesPage({ isLoggedIn = false }: { isLoggedIn?: boo
                         </div>
                       )}
                       {!user.available && (
-                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white/50">
+                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white/75">
                           Dolu
                         </div>
                       )}
                     </div>
 
                     <h3 className="mt-3 font-bold text-white">{user.name}</h3>
-                    <p className="text-xs text-white/45">@{user.username}</p>
+                    <p className="text-xs text-white/75">@{user.username}</p>
                     <p className="mt-1 text-xs font-semibold text-[#9ab0ff]">{user.role}</p>
 
                     {/* Score */}
@@ -248,12 +248,12 @@ export default function TeammatesPage({ isLoggedIn = false }: { isLoggedIn?: boo
                   </div>
 
                   {/* Bio */}
-                  <p className="mt-4 text-xs leading-5 text-white/55 text-center line-clamp-2">{user.bio}</p>
+                  <p className="mt-4 text-xs leading-5 text-white/75 text-center line-clamp-2">{user.bio}</p>
 
                   {/* Skills */}
                   <div className="mt-4 flex flex-wrap justify-center gap-1.5">
                     {user.skills.slice(0, 4).map((s) => (
-                      <span key={s} className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-semibold text-white/65">
+                      <span key={s} className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-semibold text-white/80">
                         {s}
                       </span>
                     ))}
@@ -326,7 +326,7 @@ export default function TeammatesPage({ isLoggedIn = false }: { isLoggedIn?: boo
                       giriş yap veya üye ol
                     </span>
                   </h3>
-                  <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-white/60">
+                  <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-white/75">
                     Doğru kurucu ortaklar, akıllı filtreler ve doğrudan mesajlaşma sistemi için ücretsiz profilini oluştur.
                   </p>
 
@@ -345,7 +345,7 @@ export default function TeammatesPage({ isLoggedIn = false }: { isLoggedIn?: boo
                     </a>
                   </div>
 
-                  <p className="mt-4 text-xs text-white/35">Kredi kartı gerekmez · Saniyeler içinde hazır</p>
+                  <p className="mt-4 text-xs text-white/65">Kredi kartı gerekmez · Saniyeler içinde hazır</p>
                 </div>
               </div>
             )}

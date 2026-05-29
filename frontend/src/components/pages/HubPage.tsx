@@ -261,7 +261,7 @@ export default function HubPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-transparent px-5 py-3 text-sm text-white placeholder-white/40 outline-none"
               />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-lg text-white/40">🔍</span>
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-lg text-white/75">🔍</span>
             </div>
           </div>
         </div>
@@ -297,8 +297,8 @@ export default function HubPage() {
 
               {filteredArticles.length === 0 ? (
                 <div className="rounded-[2rem] border border-white/10 bg-white/5 p-12 text-center backdrop-blur">
-                  <p className="text-lg text-white/50 font-semibold">Eşleşen makale bulunamadı.</p>
-                  <p className="text-sm text-white/40 mt-1">Lütfen arama teriminizi veya kategori filtrenizi değiştirin.</p>
+                  <p className="text-lg text-white/75 font-semibold">Eşleşen makale bulunamadı.</p>
+                  <p className="text-sm text-white/70 mt-1">Lütfen arama teriminizi veya kategori filtrenizi değiştirin.</p>
                 </div>
               ) : (
                 <div className="grid gap-6 sm:grid-cols-2">
@@ -313,12 +313,12 @@ export default function HubPage() {
                           <span className="rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-[11px] font-bold text-[#9ab0ff]">
                             {art.category}
                           </span>
-                          <span className="text-xs text-white/40">{art.readTime}</span>
+                          <span className="text-xs text-white/75">{art.readTime}</span>
                         </div>
                         <h3 className="text-lg font-bold group-hover:text-[#9ab0ff] transition-colors leading-snug">
                           {art.icon} {art.title}
                         </h3>
-                        <p className="mt-3 text-sm text-white/60 line-clamp-3 leading-relaxed">
+                        <p className="mt-3 text-sm text-white/75 line-clamp-3 leading-relaxed">
                           {art.excerpt}
                         </p>
                       </div>
@@ -330,7 +330,7 @@ export default function HubPage() {
                           </div>
                           <div>
                             <p className="text-[11px] font-bold text-white/80">{art.author}</p>
-                            <p className="text-[9px] text-white/40">{art.authorTitle}</p>
+                            <p className="text-[9px] text-white/70">{art.authorTitle}</p>
                           </div>
                         </div>
                         <span className="text-[11px] font-bold text-primary group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
@@ -358,11 +358,11 @@ export default function HubPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <h4 className="text-sm font-bold text-white truncate">{tpl.title}</h4>
-                        <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-white/60 font-bold">{tpl.type}</span>
+                        <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-white/75 font-bold">{tpl.type}</span>
                       </div>
-                      <p className="text-xs text-white/50 mt-1 leading-normal line-clamp-2">{tpl.desc}</p>
+                      <p className="text-xs text-white/75 mt-1 leading-normal line-clamp-2">{tpl.desc}</p>
                       <div className="mt-3 flex items-center justify-between">
-                        <span className="text-[10px] text-white/40">{tpl.size}</span>
+                        <span className="text-[10px] text-white/70">{tpl.size}</span>
                         <button
                           onClick={() => alert(`"${tpl.title}" şablonu indirme simülasyonu başlatıldı. Bilgisayarınıza indiriliyor...`)}
                           className="text-xs font-bold text-success hover:underline"
@@ -411,7 +411,7 @@ export default function HubPage() {
               {isSimulating && (
                 <div className="mt-5 flex flex-col items-center justify-center py-6 border-t border-white/5">
                   <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-primary"></div>
-                  <p className="text-xs text-white/50 mt-3 font-semibold">Pazar talebi ve teknik analiz yapılıyor...</p>
+                  <p className="text-xs text-white/75 mt-3 font-semibold">Pazar talebi ve teknik analiz yapılıyor...</p>
                 </div>
               )}
 
@@ -430,11 +430,11 @@ export default function HubPage() {
                     />
                   </div>
                   <div>
-                    <h4 className="text-[11px] font-bold text-white/50 uppercase">Değerlendirme:</h4>
+                    <h4 className="text-[11px] font-bold text-white/75 uppercase">Değerlendirme:</h4>
                     <p className="text-xs text-white/80 leading-relaxed mt-1">{simResult.feedback}</p>
                   </div>
                   <div>
-                    <h4 className="text-[11px] font-bold text-white/50 uppercase">Önerilen Teknolojiler:</h4>
+                    <h4 className="text-[11px] font-bold text-white/75 uppercase">Önerilen Teknolojiler:</h4>
                     <div className="flex flex-wrap gap-1 mt-1.5">
                       {simResult.techStack.map((tech) => (
                         <span key={tech} className="rounded-full bg-white/5 border border-white/8 px-2 py-0.5 text-[9px] text-white/70">
@@ -444,7 +444,7 @@ export default function HubPage() {
                     </div>
                   </div>
                   <div>
-                    <h4 className="text-[11px] font-bold text-white/50 uppercase">Bir Sonraki Adımlar:</h4>
+                    <h4 className="text-[11px] font-bold text-white/75 uppercase">Bir Sonraki Adımlar:</h4>
                     <ul className="list-disc pl-4 text-xs text-white/70 space-y-1.5 mt-1.5">
                       {simResult.actionItems.map((item, idx) => (
                         <li key={idx}>{item}</li>
@@ -457,7 +457,7 @@ export default function HubPage() {
 
             {/* Quick tips widget */}
             <div className="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur">
-              <span className="text-xs font-semibold uppercase tracking-[0.24em] text-white/40">Girişimci Tüyoları</span>
+              <span className="text-xs font-semibold uppercase tracking-[0.24em] text-white/75">Girişimci Tüyoları</span>
               <div className="mt-4 space-y-4">
                 {[
                   { q: "Müşteri Mülakatı", a: "Fikrinizi satmaya çalışmayın. Karşı tarafın yaşadığı zorlukları dinleyin." },
@@ -466,7 +466,7 @@ export default function HubPage() {
                 ].map((tip) => (
                   <div key={tip.q} className="rounded-xl border border-white/5 bg-black/20 p-3.5">
                     <h4 className="text-xs font-bold text-[#9ab0ff]">{tip.q}</h4>
-                    <p className="text-[11px] text-white/60 mt-1 leading-normal">{tip.a}</p>
+                    <p className="text-[11px] text-white/75 mt-1 leading-normal">{tip.a}</p>
                   </div>
                 ))}
               </div>
@@ -481,7 +481,7 @@ export default function HubPage() {
           <div className="relative w-full max-w-2xl rounded-[2.5rem] border border-white/10 bg-[#071121] p-8 max-h-[85vh] overflow-y-auto">
             <button
               onClick={() => setActiveArticle(null)}
-              className="absolute top-6 right-6 text-2xl text-white/50 hover:text-white transition"
+              className="absolute top-6 right-6 text-2xl text-white/75 hover:text-white transition"
               aria-label="Kapat"
             >
               ✕
@@ -490,7 +490,7 @@ export default function HubPage() {
               <span className="rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-bold text-[#9ab0ff]">
                 {activeArticle.category}
               </span>
-              <span className="text-xs text-white/40">{activeArticle.date} · {activeArticle.readTime}</span>
+              <span className="text-xs text-white/75">{activeArticle.date} · {activeArticle.readTime}</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-black leading-tight mb-4">
               {activeArticle.icon} {activeArticle.title}
@@ -502,7 +502,7 @@ export default function HubPage() {
               </div>
               <div>
                 <p className="text-xs font-bold text-white">{activeArticle.author}</p>
-                <p className="text-[10px] text-white/50">{activeArticle.authorTitle}</p>
+                <p className="text-[10px] text-white/75">{activeArticle.authorTitle}</p>
               </div>
             </div>
 
@@ -511,7 +511,7 @@ export default function HubPage() {
             </div>
 
             <div className="mt-8 border-t border-white/5 pt-6 flex justify-between items-center">
-              <p className="text-xs text-white/45">Faydalı buldunuz mu?</p>
+              <p className="text-xs text-white/75">Faydalı buldunuz mu?</p>
               <div className="flex gap-2">
                 <button
                   onClick={() => alert("Geri bildiriminiz için teşekkürler!")}

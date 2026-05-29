@@ -8,8 +8,11 @@ final class AppShellViewModel: ObservableObject {
     @Published var recommendedProjects: [RecommendedProjectMatch] = []
     @Published var aiMatches: [CandidateMatch] = []
     @Published var receivedApplications: [TeamApplication] = []
+    @Published var sentApplications: [TeamApplication] = []
+    @Published var friendRequests: [FriendRequestSummary] = []
     @Published var mentors: [MentorSummary] = []
     @Published var mentorRequests: [MentorRequestSummary] = []
+    @Published var communityMembers: [PublicUserSummary] = []
     @Published var threads: [MessageThread] = []
     @Published var selectedThread: ThreadDetail?
     @Published var selectedPublicProfile: PublicProfile?
@@ -24,20 +27,55 @@ final class AppShellViewModel: ObservableObject {
         isLoading = true
         defer { isLoading = false }
 
-        do {
-            async let summaryTask = service.loadSummary(token: token)
-            async let projectsTask = service.loadProjects(token: token)
-            async let threadsTask = service.loadThreads(token: token)
-            async let receivedTask = service.loadReceivedApplications(token: token)
+        var loadIssues: [String] = []
 
-            let (summary, projects, threads, receivedApplications) = try await (summaryTask, projectsTask, threadsTask, receivedTask)
+        do {
+            let summary = try await service.loadSummary(token: token)
             self.summary = summary
-            self.projects = projects
-            self.threads = threads
-            self.receivedApplications = receivedApplications
-            if let first = threads.first {
-                self.selectedThread = try await service.loadThreadDetail(token: token, applicationId: first.application_id)
+            session.currentUser = summary.profile.merged(with: session.currentUser)
+            self.friendRequests = summary.friend_requests ?? []
+            self.sentApplications = summary.recent_sent_applications ?? []
+            self.receivedApplications = summary.recent_received_applications ?? []
+
+            do {
+                self.projects = try await service.loadProjects(token: token)
+            } catch {
+                loadIssues.append("Projeler alınamadı")
             }
+
+            do {
+                self.threads = try await service.loadThreads(token: token)
+            } catch {
+                loadIssues.append("Mesajlar yüklenemedi")
+                self.threads = []
+            }
+
+            do {
+                self.receivedApplications = try await service.loadReceivedApplications(token: token)
+            } catch {
+                loadIssues.append("Başvurular alınamadı")
+            }
+
+            do {
+                self.sentApplications = try await service.loadSentApplications(token: token)
+            } catch {
+                loadIssues.append("Gönderilen başvurular alınamadı")
+                if self.sentApplications.isEmpty {
+                    self.sentApplications = []
+                }
+            }
+
+            if let first = self.threads.first {
+                do {
+                    self.selectedThread = try await service.loadThreadDetail(token: token, applicationId: first.application_id)
+                } catch {
+                    loadIssues.append("Mesaj detayı yüklenemedi")
+                    self.selectedThread = nil
+                }
+            } else {
+                self.selectedThread = nil
+            }
+
             self.mentors = (try? await service.loadMentors(token: token)) ?? []
             if summary.profile.is_mentor == true {
                 self.mentorRequests = (try? await service.loadMentorPanelRequests(token: token)) ?? []
@@ -49,8 +87,10 @@ final class AppShellViewModel: ObservableObject {
             } else {
                 self.recommendedProjects = []
             }
-            session.currentUser = summary.profile
-            feedbackMessage = ""
+
+            self.communityMembers = (try? await service.loadCommunityMembers(token: token)) ?? []
+
+            feedbackMessage = loadIssues.isEmpty ? "" : loadIssues.joined(separator: " • ")
         } catch {
             feedbackMessage = error.localizedDescription
         }
@@ -104,6 +144,16 @@ final class AppShellViewModel: ObservableObject {
     func loadPublicProfile(session: AppSession, userId: Int) async {
         do {
             selectedPublicProfile = try await service.loadPublicProfile(token: session.accessToken, userId: userId)
+            feedbackMessage = ""
+        } catch {
+            feedbackMessage = error.localizedDescription
+        }
+    }
+
+    func loadCommunityMembers(session: AppSession, search: String = "", verifiedOnly: Bool = false) async {
+        guard let token = session.accessToken else { return }
+        do {
+            communityMembers = try await service.loadCommunityMembers(token: token, search: search, verifiedOnly: verifiedOnly)
             feedbackMessage = ""
         } catch {
             feedbackMessage = error.localizedDescription
@@ -190,6 +240,28 @@ final class AppShellViewModel: ObservableObject {
         do {
             try await service.updateMentorRequestStatus(token: token, requestId: requestId, status: status, offeredPrice: offeredPrice)
             feedbackMessage = status == "accepted" ? "Mentör talebi onaylandı." : status == "completed" ? "Görüşme tamamlandı." : "Mentör talebi güncellendi."
+            await load(session: session)
+        } catch {
+            feedbackMessage = error.localizedDescription
+        }
+    }
+
+    func sendFriendRequest(session: AppSession, receiverId: Int) async {
+        guard let token = session.accessToken else { return }
+        do {
+            try await service.createFriendRequest(token: token, receiverId: receiverId)
+            feedbackMessage = "Ağ kurma isteğin gönderildi."
+            await load(session: session)
+        } catch {
+            feedbackMessage = error.localizedDescription
+        }
+    }
+
+    func updateFriendRequest(session: AppSession, requestId: Int, status: String) async {
+        guard let token = session.accessToken else { return }
+        do {
+            try await service.updateFriendRequest(token: token, requestId: requestId, status: status)
+            feedbackMessage = status == "accepted" ? "Ağ isteği kabul edildi." : "Ağ isteği güncellendi."
             await load(session: session)
         } catch {
             feedbackMessage = error.localizedDescription

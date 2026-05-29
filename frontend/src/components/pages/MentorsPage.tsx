@@ -159,7 +159,7 @@ export default function MentorsPage() {
             ].map((stat) => (
               <div key={stat.label} className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 backdrop-blur">
                 <p className="text-xl font-black text-white">{stat.value}</p>
-                <p className="text-xs text-white/45">{stat.label}</p>
+                <p className="text-xs text-white/75">{stat.label}</p>
               </div>
             ))}
           </div>
@@ -174,7 +174,7 @@ export default function MentorsPage() {
                 className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                   selectedCategory === cat
                     ? "bg-primary text-white shadow-[0_4px_16px_rgba(71,93,178,0.4)]"
-                    : "border border-white/10 bg-white/5 text-white/65 hover:border-white/20 hover:bg-white/8"
+                    : "border border-white/10 bg-white/5 text-white/80 hover:border-white/20 hover:bg-white/8"
                 }`}
               >
                 {cat}
@@ -196,7 +196,7 @@ export default function MentorsPage() {
               <div className={`absolute right-4 top-4 rounded-full px-2.5 py-1 text-[11px] font-bold ${
                 mentor.available
                   ? "border border-success/25 bg-success/12 text-success"
-                  : "border border-white/10 bg-white/5 text-white/35"
+                  : "border border-white/10 bg-white/5 text-white/65"
               }`}>
                 {mentor.available ? "Müsait" : "Dolu"}
               </div>
@@ -214,7 +214,7 @@ export default function MentorsPage() {
                 <p className="text-xs font-semibold text-[#9ab0ff]">{mentor.title}</p>
 
                 {/* Category */}
-                <span className="mt-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold text-white/60">
+                <span className="mt-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold text-white/80">
                   {mentor.category}
                 </span>
 
@@ -222,14 +222,14 @@ export default function MentorsPage() {
                 <div className="mt-3 flex items-center gap-1">
                   <span className="text-xs text-[#D7B56D]">{"★".repeat(Math.floor(mentor.rating))}</span>
                   <span className="text-xs font-bold text-white">{mentor.rating}/5</span>
-                  <span className="text-xs text-white/35">({mentor.sessions} seans)</span>
+                  <span className="text-xs text-white/70">({mentor.sessions} seans)</span>
                 </div>
               </div>
 
               {/* Expertise */}
               <div className="mt-5 flex flex-wrap justify-center gap-1.5">
                 {mentor.expertise.slice(0, 3).map((exp) => (
-                  <span key={exp} className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-semibold text-white/65">
+                  <span key={exp} className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-semibold text-white/80">
                     {exp}
                   </span>
                 ))}
@@ -238,16 +238,16 @@ export default function MentorsPage() {
               {/* Details */}
               <div className="mt-5 space-y-2.5 border-t border-white/8 pt-5">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-white/45">Deneyim</span>
+                  <span className="text-xs text-white/75">Deneyim</span>
                   <span className="text-sm font-bold text-white">{mentor.years} yıl</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-white/45">Seans Ücreti</span>
+                  <span className="text-xs text-white/75">Seans Ücreti</span>
                   <span className="text-sm font-bold text-[#D7B56D]">{mentor.price}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-white/45">Yanıt Süresi</span>
-                  <span className="text-xs font-semibold text-white/65">{mentor.responseTime}</span>
+                  <span className="text-xs text-white/75">Yanıt Süresi</span>
+                  <span className="text-xs font-semibold text-white/80">{mentor.responseTime}</span>
                 </div>
               </div>
 
@@ -265,14 +265,14 @@ export default function MentorsPage() {
                   <button
                     type="button"
                     disabled
-                    className="w-full cursor-not-allowed rounded-2xl border border-white/8 bg-white/3 py-2.5 text-sm font-bold text-white/30"
+                    className="w-full cursor-not-allowed rounded-2xl border border-white/8 bg-white/3 py-2.5 text-sm font-bold text-white/65"
                   >
                     Şu An Dolu
                   </button>
                 )}
                 <a
                   href="#login"
-                  className="w-full rounded-2xl border border-white/10 bg-white/5 py-2.5 text-center text-sm font-semibold text-white/70 transition hover:bg-white/8"
+                  className="w-full rounded-2xl border border-white/10 bg-white/5 py-2.5 text-center text-sm font-semibold text-white/85 transition hover:bg-white/8"
                 >
                   Mesaj Gönder
                 </a>
@@ -285,7 +285,7 @@ export default function MentorsPage() {
         <div className="mt-16 rounded-[2rem] border border-[#D7B56D]/20 bg-[linear-gradient(135deg,rgba(215,181,109,0.08),rgba(71,93,178,0.08))] p-10 text-center backdrop-blur">
           <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#D7B56D]/70">Mentör Ağı</p>
           <h2 className="mt-3 text-3xl font-extrabold text-white">Siz de mentör olmak ister misiniz?</h2>
-          <p className="mx-auto mt-3 max-w-lg text-sm leading-7 text-white/60">
+          <p className="mx-auto mt-3 max-w-lg text-sm leading-7 text-white/75">
             Deneyimlerinizi paylaşın, startup ekiplerine rehberlik edin ve kazanç elde edin. Platforma mentör olarak katılın.
           </p>
           <a

@@ -1,9 +1,13 @@
 from decimal import Decimal
+from datetime import timedelta
 
 from django.core.management.base import BaseCommand
+from django.utils import timezone
 
 from apps.projects.models import ApplicationMessage, Project, TeamApplication
 from apps.users.models import (
+    CommunityEvent,
+    CommunityThread,
     FriendRequest,
     MentorRequest,
     PremiumSubscription,
@@ -71,12 +75,12 @@ class Command(BaseCommand):
             skills=["Fundraising", "SaaS", "Go To Market"],
             interests=["mentorship", "saas", "ai"],
             is_mentor=True,
-            mentor_price=Decimal("45.00"),
-            mentor_credits=3,
+            mentor_price=Decimal("20.00"),
+            mentor_credits=1,
         )
 
-        self._ensure_premium(founder, "yearly", "Yillik Premium")
-        self._ensure_premium(builder, "monthly", "Aylik Premium")
+        self._ensure_premium(founder, "yearly", "$48 / yil")
+        self._ensure_premium(builder, "monthly", "$5 / ay")
 
         project_ai = self._upsert_project(
             owner=founder,
@@ -186,6 +190,51 @@ class Command(BaseCommand):
             defaults={"status": "pending"},
         )
 
+        self._upsert_thread(
+            author=founder,
+            topic="MVP aşamasında kurucu ortaklık payını nasıl yapılandırıyorsunuz?",
+            stats_label="29 yanıt · 4 yatırımcı yorumu",
+            signal_label="Öne çıkan başlık",
+        )
+        self._upsert_thread(
+            author=designer,
+            topic="İlk haftada ekip üyelerini gerçekten aktif hale getiren onboarding örnekleri arıyorum.",
+            stats_label="16 yanıt · 7 kaydetme",
+            signal_label="Topluluktan isteniyor",
+        )
+        self._upsert_thread(
+            author=builder,
+            topic="Takım arkadaşlarını yalnızca teknik yığına değil, çalışma temposuna göre eşleştirmek için en iyi yönteminiz ne?",
+            stats_label="21 yanıt · 3 mentör görüşü",
+            signal_label="YZ eşleşmesi",
+        )
+
+        today = timezone.localdate()
+        self._upsert_event(
+            title="Foundrly Yapay Zeka Hackathonu",
+            description="Ürün, veri ve sunum akışlarını aynı haftasonunda birleştiren çevrim içi takım kurma sprinti.",
+            location="Çevrim içi",
+            tag="Hackathon",
+            event_date=today + timedelta(days=17),
+            is_online=True,
+        )
+        self._upsert_event(
+            title="Yatırımcı Sunum Gecesi",
+            description="Kurucuların erken aşama ürünlerini yatırımcı ve mentör grubuna anlattığı seçili demo gecesi.",
+            location="İstanbul, TR",
+            tag="Sunum Gecesi",
+            event_date=today + timedelta(days=24),
+            is_online=False,
+        )
+        self._upsert_event(
+            title="Üretici Networking Oturumu",
+            description="Builder, tasarımcı ve kurucuların aktif proje fırsatları etrafında tanıştığı topluluk buluşması.",
+            location="Ankara, TR",
+            tag="Networking",
+            event_date=today + timedelta(days=32),
+            is_online=False,
+        )
+
         self.stdout.write(self.style.SUCCESS("Demo verileri hazir."))
         self.stdout.write(
             "Admin: nurselidemiir@gmail.com / Nurseli1 | Founder: founder@joinfoundrly.com / Founder123! | Builder: builder@joinfoundrly.com / Builder123!"
@@ -202,7 +251,8 @@ class Command(BaseCommand):
 
     def _ensure_premium(self, user, plan, price_label):
         user.is_premium = True
-        user.save(update_fields=["is_premium"])
+        user.mentor_credits = 1
+        user.save(update_fields=["is_premium", "mentor_credits"])
         PremiumSubscription.objects.update_or_create(
             user=user,
             defaults={
@@ -244,4 +294,18 @@ class Command(BaseCommand):
                 "rating": rating,
                 "comment": comment,
             },
+        )
+
+    def _upsert_thread(self, **defaults):
+        CommunityThread.objects.update_or_create(
+            author=defaults["author"],
+            topic=defaults["topic"],
+            defaults=defaults,
+        )
+
+    def _upsert_event(self, **defaults):
+        CommunityEvent.objects.update_or_create(
+            title=defaults["title"],
+            event_date=defaults["event_date"],
+            defaults=defaults,
         )
