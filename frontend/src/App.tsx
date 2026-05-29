@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import FoundrlyLanding from "./components/marketing/FoundrlyLanding";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "";
+const apiUrl = (path: string) => `${API_BASE_URL.replace(/\/$/, "")}${path}`;
 
 type HealthState = { status: "loading" | "ready" | "error"; message: string };
 type PremiumSubscriptionSummary = {
@@ -181,6 +182,7 @@ type PublicProfile = {
     project_title: string;
     counterpart_role: string;
   }>;
+  active_application_id?: number | null;
 };
 
 type FriendRequest = {
@@ -1243,7 +1245,7 @@ function AuthPage({
 
     try {
       if (isRegister) {
-        const registerResponse = await fetch(API_BASE_URL + "/api/auth/register/", {
+        const registerResponse = await fetch(apiUrl("/api/auth/register/"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -1268,7 +1270,7 @@ function AuthPage({
         setPassword("");
         window.location.hash = `#login${nextSuffix}`;
       } else {
-        const tokenResponse = await fetch(API_BASE_URL + "/api/auth/token/", {
+        const tokenResponse = await fetch(apiUrl("/api/auth/token/"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
@@ -1282,7 +1284,7 @@ function AuthPage({
         localStorage.setItem("foundrly_access_token", tokenData.access);
         localStorage.setItem("foundrly_refresh_token", tokenData.refresh);
 
-        const meResponse = await fetch(API_BASE_URL + "/api/users/me/", {
+        const meResponse = await fetch(apiUrl("/api/users/me/"), {
           headers: {
             Authorization: `Bearer ${tokenData.access}`,
           },
@@ -1547,6 +1549,7 @@ function DashboardPage({
   publicMentors,
   setPublicProjects,
   setPublicMentors,
+  setRoute,
   showcaseData,
   publicLoading,
   marketingAccessToken,
@@ -1557,6 +1560,7 @@ function DashboardPage({
   publicMentors: any[],
   setPublicProjects: (data: any[]) => void,
   setPublicMentors: (data: any[]) => void,
+  setRoute: (route: RouteName) => void,
   showcaseData: ShowcaseData,
   publicLoading: boolean,
   marketingAccessToken?: string | null,
@@ -1695,11 +1699,11 @@ function DashboardPage({
   const loadDashboard = async () => {
     if (!authHeaders) return;
     const [summaryResponse, threadsResponse, projectsResponse, receivedResponse, sentResponse] = await Promise.all([
-      fetch(API_BASE_URL + "/api/dashboard/summary/", { headers: authHeaders }),
-      fetch(API_BASE_URL + "/api/messages/threads/", { headers: authHeaders }),
-      fetch(API_BASE_URL + "/api/projects/", { headers: authHeaders }),
-      fetch(API_BASE_URL + "/api/applications/?received=true", { headers: authHeaders }),
-      fetch(API_BASE_URL + "/api/applications/?mine=true", { headers: authHeaders }),
+      fetch(apiUrl("/api/dashboard/summary/"), { headers: authHeaders }),
+      fetch(apiUrl("/api/messages/threads/"), { headers: authHeaders }),
+      fetch(apiUrl("/api/projects/"), { headers: authHeaders }),
+      fetch(apiUrl("/api/applications/?received=true"), { headers: authHeaders }),
+      fetch(apiUrl("/api/applications/?mine=true"), { headers: authHeaders }),
     ]);
 
     let premiumStatus = false;
@@ -1715,9 +1719,9 @@ function DashboardPage({
     if (premiumStatus) {
       try {
         const [recRes, mentorsRes, userReqRes] = await Promise.all([
-          fetch(API_BASE_URL + "/api/dashboard/recommended-projects/", { headers: authHeaders }),
-          fetch(API_BASE_URL + "/api/mentors/", { headers: authHeaders }),
-          fetch(API_BASE_URL + "/api/mentors/requests/", { headers: authHeaders }),
+          fetch(apiUrl("/api/dashboard/recommended-projects/"), { headers: authHeaders }),
+          fetch(apiUrl("/api/mentors/"), { headers: authHeaders }),
+          fetch(apiUrl("/api/mentors/requests/"), { headers: authHeaders }),
         ]);
         if (recRes.ok) setRecommendedProjects(await recRes.json());
         if (mentorsRes.ok) setMentors(await mentorsRes.json());
@@ -1727,7 +1731,7 @@ function DashboardPage({
 
     if (mentorStatus) {
       try {
-        const reqRes = await fetch(API_BASE_URL + "/api/mentors/my-requests/", { headers: authHeaders });
+        const reqRes = await fetch(apiUrl("/api/mentors/my-requests/"), { headers: authHeaders });
         if (reqRes.ok) setMentorRequests(await reqRes.json());
       } catch (e) {}
     } else {
@@ -1763,7 +1767,7 @@ function DashboardPage({
       const headers = accessToken
         ? { Authorization: `Bearer ${accessToken}` }
         : undefined;
-      const response = await fetch(`/api/users/${userId}/`, { headers });
+      const response = await fetch(apiUrl(`/api/users/${userId}/`), { headers });
       if (!response.ok) {
         throw new Error(await parseError(response));
       }
@@ -1802,7 +1806,7 @@ function DashboardPage({
         reviewForm.technical) /
         4
     );
-    const response = await fetch(`/api/users/${publicProfileId}/reviews/`, {
+    const response = await fetch(apiUrl(`/api/users/${publicProfileId}/reviews/`), {
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -1827,7 +1831,7 @@ function DashboardPage({
   const loadAdminUsers = async (search = "") => {
     if (!authHeaders || !isAdmin) return;
     const query = search ? `?search=${encodeURIComponent(search)}` : "";
-    const response = await fetch(`/api/admin/users/${query}`, { headers: authHeaders });
+    const response = await fetch(apiUrl(`/api/admin/users/${query}`), { headers: authHeaders });
     if (response.ok) {
       setAdminUsers(await response.json());
     }
@@ -1835,7 +1839,7 @@ function DashboardPage({
 
   const loadAdminDashboard = async () => {
     if (!authHeaders || !isAdmin) return;
-    const response = await fetch(API_BASE_URL + "/api/admin/dashboard/", { headers: authHeaders });
+    const response = await fetch(apiUrl("/api/admin/dashboard/"), { headers: authHeaders });
     if (response.ok) {
       setAdminDashboard(await response.json());
     }
@@ -1843,7 +1847,7 @@ function DashboardPage({
 
   const loadAdminUserDetail = async (id: number) => {
     if (!authHeaders || !isAdmin) return;
-    const response = await fetch(`/api/admin/users/${id}/`, { headers: authHeaders });
+    const response = await fetch(apiUrl(`/api/admin/users/${id}/`), { headers: authHeaders });
     if (response.ok) {
       setSelectedAdminUser(await response.json());
     }
@@ -1851,7 +1855,7 @@ function DashboardPage({
 
   const loadVerificationRequests = async () => {
     if (!authHeaders || !isAdmin) return;
-    const response = await fetch(API_BASE_URL + "/api/admin/verification-requests/?status=pending", {
+    const response = await fetch(apiUrl("/api/admin/verification-requests/?status=pending"), {
       headers: authHeaders,
     });
     if (response.ok) {
@@ -1862,7 +1866,7 @@ function DashboardPage({
   const loadAdminProjects = async (search = "") => {
     if (!authHeaders || !isAdmin) return;
     const query = search ? `?search=${encodeURIComponent(search)}` : "";
-    const response = await fetch(`/api/admin/projects/${query}`, { headers: authHeaders });
+    const response = await fetch(apiUrl(`/api/admin/projects/${query}`), { headers: authHeaders });
     if (response.ok) {
       setAdminProjects(await response.json());
     }
@@ -1870,7 +1874,7 @@ function DashboardPage({
 
   const loadAdminProjectDetail = async (id: number) => {
     if (!authHeaders || !isAdmin) return;
-    const response = await fetch(`/api/admin/projects/${id}/`, { headers: authHeaders });
+    const response = await fetch(apiUrl(`/api/admin/projects/${id}/`), { headers: authHeaders });
     if (response.ok) {
       setSelectedAdminProject(await response.json());
     }
@@ -1878,7 +1882,7 @@ function DashboardPage({
 
   const loadAdminEvents = async () => {
     if (!authHeaders || !isAdmin) return;
-    const response = await fetch(API_BASE_URL + "/api/admin/events/", { headers: authHeaders });
+    const response = await fetch(apiUrl("/api/admin/events/"), { headers: authHeaders });
     if (response.ok) {
       setAdminEvents(await response.json());
     }
@@ -1886,7 +1890,7 @@ function DashboardPage({
 
   const loadAdminMentors = async () => {
     if (!authHeaders || !isAdmin) return;
-    const response = await fetch(API_BASE_URL + "/api/admin/mentors/", { headers: authHeaders });
+    const response = await fetch(apiUrl("/api/admin/mentors/"), { headers: authHeaders });
     if (response.ok) {
       setAdminMentors(await response.json());
     }
@@ -1894,7 +1898,7 @@ function DashboardPage({
 
   const loadAdminGuides = async () => {
     if (!authHeaders || !isAdmin) return;
-    const response = await fetch(API_BASE_URL + "/api/admin/guides/", { headers: authHeaders });
+    const response = await fetch(apiUrl("/api/admin/guides/"), { headers: authHeaders });
     if (response.ok) {
       setAdminGuides(await response.json());
     }
@@ -1905,7 +1909,7 @@ function DashboardPage({
     if (!authHeaders || !isAdmin) return;
     setAdminEventFeedback("");
     try {
-      const response = await fetch(API_BASE_URL + "/api/admin/events/", {
+      const response = await fetch(apiUrl("/api/admin/events/"), {
         method: "POST",
         headers: authHeaders,
         body: JSON.stringify(adminEventForm),
@@ -1935,7 +1939,7 @@ function DashboardPage({
     if (!confirm("Bu etkinliği silmek istediğinize emin misiniz?")) return;
     setAdminEventFeedback("");
     try {
-      const response = await fetch(`/api/admin/events/${eventId}/`, {
+      const response = await fetch(apiUrl(`/api/admin/events/${eventId}/`), {
         method: "DELETE",
         headers: authHeaders,
       });
@@ -1955,7 +1959,7 @@ function DashboardPage({
     if (!authHeaders || !isAdmin) return;
     setAdminGuideFeedback("");
     try {
-      const response = await fetch(API_BASE_URL + "/api/admin/guides/", {
+      const response = await fetch(apiUrl("/api/admin/guides/"), {
         method: "POST",
         headers: authHeaders,
         body: JSON.stringify({
@@ -1990,7 +1994,7 @@ function DashboardPage({
     if (!authHeaders || !isAdmin) return;
     setAdminGuideFeedback("");
     try {
-      const response = await fetch(`/api/admin/guides/${guideId}/`, {
+      const response = await fetch(apiUrl(`/api/admin/guides/${guideId}/`), {
         method: "DELETE",
         headers: authHeaders,
       });
@@ -2010,7 +2014,7 @@ function DashboardPage({
     if (!authHeaders || !isAdmin) return;
     setAdminGuideFeedback("");
     try {
-      const response = await fetch(`/api/admin/guides/${guide.id}/`, {
+      const response = await fetch(apiUrl(`/api/admin/guides/${guide.id}/`), {
         method: "PATCH",
         headers: authHeaders,
         body: JSON.stringify({ is_published: !guide.is_published }),
@@ -2035,7 +2039,7 @@ function DashboardPage({
         ...manualMentorForm,
         is_mentor: true,
       };
-      const response = await fetch(API_BASE_URL + "/api/admin/users/create/", {
+      const response = await fetch(apiUrl("/api/admin/users/create/"), {
         method: "POST",
         headers: authHeaders,
         body: JSON.stringify(payload),
@@ -2063,7 +2067,7 @@ function DashboardPage({
 
   const loadThreadDetail = async (id: number) => {
     if (!authHeaders) return;
-    const response = await fetch(`/api/messages/threads/${id}/`, { headers: authHeaders });
+    const response = await fetch(apiUrl(`/api/messages/threads/${id}/`), { headers: authHeaders });
     if (response.ok) {
       setSelectedThread(await response.json());
     }
@@ -2122,7 +2126,7 @@ function DashboardPage({
     if (!authHeaders) return;
     setMentorFeedback("");
     try {
-      const response = await fetch(API_BASE_URL + "/api/mentors/requests/", {
+      const response = await fetch(apiUrl("/api/mentors/requests/"), {
         method: "POST",
         headers: authHeaders,
         body: JSON.stringify({ mentor: mentorId, message }),
@@ -2143,7 +2147,7 @@ function DashboardPage({
     if (!authHeaders) return;
     try {
       setMentorFeedback("");
-      const response = await fetch(`/api/mentors/requests/${requestId}/status/`, {
+      const response = await fetch(apiUrl(`/api/mentors/requests/${requestId}/status/`), {
         method: "PATCH",
         headers: authHeaders,
         body: JSON.stringify({ 
@@ -2166,7 +2170,7 @@ function DashboardPage({
     if (!authHeaders) return;
     try {
       setMentorFeedback("");
-      const response = await fetch(`/api/mentors/requests/${requestId}/confirm/`, {
+      const response = await fetch(apiUrl(`/api/mentors/requests/${requestId}/confirm/`), {
         method: "PATCH",
         headers: authHeaders,
         body: JSON.stringify({
@@ -2197,7 +2201,7 @@ function DashboardPage({
     formData.append("profile_picture", file);
 
     try {
-      const response = await fetch(API_BASE_URL + "/api/users/me/profile-picture/", {
+      const response = await fetch(apiUrl("/api/users/me/profile-picture/"), {
         method: "POST",
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -2216,7 +2220,7 @@ function DashboardPage({
   const handleSendFriendRequest = async (receiverId: number) => {
     if (!authHeaders) return;
     try {
-      const response = await fetch(API_BASE_URL + "/api/friend-requests/", {
+      const response = await fetch(apiUrl("/api/friend-requests/"), {
         method: "POST",
         headers: authHeaders,
         body: JSON.stringify({ receiver: receiverId }),
@@ -2231,7 +2235,7 @@ function DashboardPage({
   const handleUpdateFriendRequest = async (requestId: number, status: string) => {
     if (!authHeaders) return;
     try {
-      const response = await fetch(`/api/friend-requests/${requestId}/`, {
+      const response = await fetch(apiUrl(`/api/friend-requests/${requestId}/`), {
         method: "PATCH",
         headers: authHeaders,
         body: JSON.stringify({ status }),
@@ -2271,7 +2275,7 @@ function DashboardPage({
 
     if (authHeaders) {
       try {
-        await fetch(API_BASE_URL + "/api/users/me/", {
+        await fetch(apiUrl("/api/users/me/"), {
           method: "PATCH",
           headers: {
             ...authHeaders,
@@ -2322,7 +2326,7 @@ function DashboardPage({
     setAiAnalysisState("analyzing");
     
     try {
-      const response = await fetch(`/api/projects/${aiSelectedProjectId}/matches/`, {
+      const response = await fetch(apiUrl(`/api/projects/${aiSelectedProjectId}/matches/`), {
         headers: authHeaders,
       });
       if (response.ok) {
@@ -2343,7 +2347,7 @@ function DashboardPage({
     if (!authHeaders) return;
     setProjectFeedback("");
 
-    const response = await fetch(API_BASE_URL + "/api/projects/", {
+    const response = await fetch(apiUrl("/api/projects/"), {
       method: "POST",
       headers: authHeaders,
       body: JSON.stringify({
@@ -2373,8 +2377,7 @@ function DashboardPage({
     event.preventDefault();
     if (!authHeaders || !selectedThread || !messageDraft.trim()) return;
     setMessageError("");
-    const response = await fetch(
-      `/api/messages/threads/${selectedThread.application_id}/messages/`,
+    const response = await fetch(apiUrl(`/api/messages/threads/${selectedThread.application_id}/messages/`),
       {
         method: "POST",
         headers: authHeaders,
@@ -2398,7 +2401,7 @@ function DashboardPage({
   ) => {
     if (!authHeaders) return;
     setAdminFeedback("");
-    const response = await fetch(`/api/admin/users/${userId}/role/`, {
+    const response = await fetch(apiUrl(`/api/admin/users/${userId}/role/`), {
       method: "PATCH",
       headers: authHeaders,
       body: JSON.stringify(payload),
@@ -2428,7 +2431,7 @@ function DashboardPage({
   ) => {
     if (!authHeaders) return;
     setAdminFeedback("");
-    const response = await fetch(`/api/admin/users/${userId}/moderation/`, {
+    const response = await fetch(apiUrl(`/api/admin/users/${userId}/moderation/`), {
       method: "PATCH",
       headers: authHeaders,
       body: JSON.stringify(payload),
@@ -2451,7 +2454,7 @@ function DashboardPage({
   const handleUserDelete = async (userId: number) => {
     if (!authHeaders) return;
     setAdminFeedback("");
-    const response = await fetch(`/api/admin/users/${userId}/moderation/`, {
+    const response = await fetch(apiUrl(`/api/admin/users/${userId}/moderation/`), {
       method: "DELETE",
       headers: authHeaders,
     });
@@ -2474,7 +2477,7 @@ function DashboardPage({
   ) => {
     if (!authHeaders) return;
     setAdminFeedback("");
-    const response = await fetch(`/api/verification-requests/${requestId}/review/`, {
+    const response = await fetch(apiUrl(`/api/verification-requests/${requestId}/review/`), {
       method: "PATCH",
       headers: authHeaders,
       body: JSON.stringify({
@@ -2502,7 +2505,7 @@ function DashboardPage({
   const handleProjectDelete = async (projectId: number) => {
     if (!authHeaders) return;
     setAdminFeedback("");
-    const response = await fetch(`/api/admin/projects/${projectId}/`, {
+    const response = await fetch(apiUrl(`/api/admin/projects/${projectId}/`), {
       method: "DELETE",
       headers: authHeaders,
     });
@@ -2525,7 +2528,7 @@ function DashboardPage({
     }
 
     setBillingFeedback("");
-    const response = await fetch(API_BASE_URL + "/api/premium/subscription/", {
+    const response = await fetch(apiUrl("/api/premium/subscription/"), {
       method: "POST",
       headers: authHeaders,
       body: JSON.stringify({ plan }),
@@ -2543,7 +2546,7 @@ function DashboardPage({
   const handleApplicationSubmit = async (projectId: number) => {
     if (!authHeaders || !applicationMessage.trim()) return;
     setApplicationFeedback("");
-    const response = await fetch(API_BASE_URL + "/api/applications/", {
+    const response = await fetch(apiUrl("/api/applications/"), {
       method: "POST",
       headers: authHeaders,
       body: JSON.stringify({
@@ -2569,7 +2572,7 @@ function DashboardPage({
   ) => {
     if (!authHeaders) return;
     setApplicationFeedback("");
-    const response = await fetch(`/api/applications/${applicationId}/status/`, {
+    const response = await fetch(apiUrl(`/api/applications/${applicationId}/status/`), {
       method: "PATCH",
       headers: authHeaders,
       body: JSON.stringify({ status }),
@@ -2590,7 +2593,7 @@ function DashboardPage({
     event.preventDefault();
     if (!authHeaders) return;
     setVerifiedFeedback("");
-    const response = await fetch(API_BASE_URL + "/api/verification-requests/", {
+    const response = await fetch(apiUrl("/api/verification-requests/"), {
       method: "POST",
       headers: authHeaders,
       body: JSON.stringify(verifiedForm),
@@ -4807,11 +4810,11 @@ export default function App() {
           }
         : undefined;
       const requests: Promise<Response>[] = [
-        fetch(API_BASE_URL + "/api/showcase/", showcaseHeaders ? { headers: showcaseHeaders } : undefined),
+        fetch(apiUrl("/api/showcase/"), showcaseHeaders ? { headers: showcaseHeaders } : undefined),
       ];
       if (marketingAccessToken) {
         requests.push(
-          fetch(API_BASE_URL + "/api/mentors/", {
+          fetch(apiUrl("/api/mentors/"), {
             headers: {
               Authorization: `Bearer ${marketingAccessToken}`,
             },
@@ -4844,7 +4847,7 @@ export default function App() {
       return;
     }
     try {
-      const response = await fetch(API_BASE_URL + "/api/premium/subscription/", {
+      const response = await fetch(apiUrl("/api/premium/subscription/"), {
         headers: {
           Authorization: `Bearer ${marketingAccessToken}`,
         },
@@ -4916,7 +4919,7 @@ export default function App() {
     setPremiumLoading(true);
     setPremiumFeedback("");
     try {
-      const response = await fetch(API_BASE_URL + "/api/premium/subscription/", {
+      const response = await fetch(apiUrl("/api/premium/subscription/"), {
         method: "POST",
         headers: {
           Authorization: `Bearer ${marketingAccessToken}`,
@@ -4929,7 +4932,7 @@ export default function App() {
         throw new Error(await parseError(response));
       }
 
-      const meResponse = await fetch(API_BASE_URL + "/api/users/me/", {
+      const meResponse = await fetch(apiUrl("/api/users/me/"), {
         headers: {
           Authorization: `Bearer ${marketingAccessToken}`,
         },
@@ -4957,7 +4960,7 @@ export default function App() {
     setPremiumLoading(true);
     setPremiumFeedback("");
     try {
-      const response = await fetch(API_BASE_URL + "/api/premium/subscription/", {
+      const response = await fetch(apiUrl("/api/premium/subscription/"), {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${marketingAccessToken}`,
@@ -4968,7 +4971,7 @@ export default function App() {
         throw new Error(await parseError(response));
       }
 
-      const meResponse = await fetch(API_BASE_URL + "/api/users/me/", {
+      const meResponse = await fetch(apiUrl("/api/users/me/"), {
         headers: {
           Authorization: `Bearer ${marketingAccessToken}`,
         },
@@ -5052,6 +5055,7 @@ export default function App() {
         publicMentors={publicMentors}
         setPublicProjects={setPublicProjects}
         setPublicMentors={setPublicMentors}
+        setRoute={setRoute}
         showcaseData={showcaseData}
         publicLoading={publicLoading}
         marketingAccessToken={marketingAccessToken}
@@ -5773,7 +5777,7 @@ function EventsView({
   const handleRegister = async (eventId: number) => {
     if (accessToken) {
       try {
-        const response = await fetch(API_BASE_URL + "/api/events/register/", {
+        const response = await fetch(apiUrl("/api/events/register/"), {
           method: "POST",
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -6249,7 +6253,7 @@ function MentorPanelView({
     const accessToken = localStorage.getItem("foundrly_access_token");
     if (!accessToken) return;
     try {
-      await fetch(API_BASE_URL + "/api/users/me/", {
+      await fetch(apiUrl("/api/users/me/"), {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

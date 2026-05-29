@@ -1,6 +1,7 @@
 services:
   - type: web
     name: foundrly-backend
+    plan: free
     env: python
     buildCommand: ./build.sh
     startCommand: gunicorn config.wsgi:application
@@ -14,12 +15,10 @@ services:
       - key: ALLOWED_HOSTS
         value: "*"
       - key: DATABASE_URL
-        fromDatabase:
-          name: foundrly-db
-          property: connectionString
+        sync: false
       - key: CORS_ALLOWED_ORIGINS
-        value: "http://localhost:3000,http://localhost:5173" # Vercel URL will be added here later
-
-databases:
-  - name: foundrly-db
-    plan: free
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+      - key: FRONTEND_BASE_URL
+        sync: false

@@ -156,6 +156,21 @@ docker compose exec web python manage.py seed_demo_data
 
 ---
 
+## Kartsız Deploy
+
+Render Blueprint içinde veritabanı oluşturmak kart doğrulaması isteyebilir. Kartsız deploy için en pratik akış:
+
+1. Neon veya Supabase üzerinde ücretsiz bir PostgreSQL veritabanı oluştur.
+2. Connection string'i kopyala.
+3. Render'da `New + -> Blueprint` ile bu repoyu bağla.
+4. `DATABASE_URL` alanına dış veritabanı connection string'ini gir.
+5. `CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS` ve `FRONTEND_BASE_URL` alanlarını Vercel URL'inle doldur.
+6. Frontend'i Vercel'de `frontend/` root directory ile deploy et ve `VITE_API_URL` değişkenini Render backend URL'i olarak ekle.
+
+Bu repository'deki `render.yaml`, kartsız senaryo için Render'ın kendi Postgres'ini oluşturmadan sadece backend servisini ayağa kaldıracak şekilde hazırlanmıştır.
+
+---
+
 ## Servis Adresleri
 
 | Servis | Adres |
