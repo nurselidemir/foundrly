@@ -1,6 +1,8 @@
 import json
+from decimal import Decimal
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
@@ -13,6 +15,8 @@ from rest_framework.views import APIView
 
 from apps.users.models import (
     CommunityEvent,
+    CommunityEventRegistration,
+    CommunityGuide,
     CommunityThread,
     VerificationRequest,
     User,
@@ -25,6 +29,8 @@ from apps.users.serializers import (
     AdminUserRoleSerializer,
     AdminVerificationRequestSerializer,
     CommunityEventSerializer,
+    CommunityEventRegistrationSerializer,
+    CommunityGuideSerializer,
     CommunityThreadSerializer,
     PublicUserReviewSerializer,
     PublicUserProfileSerializer,
@@ -39,6 +45,8 @@ from apps.users.serializers import (
     VerificationReviewSerializer,
     MentorSerializer,
     MentorRequestSerializer,
+    MentorRequestMentorActionSerializer,
+    MentorRequestUserActionSerializer,
     FriendRequestSerializer,
 )
 
@@ -107,6 +115,8 @@ class ShowcaseDataView(APIView):
 
     def get(self, request):
         from apps.projects.models import Project
+        from apps.users.models import UserReview
+        from apps.users.serializers import PublicUserReviewSerializer
 
         projects = (
             Project.objects.select_related("owner")
@@ -130,15 +140,25 @@ class ShowcaseDataView(APIView):
             CommunityThread.objects.select_related("author")
             .filter(is_featured=True)[:8]
         )
-        events = CommunityEvent.objects.filter(is_featured=True)[:8]
+        events = CommunityEvent.objects.filter(is_featured=True).prefetch_related("registrations")[:8]
+        guides = CommunityGuide.objects.filter(is_published=True)[:8]
+        reviews = UserReview.objects.select_related("reviewer", "reviewee", "application__project").order_by("-created_at")[:10]
 
         data = {
             "projects": ShowcaseProjectSerializer(projects, many=True).data,
             "users": ShowcaseUserSerializer(users, many=True).data,
             "threads": CommunityThreadSerializer(threads, many=True).data,
-            "events": CommunityEventSerializer(events, many=True).data,
+            "events": CommunityEventSerializer(events, many=True, context={"request": request}).data,
+            "guides": CommunityGuideSerializer(guides, many=True).data,
+            "reviews": PublicUserReviewSerializer(reviews, many=True).data,
         }
         return Response(data)
+
+
+class CommunityEventRegistrationCreateView(generics.CreateAPIView):
+    queryset = CommunityEventRegistration.objects.all()
+    serializer_class = CommunityEventRegistrationSerializer
+    permission_classes = [IsAuthenticated]
 
 
 class MentorListView(generics.ListAPIView):
@@ -192,7 +212,7 @@ class MentorMyRequestsView(generics.ListAPIView):
 
 class MentorRequestStatusUpdateView(generics.UpdateAPIView):
     queryset = MentorRequest.objects.all()
-    serializer_class = MentorRequestSerializer
+    serializer_class = MentorRequestMentorActionSerializer
     permission_classes = [IsAuthenticated]
     http_method_names = ["patch"]
 
@@ -202,22 +222,36 @@ class MentorRequestStatusUpdateView(generics.UpdateAPIView):
             raise PermissionDenied("Sadece talebin atandigi mentor durum guncellemesi yapabilir.")
         return obj
 
-    def perform_update(self, serializer):
-        old_status = self.get_object().status
-        instance = serializer.save()
-        
-        # If status changed to completed, give money to mentor
-        if old_status != "completed" and instance.status == "completed":
-            mentor = instance.mentor
-            base_price = instance.offered_price if instance.price_at_request == -1 else instance.price_at_request
-            earned = base_price * (1 - instance.commission_rate)
-            mentor.mentor_balance += earned
-            mentor.save(update_fields=["mentor_balance"])
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(
+            data=request.data,
+            context={"request_instance": instance},
+        )
+        serializer.is_valid(raise_exception=True)
+
+        action = serializer.validated_data["action"]
+        now = timezone.now()
+
+        if action == "offer":
+            instance.status = MentorRequest.STATUS_OFFERED
+            instance.offered_price = serializer.validated_data["offered_price"]
+            instance.meeting_time = serializer.validated_data["meeting_time"]
+            instance.save(update_fields=["status", "offered_price", "meeting_time"])
+        elif action == "decline":
+            instance.status = MentorRequest.STATUS_DECLINED
+            instance.save(update_fields=["status"])
+        elif action == "mark_completed":
+            instance.status = MentorRequest.STATUS_MENTOR_COMPLETED
+            instance.mentor_completed_at = now
+            instance.save(update_fields=["status", "mentor_completed_at"])
+
+        return Response(MentorRequestSerializer(instance).data)
 
 
 class MentorRequestConfirmView(generics.UpdateAPIView):
     queryset = MentorRequest.objects.all()
-    serializer_class = MentorRequestSerializer
+    serializer_class = MentorRequestUserActionSerializer
     permission_classes = [IsAuthenticated]
     http_method_names = ["patch"]
 
@@ -227,8 +261,42 @@ class MentorRequestConfirmView(generics.UpdateAPIView):
             raise PermissionDenied("Sadece talebi olusturan kullanici onay verebilir.")
         return obj
 
-    def perform_update(self, serializer):
-        serializer.save(user_confirmed=True)
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(
+            data=request.data or {"action": "accept_offer"},
+            context={"request_instance": instance},
+        )
+        serializer.is_valid(raise_exception=True)
+
+        action = serializer.validated_data["action"]
+        now = timezone.now()
+
+        if action == "accept_offer":
+            reserved_amount = Decimal("0.00") if instance.price_at_request == 0 else instance.offered_price
+            instance.status = MentorRequest.STATUS_PAID_RESERVED
+            instance.user_confirmed = True
+            instance.user_confirmed_at = now
+            instance.reserved_amount = reserved_amount
+            instance.save(
+                update_fields=["status", "user_confirmed", "user_confirmed_at", "reserved_amount"]
+            )
+        elif action == "confirm_completion":
+            payout = instance.reserved_amount * (Decimal("1.00") - instance.commission_rate)
+            mentor = instance.mentor
+            mentor.mentor_balance += payout
+            mentor.save(update_fields=["mentor_balance"])
+
+            instance.status = MentorRequest.STATUS_RELEASED
+            instance.released_at = now
+            instance.save(update_fields=["status", "released_at"])
+        elif action == "open_dispute":
+            instance.status = MentorRequest.STATUS_DISPUTED
+            instance.disputed_at = now
+            instance.dispute_reason = serializer.validated_data["dispute_reason"]
+            instance.save(update_fields=["status", "disputed_at", "dispute_reason"])
+
+        return Response(MentorRequestSerializer(instance).data)
 
 
 class CurrentUserView(generics.RetrieveUpdateAPIView):
@@ -418,10 +486,12 @@ class AdminUserListView(generics.ListAPIView):
         if not self.request.user.is_staff:
             raise PermissionDenied("Bu alan sadece admin kullanicilar icindir.")
 
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().filter(is_mentor=False)
         search = self.request.query_params.get("search")
         if search:
-            queryset = queryset.filter(full_name__icontains=search)
+            queryset = queryset.filter(
+                Q(full_name__icontains=search) | Q(email__icontains=search)
+            )
         return queryset
 
 
@@ -476,7 +546,23 @@ class AdminUserCreateView(generics.CreateAPIView):
         if not self.request.user.is_staff:
             raise PermissionDenied("Sadece adminler yeni kullanici/mentor olusturabilir.")
         user = serializer.save()
-        # If admin specified is_mentor in some way, or we just want to allow editing after create
+        is_mentor = str(self.request.data.get("is_mentor", "")).lower() in {
+            "true",
+            "1",
+            "yes",
+            "on",
+        }
+        if is_mentor:
+            user.is_mentor = True
+            user.is_premium = True
+            mentor_price = self.request.data.get("mentor_price", 0)
+            try:
+                user.mentor_price = mentor_price
+            except (TypeError, ValueError, ValidationError):
+                user.mentor_price = 0
+            user.title = self.request.data.get("title", "Resmi Mentör")
+            user.is_verified_talent = True  # Manual mentors are automatically verified
+            user.save(update_fields=["is_mentor", "is_premium", "mentor_price", "title", "is_verified_talent"])
         return user
 
 
@@ -506,3 +592,88 @@ class AdminVerificationRequestListView(generics.ListAPIView):
             )
 
         return queryset
+
+
+class AdminEventListCreateView(generics.ListCreateAPIView):
+    """Admin: etkinlikleri listele ve yeni etkinlik oluştur."""
+    queryset = CommunityEvent.objects.all()
+    serializer_class = CommunityEventSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        if not self.request.user.is_staff:
+            raise PermissionDenied("Bu alan sadece admin kullanicilar icindir.")
+        return super().get_queryset()
+
+    def perform_create(self, serializer):
+        if not self.request.user.is_staff:
+            raise PermissionDenied("Bu alan sadece admin kullanicilar icindir.")
+        serializer.save()
+
+
+class AdminEventDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Admin: etkinlik detay, güncelle ve sil."""
+    queryset = CommunityEvent.objects.all()
+    serializer_class = CommunityEventSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        if not self.request.user.is_staff:
+            raise PermissionDenied("Bu alan sadece admin kullanicilar icindir.")
+        return super().get_object()
+
+
+class AdminMentorListView(generics.ListAPIView):
+    """Admin: tüm mentor durumundaki kullanıcıları listele."""
+    queryset = User.objects.filter(is_mentor=True).order_by("full_name")
+    serializer_class = AdminUserModerationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        if not self.request.user.is_staff:
+            raise PermissionDenied("Bu alan sadece admin kullanicilar icindir.")
+        return User.objects.filter(is_mentor=True).order_by("full_name")
+
+    def list(self, request, *args, **kwargs):
+        qs = self.get_queryset()
+        from apps.users.serializers import AdminUserDetailSerializer
+        data = []
+        for user in qs:
+            data.append({
+                "id": user.id,
+                "full_name": user.full_name,
+                "email": user.email,
+                "title": user.title,
+                "is_mentor": user.is_mentor,
+                "mentor_price": str(user.mentor_price),
+                "is_verified_talent": user.is_verified_talent,
+                "is_premium": user.is_premium,
+            })
+        return Response(data)
+
+
+class AdminGuideListCreateView(generics.ListCreateAPIView):
+    queryset = CommunityGuide.objects.all()
+    serializer_class = CommunityGuideSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        if not self.request.user.is_staff:
+            raise PermissionDenied("Bu alan sadece admin kullanicilar icindir.")
+        return super().get_queryset()
+
+    def perform_create(self, serializer):
+        if not self.request.user.is_staff:
+            raise PermissionDenied("Bu alan sadece admin kullanicilar icindir.")
+        serializer.save()
+
+
+class AdminGuideDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = CommunityGuide.objects.all()
+    serializer_class = CommunityGuideSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        if not self.request.user.is_staff:
+            raise PermissionDenied("Bu alan sadece admin kullanicilar icindir.")
+        return super().get_object()

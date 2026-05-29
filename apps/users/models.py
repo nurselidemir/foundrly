@@ -120,23 +120,43 @@ class VerificationRequest(models.Model):
 
 
 class MentorRequest(models.Model):
+    STATUS_PENDING = "pending"
+    STATUS_OFFERED = "offered"
+    STATUS_PAID_RESERVED = "paid_reserved"
+    STATUS_MENTOR_COMPLETED = "mentor_completed"
+    STATUS_RELEASED = "released"
+    STATUS_DISPUTED = "disputed"
+    STATUS_DECLINED = "declined"
+    STATUS_REFUNDED = "refunded"
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="mentor_requests")
     mentor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="mentor_sessions")
     message = models.TextField()
     status = models.CharField(
         max_length=20,
         choices=[
-            ("pending", "Pending"),
-            ("accepted", "Accepted"),
-            ("completed", "Completed"),
+            (STATUS_PENDING, "Pending"),
+            (STATUS_OFFERED, "Offered"),
+            (STATUS_PAID_RESERVED, "Paid Reserved"),
+            (STATUS_MENTOR_COMPLETED, "Mentor Completed"),
+            (STATUS_RELEASED, "Released"),
+            (STATUS_DISPUTED, "Disputed"),
+            (STATUS_DECLINED, "Declined"),
+            (STATUS_REFUNDED, "Refunded"),
         ],
-        default="pending",
+        default=STATUS_PENDING,
     )
     meeting_time = models.DateTimeField(null=True, blank=True)
     user_confirmed = models.BooleanField(default=False)
     price_at_request = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     offered_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    reserved_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     commission_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0.20)
+    mentor_completed_at = models.DateTimeField(null=True, blank=True)
+    user_confirmed_at = models.DateTimeField(null=True, blank=True)
+    released_at = models.DateTimeField(null=True, blank=True)
+    disputed_at = models.DateTimeField(null=True, blank=True)
+    dispute_reason = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -235,6 +255,46 @@ class CommunityEvent(models.Model):
 
     class Meta:
         ordering = ["event_date", "-created_at"]
+
+    def __str__(self) -> str:
+        return self.title
+
+
+class CommunityEventRegistration(models.Model):
+    user = models.ForeignKey(
+        "User",
+        on_delete=models.CASCADE,
+        related_name="event_registrations",
+    )
+    event = models.ForeignKey(
+        CommunityEvent,
+        on_delete=models.CASCADE,
+        related_name="registrations",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["user", "event"], name="unique_event_registration")
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.user_id}-{self.event_id}"
+
+
+class CommunityGuide(models.Model):
+    title = models.CharField(max_length=255)
+    read = models.CharField(max_length=80)
+    tone = models.CharField(max_length=80)
+    summary = models.TextField()
+    bullets = models.JSONField(default=list, blank=True)
+    is_published = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
 
     def __str__(self) -> str:
         return self.title

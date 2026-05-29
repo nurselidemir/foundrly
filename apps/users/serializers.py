@@ -4,6 +4,8 @@ from rest_framework import serializers
 
 from apps.users.models import (
     CommunityEvent,
+    CommunityEventRegistration,
+    CommunityGuide,
     CommunityThread,
     FriendRequest,
     MentorRequest,
@@ -203,7 +205,7 @@ class PremiumSubscribeSerializer(serializers.Serializer):
     def create(self, validated_data):
         user = self.context["request"].user
         plan = validated_data["plan"]
-        price_label = "$5 / ay" if plan == "monthly" else "$48 / yil"
+        price_label = "₺199 / ay" if plan == "monthly" else "₺1.990 / yil"
 
         subscription, _ = PremiumSubscription.objects.update_or_create(
             user=user,
@@ -294,6 +296,8 @@ class CommunityThreadSerializer(serializers.ModelSerializer):
 
 
 class CommunityEventSerializer(serializers.ModelSerializer):
+    is_registered = serializers.SerializerMethodField()
+
     class Meta:
         model = CommunityEvent
         fields = [
@@ -304,7 +308,53 @@ class CommunityEventSerializer(serializers.ModelSerializer):
             "tag",
             "event_date",
             "is_online",
+            "is_featured",
+            "is_registered",
+            "created_at",
         ]
+        read_only_fields = ["id", "created_at"]
+
+    def get_is_registered(self, obj):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return False
+        return obj.registrations.filter(user=request.user).exists()
+
+
+class CommunityEventRegistrationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CommunityEventRegistration
+        fields = ["id", "event", "created_at"]
+        read_only_fields = ["id", "created_at"]
+
+    def validate_event(self, value):
+        if not value.is_featured:
+            raise serializers.ValidationError("Sadece aktif etkinliklere kayit olunabilir.")
+        return value
+
+    def create(self, validated_data):
+        registration, _ = CommunityEventRegistration.objects.get_or_create(
+            user=self.context["request"].user,
+            event=validated_data["event"],
+        )
+        return registration
+
+
+class CommunityGuideSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CommunityGuide
+        fields = [
+            "id",
+            "title",
+            "read",
+            "tone",
+            "summary",
+            "bullets",
+            "is_published",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
 
 
 class VerificationRequestSerializer(serializers.ModelSerializer):
@@ -374,10 +424,21 @@ class AdminUserRoleSerializer(serializers.ModelSerializer):
             "email",
             "full_name",
             "title",
+            "is_mentor",
+            "is_verified_talent",
+            "is_premium",
             "is_staff",
             "is_superuser",
         ]
-        read_only_fields = ["id", "email", "full_name", "title"]
+        read_only_fields = [
+            "id",
+            "email",
+            "full_name",
+            "title",
+            "is_mentor",
+            "is_verified_talent",
+            "is_premium",
+        ]
 
     def validate(self, attrs):
         request = self.context["request"]
@@ -480,6 +541,13 @@ class AdminUserModerationSerializer(serializers.ModelSerializer):
         if not request.user.is_staff:
             raise serializers.ValidationError("Bu islem sadece admin kullanicilar icindir.")
         return attrs
+
+    def update(self, instance, validated_data):
+        is_mentor = validated_data.get("is_mentor")
+        if is_mentor is True:
+            validated_data["is_premium"] = True
+            validated_data.setdefault("is_verified_talent", True)
+        return super().update(instance, validated_data)
 
 
 class AdminVerificationRequestSerializer(serializers.ModelSerializer):
@@ -584,6 +652,7 @@ class MentorSerializer(serializers.ModelSerializer):
 class MentorRequestSerializer(serializers.ModelSerializer):
     mentor_details = MentorSerializer(source="mentor", read_only=True)
     user_details = MentorSerializer(source="user", read_only=True)
+    status_label = serializers.SerializerMethodField()
 
     class Meta:
         model = MentorRequest
@@ -599,40 +668,130 @@ class MentorRequestSerializer(serializers.ModelSerializer):
             "user_confirmed",
             "price_at_request",
             "offered_price",
+            "reserved_amount",
             "commission_rate",
+            "mentor_completed_at",
+            "user_confirmed_at",
+            "released_at",
+            "disputed_at",
+            "dispute_reason",
+            "status_label",
             "created_at",
         ]
-        read_only_fields = ["id", "user", "price_at_request", "commission_rate", "created_at"]
+        read_only_fields = [
+            "id",
+            "user",
+            "status",
+            "meeting_time",
+            "user_confirmed",
+            "price_at_request",
+            "offered_price",
+            "reserved_amount",
+            "commission_rate",
+            "mentor_completed_at",
+            "user_confirmed_at",
+            "released_at",
+            "disputed_at",
+            "dispute_reason",
+            "status_label",
+            "created_at",
+        ]
 
     def validate(self, attrs):
         user = self.context["request"].user
-        if not user.is_premium:
+        request = self.context.get("request")
+        if request and request.method == "POST" and not user.is_premium:
             raise serializers.ValidationError("Mentor destegi sadece premium kullanicilar icindir.")
 
-        mentor = attrs["mentor"]
+        mentor = attrs.get("mentor")
+        if mentor is None:
+            raise serializers.ValidationError({"mentor": "Mentor secimi zorunludur."})
         if not mentor.is_mentor:
             raise serializers.ValidationError("Secilen kullanici bir mentor degildir.")
 
-        # Price is now offered by the mentor later, so we just check credits if they want a free session
-        # but even if they don't have credits, they can request, and the mentor will offer a price.
         return attrs
 
     def create(self, validated_data):
         user = self.context["request"].user
-        # We'll use price_at_request=0 to indicate it's an offer-based request initially
-        # If user had credits, we'll mark it as 0 (free)
-        price = -1 # -1 means "Waiting for offer"
+        price = -1
         if user.mentor_credits > 0:
             user.mentor_credits -= 1
             user.save(update_fields=["mentor_credits"])
-            price = 0 # 0 means "Free session used"
+            price = 0
 
         return MentorRequest.objects.create(
-            user=user, 
+            user=user,
+            status=MentorRequest.STATUS_PENDING,
             price_at_request=price,
             commission_rate=0.20,
             **validated_data
         )
+
+    def get_status_label(self, obj):
+        labels = {
+            MentorRequest.STATUS_PENDING: "Talep iletildi",
+            MentorRequest.STATUS_OFFERED: "Teklif bekliyor",
+            MentorRequest.STATUS_PAID_RESERVED: "Odeme rezerve edildi",
+            MentorRequest.STATUS_MENTOR_COMPLETED: "Mentor tamamlandi dedi",
+            MentorRequest.STATUS_RELEASED: "Odeme mentore aktarildi",
+            MentorRequest.STATUS_DISPUTED: "Itiraz incelemede",
+            MentorRequest.STATUS_DECLINED: "Mentor reddetti",
+            MentorRequest.STATUS_REFUNDED: "Iade edildi",
+            "accepted": "Kullanici onayi bekliyor",
+            "completed": "Tamamlandi",
+        }
+        return labels.get(obj.status, obj.status)
+
+
+class MentorRequestMentorActionSerializer(serializers.Serializer):
+    action = serializers.ChoiceField(choices=["offer", "decline", "mark_completed"])
+    offered_price = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
+    meeting_time = serializers.DateTimeField(required=False)
+
+    def validate(self, attrs):
+        instance = self.context["request_instance"]
+        action = attrs["action"]
+
+        if action == "offer":
+            if instance.status != MentorRequest.STATUS_PENDING:
+                raise serializers.ValidationError("Sadece yeni taleplere teklif verilebilir.")
+            if attrs.get("meeting_time") is None:
+                raise serializers.ValidationError({"meeting_time": "Gorusme zamani zorunludur."})
+            if instance.price_at_request == 0:
+                attrs["offered_price"] = 0
+            elif attrs.get("offered_price") is None or attrs["offered_price"] <= 0:
+                raise serializers.ValidationError({"offered_price": "Ucret teklifi pozitif olmalidir."})
+
+        if action == "decline" and instance.status not in {MentorRequest.STATUS_PENDING, MentorRequest.STATUS_OFFERED}:
+            raise serializers.ValidationError("Bu talep bu asamada reddedilemez.")
+
+        if action == "mark_completed" and instance.status != MentorRequest.STATUS_PAID_RESERVED:
+            raise serializers.ValidationError("Odeme rezerve edilmeden gorusme tamamlanmis sayilamaz.")
+
+        return attrs
+
+
+class MentorRequestUserActionSerializer(serializers.Serializer):
+    action = serializers.ChoiceField(choices=["accept_offer", "confirm_completion", "open_dispute"])
+    dispute_reason = serializers.CharField(required=False, allow_blank=False)
+
+    def validate(self, attrs):
+        instance = self.context["request_instance"]
+        action = attrs["action"]
+
+        if action == "accept_offer" and instance.status != MentorRequest.STATUS_OFFERED:
+            raise serializers.ValidationError("Su an teklif kabul edilemez.")
+
+        if action == "confirm_completion" and instance.status != MentorRequest.STATUS_MENTOR_COMPLETED:
+            raise serializers.ValidationError("Mentor gorusmeyi tamamlamadan onay verilemez.")
+
+        if action == "open_dispute":
+            if instance.status not in {MentorRequest.STATUS_PAID_RESERVED, MentorRequest.STATUS_MENTOR_COMPLETED}:
+                raise serializers.ValidationError("Bu talep icin su an itiraz acilamaz.")
+            if not attrs.get("dispute_reason"):
+                raise serializers.ValidationError({"dispute_reason": "Itiraz nedeni zorunludur."})
+
+        return attrs
 
 
 class FriendRequestSerializer(serializers.ModelSerializer):

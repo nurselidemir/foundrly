@@ -3,6 +3,12 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from apps.users.views import (
     AdminDashboardView,
+    AdminEventDetailView,
+    AdminEventListCreateView,
+    AdminGuideDetailView,
+    AdminGuideListCreateView,
+    AdminMentorListView,
+    CommunityEventRegistrationCreateView,
     AdminUserDetailView,
     AdminUserListView,
     AdminUserModerationView,
@@ -32,6 +38,7 @@ from apps.users.views import (
 urlpatterns = [
     path("health/", HealthCheckView.as_view(), name="health-check"),
     path("showcase/", ShowcaseDataView.as_view(), name="showcase-data"),
+    path("events/register/", CommunityEventRegistrationCreateView.as_view(), name="event-registration-create"),
     path("users/", UserListView.as_view(), name="user-list"),
     path("users/me/", CurrentUserView.as_view(), name="current-user"),
     path("users/me/profile-picture/", ProfilePictureUploadView.as_view(), name="profile-picture-upload"),
@@ -44,6 +51,11 @@ urlpatterns = [
     path("admin/users/<int:pk>/role/", AdminUserRoleUpdateView.as_view(), name="admin-user-role-update"),
     path("admin/users/<int:pk>/moderation/", AdminUserModerationView.as_view(), name="admin-user-moderation"),
     path("admin/verification-requests/", AdminVerificationRequestListView.as_view(), name="admin-verification-request-list"),
+    path("admin/events/", AdminEventListCreateView.as_view(), name="admin-event-list-create"),
+    path("admin/events/<int:pk>/", AdminEventDetailView.as_view(), name="admin-event-detail"),
+    path("admin/guides/", AdminGuideListCreateView.as_view(), name="admin-guide-list-create"),
+    path("admin/guides/<int:pk>/", AdminGuideDetailView.as_view(), name="admin-guide-detail"),
+    path("admin/mentors/", AdminMentorListView.as_view(), name="admin-mentor-list"),
     path("premium/subscription/", PremiumSubscriptionView.as_view(), name="premium-subscription"),
     path("verification-requests/", VerificationRequestListCreateView.as_view(), name="verification-request-list-create"),
     path("verification-requests/<int:pk>/review/", VerificationReviewView.as_view(), name="verification-request-review"),

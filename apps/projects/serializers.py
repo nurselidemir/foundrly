@@ -18,18 +18,31 @@ class UserSummarySerializer(serializers.Serializer):
 
 class TeamApplicationSerializer(serializers.ModelSerializer):
     applicant = UserSummarySerializer(read_only=True)
+    project_details = serializers.SerializerMethodField()
 
     class Meta:
         model = TeamApplication
         fields = [
             "id",
             "project",
+            "project_details",
             "applicant",
             "message",
             "status",
             "created_at",
         ]
         read_only_fields = ["id", "applicant", "status", "created_at"]
+
+    def get_project_details(self, obj):
+        return {
+            "id": obj.project.id,
+            "title": obj.project.title,
+            "summary": obj.project.summary,
+            "is_premium_highlighted": obj.project.is_premium_highlighted,
+            "created_at": obj.project.created_at,
+            "updated_at": obj.project.updated_at,
+            "owner": UserSummarySerializer(obj.project.owner).data,
+        }
 
     def validate(self, attrs):
         request = self.context.get("request")

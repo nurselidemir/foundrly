@@ -101,7 +101,7 @@ class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class TeamApplicationListCreateView(generics.ListCreateAPIView):
-    queryset = TeamApplication.objects.select_related("project", "applicant").all()
+    queryset = TeamApplication.objects.select_related("project", "project__owner", "applicant").all()
     serializer_class = TeamApplicationSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
@@ -152,7 +152,8 @@ class TeamApplicationStatusUpdateView(generics.UpdateAPIView):
 
 from apps.users.models import FriendRequest
 from apps.users.serializers import FriendRequestSerializer
-...
+
+
 class DashboardSummaryView(APIView):
     permission_classes = [IsAuthenticated]
 

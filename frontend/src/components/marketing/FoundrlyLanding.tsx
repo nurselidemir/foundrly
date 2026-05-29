@@ -207,10 +207,18 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 
 export default function FoundrlyLanding({
   onSearchUser,
+  reviews = [],
 }: {
   onSearchUser?: (query: string) => void;
+  reviews?: any[];
 }) {
   const [query, setQuery] = useState("");
+  const displayedReviews = reviews && reviews.length ? reviews : testimonials.map((t, idx) => ({
+    id: String(idx),
+    reviewer: { full_name: t.name, title: t.title },
+    comment: t.quote,
+    rating: t.rating,
+  }));
 
   return (
     <div className="bg-[#050B18] text-white">
@@ -489,7 +497,7 @@ export default function FoundrlyLanding({
         <div className="mx-auto max-w-7xl px-6 py-20 lg:px-10">
           <SectionHeading
             eyebrow="Premium Fiyatlandırma"
-            title="Ciddi builder'lar için modern bir SaaS fiyatlandırma modeli."
+            title="Sade ve şeffaf fiyatlandırma."
             body="Ücretsiz başla. Doğrulanmış güven, YZ eşleştirmesi ve premium görünürlüğe hazır olduğunda yükselt."
           />
 
@@ -561,9 +569,9 @@ export default function FoundrlyLanding({
             body="Daha iyi insan sinyalleriyle başlayan yatırımcıya hazır ekipler. Bu hikayeler o farkı yansıtıyor."
           />
           <div className="mt-12 grid gap-5 lg:grid-cols-3">
-            {testimonials.map((item, index) => (
+            {displayedReviews.slice(0, 6).map((item: any, index: number) => (
               <motion.article
-                key={item.name}
+                key={item.id}
                 className="rounded-[30px] border border-white/10 bg-white/6 p-6 backdrop-blur"
                 initial="hidden"
                 whileInView="show"
@@ -572,16 +580,19 @@ export default function FoundrlyLanding({
                 variants={fadeUp}
               >
                 <div className="flex gap-1 text-[#D7B56D]">
-                  {"★".repeat(item.rating)}
+                  {"★".repeat(item.rating || 5)}
                 </div>
-                <p className="mt-4 text-base leading-8 text-white/84">"{item.quote}"</p>
+                <p className="mt-4 text-base leading-8 text-white/84">"{item.comment}"</p>
                 <div className="mt-8 flex items-center gap-4">
                   <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#475DB2,#3FB170)] font-bold">
-                    {item.name.split(" ").map((part) => part[0]).join("").slice(0, 2)}
+                    {(item.reviewer?.full_name || "Kullanıcı").split(" ").map((part: string) => part[0]).join("").slice(0, 2)}
                   </div>
                   <div>
-                    <p className="font-semibold text-white">{item.name}</p>
-                    <p className="mt-1 text-sm text-white/75">{item.title}</p>
+                    <p className="font-semibold text-white">{item.reviewer?.full_name}</p>
+                    <p className="mt-1 text-sm text-white/75">
+                      {item.reviewer?.title || "Foundrly Üyesi"}
+                      {item.project && <span className="block text-xs text-white/45">Proje: {item.project.title}</span>}
+                    </p>
                   </div>
                 </div>
               </motion.article>

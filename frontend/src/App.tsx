@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import FoundrlyLanding from "./components/marketing/FoundrlyLanding";
 
 type HealthState = { status: "loading" | "ready" | "error"; message: string };
@@ -105,6 +105,26 @@ type ProjectCard = {
 type TeamApplication = {
   id: number;
   project: number;
+  project_details?: {
+    id: number;
+    title: string;
+    summary: string;
+    is_premium_highlighted: boolean;
+    created_at: string;
+    updated_at: string;
+    owner: {
+      id: number;
+      email: string;
+      full_name: string;
+      title: string;
+      profile_picture?: string | null;
+      is_verified_talent: boolean;
+      is_premium: boolean;
+      is_mentor: boolean;
+      is_staff: boolean;
+      is_superuser: boolean;
+    };
+  };
   applicant: {
     id: number;
     email: string;
@@ -219,6 +239,8 @@ type AdminUser = {
   is_mentor: boolean;
   is_staff: boolean;
   is_superuser: boolean;
+  is_verified_talent?: boolean;
+  is_premium?: boolean;
 };
 
 type AdminDashboardStats = {
@@ -364,6 +386,7 @@ type CommunityEventItem = {
   tag: string;
   event_date: string;
   is_online: boolean;
+  is_registered?: boolean;
 };
 
 type ShowcaseData = {
@@ -371,6 +394,17 @@ type ShowcaseData = {
   users: ShowcaseUser[];
   threads: CommunityThreadItem[];
   events: CommunityEventItem[];
+  guides: CommunityGuideItem[];
+};
+
+type CommunityGuideItem = {
+  id: number;
+  title: string;
+  read: string;
+  tone: string;
+  summary: string;
+  bullets: string[];
+  is_published?: boolean;
 };
 
 const NAV_LINKS = [
@@ -720,12 +754,21 @@ function getRouteFromHash(): RouteName {
     case "#app-mentor-panel":
       return "app-mentor-panel";
     case "#app-events":
-      return "app-events";
-    case "#app-messages":
+      return "app-networking";
+    case "#app-admin":
       return "app-admin";
     default:
       return "home";
   }
+}
+
+function formatTRY(value: number | string | null | undefined) {
+  const amount = typeof value === "string" ? Number(value) : value ?? 0;
+  return new Intl.NumberFormat("tr-TR", {
+    style: "currency",
+    currency: "TRY",
+    maximumFractionDigits: 0,
+  }).format(Number.isFinite(amount) ? amount : 0);
 }
 
 function getPublicProfileIdFromHash() {
@@ -816,22 +859,17 @@ function PremiumSimulationPage({
   const [mentorSessionFeedback, setMentorSessionFeedback] = useState("");
   const benefitCards = [
     {
-      title: "Seçilmiş Eşleşme",
-      body: "Kurucu profili, rol ihtiyacı ve proje yoğunluğunu birlikte okuyarak daha kaliteli aday listeleri üretir.",
+      title: "YZ Ekip Kurucu",
+      body: "Yapay zeka analizleri ile en uyumlu takım arkadaşlarını tespit ederek ekip kurma sürecini kolaylaştırır.",
     },
     {
-      title: "Kurucu Sinyali",
-      body: "Doğrulanmış profil, daha yüksek görünürlük ve premium rozet ile güven hissini ilk bakışta artırır.",
+      title: "Mentörlük Seansları",
+      body: "Doğrudan platform üzerinden uzman mentörlerden seans talep edebilir ve birebir görüşmeler yapabilirsiniz.",
     },
     {
-      title: "Hız Katmanı",
-      body: "Doğru insanlara daha hızlı ulaşarak proje başlangıç süresini ciddi biçimde kısaltır.",
+      title: "Yetenek Doğrulama",
+      body: "Platform onaylı rozet ile kurucu sinyalinizi güçlendirir ve adaylar arasındaki güvenilirliliğinizi artırır.",
     },
-  ];
-  const premiumStats = [
-    { label: "Daha hızlı aday bulma", value: "3x" },
-    { label: "Öne çıkan proje görünürlüğü", value: "+68%" },
-    { label: "Ücretsiz mentör görüşmesi", value: "1 x 15 dk" },
   ];
 
   return (
@@ -843,9 +881,6 @@ function PremiumSimulationPage({
               <span className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/70 px-4 py-2 text-xs font-bold uppercase tracking-[0.28em] text-primary">
                 <span className="h-2 w-2 rounded-full bg-aurum shadow-[0_0_0_4px_rgba(215,181,109,0.18)]" />
                 Premium üyelik
-              </span>
-              <span className="rounded-full bg-ink px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-white/78">
-                Üretici prestij katmanı
               </span>
             </div>
 
@@ -863,16 +898,7 @@ function PremiumSimulationPage({
               </p>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-3">
-              {premiumStats.map((stat) => (
-                <div key={stat.label} className="rounded-[1.75rem] border border-white/12 bg-[#0b1630]/72 p-5 shadow-[0_18px_55px_rgba(4,8,18,0.28)] backdrop-blur">
-                  <p className="text-3xl font-black tracking-tight text-white">{stat.value}</p>
-                  <p className="mt-2 text-sm leading-6 text-white/68">{stat.label}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-3">
               {benefitCards.map((card) => (
                 <article key={card.title} className="rounded-[1.75rem] border border-white/12 bg-[#0b1630]/72 p-5 shadow-[0_16px_45px_rgba(4,8,18,0.24)] backdrop-blur">
                   <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#9ab0ff]/82">
@@ -900,7 +926,7 @@ function PremiumSimulationPage({
                   </h2>
                 </div>
                 <div className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/70">
-                  $5 / ay
+                  ₺199 / ay
                 </div>
               </div>
 
@@ -953,7 +979,7 @@ function PremiumSimulationPage({
                     </p>
                     {subscriptionState?.subscription && (
                       <p className="mt-3 text-sm text-white/70">
-                        Aktif plan: {subscriptionState.subscription.plan === "monthly" ? "Aylık Premium" : "Yıllık Premium"} · {subscriptionState.subscription.price_label}
+                        Aktif plan: {subscriptionState.subscription.plan === "monthly" ? "Aylık Premium" : "Yıllık Premium"} · {subscriptionState.subscription.plan === "monthly" ? "₺199 / ay" : "₺1.990 / yıl"}
                       </p>
                     )}
                   </div>
@@ -989,38 +1015,7 @@ function PremiumSimulationPage({
                       Topluluğa Git
                     </a>
                   </div>
-                  <div className="rounded-[1.4rem] border border-white/12 bg-white/8 px-4 py-4">
-                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/48">Ek Mentör Seansı</p>
-                    <p className="mt-3 text-sm leading-6 text-white/70">
-                      Ücretsiz 15 dakikalık görüşme hakkını kullandıktan sonra ek seansı kart bilgilerinle güvenli şekilde açabilirsin.
-                    </p>
-                    <div className="mt-4 grid gap-3">
-                      <input value={cardHolder} onChange={(e) => setCardHolder(e.target.value)} placeholder="Kart üzerindeki isim" className="app-input" />
-                      <input value={cardNumber} onChange={(e) => setCardNumber(e.target.value)} placeholder="Kart numarası" className="app-input" />
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <input value={cardExpiry} onChange={(e) => setCardExpiry(e.target.value)} placeholder="SKT (AA/YY)" className="app-input" />
-                        <input value={cardCvc} onChange={(e) => setCardCvc(e.target.value)} placeholder="CVC" className="app-input" />
-                      </div>
-                    </div>
-                    {mentorSessionFeedback && (
-                      <div className="mt-4 rounded-2xl border border-success/20 bg-success/12 px-4 py-3 text-sm text-white">
-                        {mentorSessionFeedback}
-                      </div>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!cardHolder.trim() || !cardNumber.trim() || !cardExpiry.trim() || !cardCvc.trim()) {
-                          setMentorSessionFeedback("Ek seans için kart bilgilerini doldurup ödemeyi onaylamalısın.");
-                          return;
-                        }
-                        setMentorSessionFeedback("Ödeme alındı. 15 dakikalık ek mentör seansı hesabına tanımlandı.");
-                      }}
-                      className="mt-4 w-full rounded-2xl bg-white px-5 py-3 text-center text-sm font-bold text-[#08101f] transition hover:bg-white/90"
-                    >
-                      Ek Mentör Seansını Aç
-                    </button>
-                  </div>
+                  {/* Ek mentor seansı ödeme kısmı Mentörler panelinde seçilen mentörün altındadır */}
                 </div>
               ) : (
                 <div className="mt-7 space-y-4">
@@ -1548,13 +1543,21 @@ function DashboardPage({
   publicProjects,
   publicMentors,
   setPublicProjects,
-  setPublicMentors
+  setPublicMentors,
+  showcaseData,
+  publicLoading,
+  marketingAccessToken,
+  refreshPublicData,
 }: { 
   route: Exclude<RouteName, "home" | "login" | "register" | "mentors">,
   publicProjects: ProjectCard[],
   publicMentors: any[],
   setPublicProjects: (data: any[]) => void,
-  setPublicMentors: (data: any[]) => void
+  setPublicMentors: (data: any[]) => void,
+  showcaseData: ShowcaseData,
+  publicLoading: boolean,
+  marketingAccessToken?: string | null,
+  refreshPublicData: () => Promise<void>,
 }) {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [threads, setThreads] = useState<MessageThread[]>([]);
@@ -1585,6 +1588,36 @@ function DashboardPage({
   const [selectedAdminProject, setSelectedAdminProject] = useState<AdminProject | null>(null);
   const [adminProjectSearch, setAdminProjectSearch] = useState("");
   const [adminFeedback, setAdminFeedback] = useState("");
+  const [adminTab, setAdminTab] = useState<"users" | "projects" | "events" | "mentors" | "guides">("users");
+  const [adminEvents, setAdminEvents] = useState<any[]>([]);
+  const [adminEventForm, setAdminEventForm] = useState({
+    title: "",
+    description: "",
+    location: "",
+    event_date: "",
+    tag: "Workshop",
+    is_online: false
+  });
+  const [adminEventFeedback, setAdminEventFeedback] = useState("");
+  const [adminMentors, setAdminMentors] = useState<any[]>([]);
+  const [adminGuides, setAdminGuides] = useState<CommunityGuideItem[]>([]);
+  const [adminGuideForm, setAdminGuideForm] = useState({
+    title: "",
+    read: "5 dk okuma",
+    tone: "Yürütme",
+    summary: "",
+    bullets: "",
+    is_published: true,
+  });
+  const [adminGuideFeedback, setAdminGuideFeedback] = useState("");
+  const [manualMentorForm, setManualMentorForm] = useState({
+    full_name: "",
+    email: "",
+    password: "",
+    title: "",
+    mentor_price: 25
+  });
+  const [manualMentorFeedback, setManualMentorFeedback] = useState("");
   const [loadingLabel, setLoadingLabel] = useState("Panel yükleniyor…");
   const [billingFeedback, setBillingFeedback] = useState("");
   const [aiAnalysisState, setAiAnalysisState] = useState<"idle" | "analyzing" | "done">("idle");
@@ -1609,10 +1642,16 @@ function DashboardPage({
   const [onboardingRole, setOnboardingRole] = useState("Founder");
   const [onboardingSkills, setOnboardingSkills] = useState<string[]>(["React", "AI"]);
   const [onboardingGoal, setOnboardingGoal] = useState("Build a startup team");
+  const nonMentorAdminUsers = adminUsers.filter((user) => !user.is_mentor);
 
   const accessToken = getStoredAccessToken();
   const storedUser = localStorage.getItem("foundrly_current_user");
   const currentUser = storedUser ? (JSON.parse(storedUser) as CurrentUser) : null;
+  const myProjects = publicProjects.filter((project) => project.owner.id === currentUser?.id);
+  const myProjectsWithApplications = myProjects.map((project) => ({
+    ...project,
+    applications: receivedApplications.filter((application) => application.project === project.id),
+  }));
   const effectiveProfile = summary?.profile || currentUser;
   const profileStrength = [
     effectiveProfile?.title,
@@ -1632,11 +1671,18 @@ function DashboardPage({
   const isPremium = Boolean(summary?.profile.is_premium || currentUser?.is_premium);
   const isMentor = Boolean(summary?.profile.is_mentor || currentUser?.is_mentor);
 
-  const appNav = [
-    ...APP_NAV_BASE,
-    ...(isMentor ? [{ label: "Mentör Paneli", href: "#app-mentor-panel" }] : []),
-    ...(isAdmin ? [{ label: "Yönetim", href: "#app-admin" }] : []),
-  ];
+  let appNav: { label: string; href: string }[] = [];
+  if (isAdmin) {
+    appNav = [
+      { label: "Yönetim Paneli", href: "#app-admin" }
+    ];
+  } else if (isMentor) {
+    appNav = [
+      { label: "Mentör Paneli", href: "#app-mentor-panel" }
+    ];
+  } else {
+    appNav = APP_NAV_BASE;
+  }
   const publicProfileId = route === "app-member" ? getPublicProfileIdFromHash() : null;
 
   const loadDashboard = async () => {
@@ -1650,11 +1696,13 @@ function DashboardPage({
     ]);
 
     let premiumStatus = false;
+    let mentorStatus = false;
     if (summaryResponse.ok) {
       const summaryData = await summaryResponse.json();
       setSummary(summaryData);
       localStorage.setItem("foundrly_current_user", JSON.stringify(summaryData.profile));
       premiumStatus = summaryData.profile.is_premium;
+      mentorStatus = summaryData.profile.is_mentor;
     }
 
     if (premiumStatus) {
@@ -1670,11 +1718,13 @@ function DashboardPage({
       } catch (e) {}
     }
 
-    if (isMentor) {
+    if (mentorStatus) {
       try {
         const reqRes = await fetch("/api/mentors/my-requests/", { headers: authHeaders });
         if (reqRes.ok) setMentorRequests(await reqRes.json());
       } catch (e) {}
+    } else {
+      setMentorRequests([]);
     }
 
     if (threadsResponse.ok) {
@@ -1810,6 +1860,191 @@ function DashboardPage({
     }
   };
 
+  const loadAdminEvents = async () => {
+    if (!authHeaders || !isAdmin) return;
+    const response = await fetch("/api/admin/events/", { headers: authHeaders });
+    if (response.ok) {
+      setAdminEvents(await response.json());
+    }
+  };
+
+  const loadAdminMentors = async () => {
+    if (!authHeaders || !isAdmin) return;
+    const response = await fetch("/api/admin/mentors/", { headers: authHeaders });
+    if (response.ok) {
+      setAdminMentors(await response.json());
+    }
+  };
+
+  const loadAdminGuides = async () => {
+    if (!authHeaders || !isAdmin) return;
+    const response = await fetch("/api/admin/guides/", { headers: authHeaders });
+    if (response.ok) {
+      setAdminGuides(await response.json());
+    }
+  };
+
+  const handleCreateAdminEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!authHeaders || !isAdmin) return;
+    setAdminEventFeedback("");
+    try {
+      const response = await fetch("/api/admin/events/", {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify(adminEventForm),
+      });
+      if (response.ok) {
+        setAdminEventFeedback("Etkinlik başarıyla oluşturuldu.");
+        setAdminEventForm({
+          title: "",
+          description: "",
+          location: "",
+          event_date: "",
+          tag: "Workshop",
+          is_online: false,
+        });
+        loadAdminEvents();
+      } else {
+        const errorData = await response.json();
+        setAdminEventFeedback(`Hata: ${JSON.stringify(errorData)}`);
+      }
+    } catch (err) {
+      setAdminEventFeedback("Etkinlik oluşturulurken bir hata oluştu.");
+    }
+  };
+
+  const handleDeleteAdminEvent = async (eventId: number) => {
+    if (!authHeaders || !isAdmin) return;
+    if (!confirm("Bu etkinliği silmek istediğinize emin misiniz?")) return;
+    setAdminEventFeedback("");
+    try {
+      const response = await fetch(`/api/admin/events/${eventId}/`, {
+        method: "DELETE",
+        headers: authHeaders,
+      });
+      if (response.ok) {
+        setAdminEventFeedback("Etkinlik başarıyla silindi.");
+        loadAdminEvents();
+      } else {
+        setAdminEventFeedback("Etkinlik silinirken bir hata oluştu.");
+      }
+    } catch (err) {
+      setAdminEventFeedback("Etkinlik silinirken bir hata oluştu.");
+    }
+  };
+
+  const handleCreateAdminGuide = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!authHeaders || !isAdmin) return;
+    setAdminGuideFeedback("");
+    try {
+      const response = await fetch("/api/admin/guides/", {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({
+          ...adminGuideForm,
+          bullets: adminGuideForm.bullets
+            .split("\n")
+            .map((item) => item.trim())
+            .filter(Boolean),
+        }),
+      });
+      if (response.ok) {
+        setAdminGuideFeedback("Makale başarıyla oluşturuldu.");
+        setAdminGuideForm({
+          title: "",
+          read: "5 dk okuma",
+          tone: "Yürütme",
+          summary: "",
+          bullets: "",
+          is_published: true,
+        });
+        loadAdminGuides();
+        refreshPublicData();
+      } else {
+        setAdminGuideFeedback(await parseError(response));
+      }
+    } catch {
+      setAdminGuideFeedback("Makale oluşturulurken teknik bir sorun oluştu.");
+    }
+  };
+
+  const handleDeleteAdminGuide = async (guideId: number) => {
+    if (!authHeaders || !isAdmin) return;
+    setAdminGuideFeedback("");
+    try {
+      const response = await fetch(`/api/admin/guides/${guideId}/`, {
+        method: "DELETE",
+        headers: authHeaders,
+      });
+      if (response.ok) {
+        setAdminGuideFeedback("Makale silindi.");
+        loadAdminGuides();
+        refreshPublicData();
+      } else {
+        setAdminGuideFeedback(await parseError(response));
+      }
+    } catch {
+      setAdminGuideFeedback("Makale silinirken teknik bir sorun oluştu.");
+    }
+  };
+
+  const handleToggleGuidePublish = async (guide: CommunityGuideItem) => {
+    if (!authHeaders || !isAdmin) return;
+    setAdminGuideFeedback("");
+    try {
+      const response = await fetch(`/api/admin/guides/${guide.id}/`, {
+        method: "PATCH",
+        headers: authHeaders,
+        body: JSON.stringify({ is_published: !guide.is_published }),
+      });
+      if (response.ok) {
+        loadAdminGuides();
+        refreshPublicData();
+      } else {
+        setAdminGuideFeedback(await parseError(response));
+      }
+    } catch {
+      setAdminGuideFeedback("Makale durumu güncellenemedi.");
+    }
+  };
+
+  const handleCreateManualMentor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!authHeaders || !isAdmin) return;
+    setManualMentorFeedback("");
+    try {
+      const payload = {
+        ...manualMentorForm,
+        is_mentor: true,
+      };
+      const response = await fetch("/api/admin/users/create/", {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify(payload),
+      });
+      if (response.ok) {
+        setManualMentorFeedback("Mentör başarıyla oluşturuldu.");
+        setManualMentorForm({
+          full_name: "",
+          email: "",
+          password: "",
+          title: "",
+          mentor_price: 25,
+        });
+        await loadAdminMentors();
+        await loadAdminUsers();
+        await loadAdminDashboard();
+      } else {
+        const errData = await response.json();
+        setManualMentorFeedback(`Hata: ${Object.values(errData).flat().join(" ")}`);
+      }
+    } catch (err) {
+      setManualMentorFeedback("Manuel mentör eklenirken teknik bir sorun oluştu.");
+    }
+  };
+
   const loadThreadDetail = async (id: number) => {
     if (!authHeaders) return;
     const response = await fetch(`/api/messages/threads/${id}/`, { headers: authHeaders });
@@ -1829,6 +2064,9 @@ function DashboardPage({
       loadAdminUsers(),
       loadVerificationRequests(),
       loadAdminProjects(),
+      loadAdminEvents(),
+      loadAdminMentors(),
+      loadAdminGuides(),
     ]).finally(() => {
       setLoadingLabel("Panel hazır.");
     });
@@ -1845,6 +2083,18 @@ function DashboardPage({
       loadPublicProfile(publicProfileId);
     }
   }, [route, publicProfileId]);
+
+  useEffect(() => {
+    if (isAdmin) {
+      if (route !== "app-admin") {
+        window.location.hash = "#app-admin";
+      }
+    } else if (isMentor) {
+      if (route !== "app-mentor-panel") {
+        window.location.hash = "#app-mentor-panel";
+      }
+    }
+  }, [route, isAdmin, isMentor]);
 
   useEffect(() => {
     if (route === "app-home" && onboardingNeeded) {
@@ -1873,35 +2123,56 @@ function DashboardPage({
     }
   };
 
-  const handleMentorRequestStatus = async (requestId: number, status: string, offeredPrice?: number, meetingTime?: string) => {
+  const handleMentorRequestStatus = async (requestId: number, action: string, offeredPrice?: number, meetingTime?: string) => {
     if (!authHeaders) return;
     try {
+      setMentorFeedback("");
       const response = await fetch(`/api/mentors/requests/${requestId}/status/`, {
         method: "PATCH",
         headers: authHeaders,
         body: JSON.stringify({ 
-          status, 
+          action,
           offered_price: offeredPrice,
           meeting_time: meetingTime
         }),
       });
       if (response.ok) {
         loadDashboard();
+      } else {
+        setMentorFeedback(await parseError(response));
       }
-    } catch (e) {}
+    } catch (e) {
+      setMentorFeedback("Mentör talebi güncellenirken bağlantı hatası oluştu.");
+    }
   };
 
-  const handleConfirmMentorRequest = async (requestId: number) => {
+  const handleConfirmMentorRequest = async (requestId: number, action = "accept_offer", disputeReason?: string) => {
     if (!authHeaders) return;
     try {
+      setMentorFeedback("");
       const response = await fetch(`/api/mentors/requests/${requestId}/confirm/`, {
         method: "PATCH",
         headers: authHeaders,
+        body: JSON.stringify({
+          action,
+          dispute_reason: disputeReason,
+        }),
       });
       if (response.ok) {
+        if (action === "accept_offer") {
+          setMentorFeedback("Odeme rezerve edildi. Simdi sira mentorde: gorusme tamamlandiginda size onay ekrani acilacak.");
+        } else if (action === "confirm_completion") {
+          setMentorFeedback("Gorusme onaylandi. Odeme mentore aktarildi.");
+        } else if (action === "open_dispute") {
+          setMentorFeedback("Itiraz kaydedildi. Odeme inceleme bitene kadar bekletilecek.");
+        }
         loadDashboard();
+      } else {
+        setMentorFeedback(await parseError(response));
       }
-    } catch (e) {}
+    } catch (e) {
+      setMentorFeedback("Talep guncellenirken baglanti hatasi olustu.");
+    }
   };
 
   const handleUploadProfilePicture = async (file: File) => {
@@ -2013,6 +2284,7 @@ function DashboardPage({
     localStorage.removeItem("foundrly_access_token");
     localStorage.removeItem("foundrly_refresh_token");
     localStorage.removeItem("foundrly_current_user");
+    setSummary(null);
     window.location.hash = "#home";
   };
 
@@ -2154,6 +2426,7 @@ function DashboardPage({
     setAdminFeedback("Kullanıcı durumu güncellendi.");
     loadAdminUsers(adminSearch);
     loadAdminDashboard();
+    loadAdminMentors();
     if (selectedAdminUser?.id === userId) {
       loadAdminUserDetail(userId);
     }
@@ -2176,6 +2449,7 @@ function DashboardPage({
     setSelectedAdminUser(null);
     loadAdminUsers(adminSearch);
     loadAdminDashboard();
+    loadAdminMentors();
   };
 
   const handleVerificationReview = async (
@@ -2201,7 +2475,7 @@ function DashboardPage({
       return;
     }
 
-    setAdminFeedback("Verification isteği güncellendi.");
+    setAdminFeedback("");
     loadVerificationRequests();
     loadAdminDashboard();
     if (selectedAdminUser) {
@@ -2319,12 +2593,10 @@ function DashboardPage({
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(71,93,178,0.25),transparent_30%),radial-gradient(circle_at_80%_18%,rgba(63,177,112,0.15),transparent_25%),radial-gradient(circle_at_50%_110%,rgba(71,93,178,0.18),transparent_40%)]" />
       <header className="sticky top-0 z-50 border-b border-white/10 bg-[#050B18]/72 backdrop-blur-xl relative z-10">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
-          <a href="#app-home" className="flex flex-col leading-none">
+          <a href={isAdmin ? "#app-admin" : isMentor ? "#app-mentor-panel" : "#app-home"} className="flex items-center gap-4 leading-none">
+            <img src="/f.jpg" alt="Foundrly" className="h-16 w-16 rounded-xl object-cover shadow-sm" />
             <span className="text-2xl font-extrabold tracking-tight text-white">
               Foundrly
-            </span>
-            <span className="text-[11px] font-medium tracking-widest text-[#9ab0ff]/80">
-              FİKİRLERİ EKİPLERE DÖNÜŞTÜR
             </span>
           </a>
 
@@ -2343,7 +2615,7 @@ function DashboardPage({
                 {item.label}
               </a>
             ))}
-            {!isPremium && (
+            {!isPremium && !isAdmin && !isMentor && (
               <a
                 href="#premium"
                 className="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-white shadow-halo transition hover:bg-accent/90"
@@ -2491,8 +2763,8 @@ function DashboardPage({
                     ["Katıldığım Ekip", summary?.metrics.accepted_memberships_count ?? 0],
                   ].map(([label, value]) => (
                     <div key={String(label)} className="app-kpi-card rounded-2xl p-5">
-                      <p className="text-xs font-bold uppercase tracking-widest text-ink/60">{label}</p>
-                      <p className="mt-2 text-3xl font-extrabold">{value}</p>
+                      <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/70">{label}</p>
+                      <p className="mt-2 text-3xl font-extrabold text-white">{value}</p>
                     </div>
                   ))}
                 </div>
@@ -2635,11 +2907,79 @@ function DashboardPage({
 
               <div className="space-y-6">
                 <section className="app-panel rounded-[2rem] p-6">
+                  <p className="app-section-eyebrow text-sm font-bold uppercase tracking-[0.2em]">Projelerim</p>
+                  <div className="mt-4 space-y-4">
+                    {myProjectsWithApplications.length ? (
+                      myProjectsWithApplications.map((project) => (
+                        <article key={project.id} className="app-solid-card rounded-2xl p-5">
+                          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                            <div>
+                              <p className="font-bold text-white">{project.title}</p>
+                              <p className="mt-2 text-sm leading-6 text-white/60">{project.summary}</p>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs font-bold text-white/75">
+                                {project.applications.length} başvuru
+                              </span>
+                              <span className="rounded-full border border-[#9ab0ff]/20 bg-[#9ab0ff]/10 px-3 py-1 text-xs font-bold text-[#c7d3ff]">
+                                Proje sahibi görünümü
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="mt-5 space-y-3">
+                            {project.applications.length ? (
+                              project.applications.map((application) => (
+                                <div key={application.id} className="rounded-2xl border border-white/8 bg-black/20 p-4">
+                                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                                    <div>
+                                      <p className="text-xs font-bold uppercase tracking-widest text-[#9ab0ff]">
+                                        Bu başvuru şu projeye geldi: {project.title}
+                                      </p>
+                                      <button
+                                        type="button"
+                                        onClick={() => openPublicProfile(application.applicant.id)}
+                                        className="mt-2 font-bold text-white transition hover:text-[#9ab0ff]"
+                                      >
+                                        {application.applicant.full_name}
+                                      </button>
+                                      <p className="mt-1 text-xs uppercase tracking-widest text-white/40">{application.status}</p>
+                                    </div>
+                                    {application.status === "pending" && (
+                                      <div className="flex flex-wrap gap-2">
+                                        <button type="button" onClick={() => handleApplicationStatus(application.id, "accepted")} className="rounded-full bg-success px-4 py-2 text-xs font-semibold text-white transition hover:bg-success/90">Kabul Et</button>
+                                        <button type="button" onClick={() => handleApplicationStatus(application.id, "rejected")} className="rounded-full border border-red-400/20 bg-red-500/10 px-4 py-2 text-xs font-semibold text-red-200 transition hover:bg-red-500/16">Reddet</button>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <p className="mt-3 text-sm leading-6 text-white/68">{application.message}</p>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="rounded-2xl border border-dashed border-white/12 bg-black/20 p-4 text-sm text-white/55">
+                                Bu projeye henüz başvuru gelmedi.
+                              </div>
+                            )}
+                          </div>
+                        </article>
+                      ))
+                    ) : (
+                      <div className="rounded-2xl border border-dashed border-white/12 bg-black/20 p-4 text-sm text-white/55">
+                        Henüz bir proje oluşturmadınız.
+                      </div>
+                    )}
+                  </div>
+                </section>
+
+                <section className="app-panel rounded-[2rem] p-6">
                   <p className="app-section-eyebrow text-sm font-bold uppercase tracking-[0.2em]">Gelen Başvurular</p>
                   <div className="mt-4 space-y-3">
                     {receivedApplications.length ? (
                       receivedApplications.slice(0, 5).map((application) => (
                         <article key={application.id} className="app-solid-card rounded-2xl p-4">
+                          <p className="text-xs font-bold uppercase tracking-widest text-[#9ab0ff]">
+                            Proje: {application.project_details?.title || `#${application.project}`}
+                          </p>
                           <button type="button" onClick={() => openPublicProfile(application.applicant.id)} className="font-bold text-white transition hover:text-[#9ab0ff]">{application.applicant.full_name}</button>
                           <p className="mt-1 text-sm text-white/60">{application.message}</p>
                           <p className="mt-2 text-xs font-bold uppercase tracking-widest text-white/42">{application.status}</p>
@@ -2825,7 +3165,7 @@ function DashboardPage({
                           >
                             {isActive ? "Detayı Kapat" : "Detayı Gör"}
                           </button>
-                          {!alreadyApplied && (
+                          {!alreadyApplied && !isMentor && (
                             <button
                               type="button"
                               onClick={() => {
@@ -2932,47 +3272,49 @@ function DashboardPage({
                       </div>
                     </div>
 
-                    <div className="mt-6 space-y-3">
-                      {selectedProjectId === selectedDiscoverProject.id && (
-                        <textarea
-                          value={applicationMessage}
-                          onChange={(e) => setApplicationMessage(e.target.value)}
-                          placeholder="Projeye neden uygun olduğunu kısa ve net şekilde yaz."
-                          className="app-input min-h-28 bg-white"
-                        />
-                      )}
-                      <div className="flex flex-wrap gap-3">
-                        {selectedProjectId === selectedDiscoverProject.id ? (
-                          <>
+                    {!isMentor && (
+                      <div className="mt-6 space-y-3">
+                        {selectedProjectId === selectedDiscoverProject.id && (
+                          <textarea
+                            value={applicationMessage}
+                            onChange={(e) => setApplicationMessage(e.target.value)}
+                            placeholder="Projeye neden uygun olduğunu kısa ve net şekilde yaz."
+                            className="app-input min-h-28 bg-white"
+                          />
+                        )}
+                        <div className="flex flex-wrap gap-3">
+                          {selectedProjectId === selectedDiscoverProject.id ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleApplicationSubmit(selectedDiscoverProject.id)}
+                                className="rounded-2xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90"
+                              >
+                                Başvuruyu Gönder
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedProjectId(null);
+                                  setApplicationMessage("");
+                                }}
+                                className="rounded-2xl border border-white/12 bg-white/6 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/22 hover:bg-white/10"
+                              >
+                                Vazgeç
+                              </button>
+                            </>
+                          ) : (
                             <button
                               type="button"
-                              onClick={() => handleApplicationSubmit(selectedDiscoverProject.id)}
+                              onClick={() => setSelectedProjectId(selectedDiscoverProject.id)}
                               className="rounded-2xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90"
                             >
-                              Başvuruyu Gönder
+                              Bu Projeye Başvur
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedProjectId(null);
-                                setApplicationMessage("");
-                              }}
-                              className="rounded-2xl border border-white/12 bg-white/6 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/22 hover:bg-white/10"
-                            >
-                              Vazgeç
-                            </button>
-                          </>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => setSelectedProjectId(selectedDiscoverProject.id)}
-                            className="rounded-2xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90"
-                          >
-                            Bu Projeye Başvur
-                          </button>
-                        )}
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </>
                 ) : (
                   <div className="flex h-full min-h-[420px] items-center justify-center rounded-[1.75rem] border border-dashed border-white/12 bg-black/20 p-6 text-center text-sm text-white/55">
@@ -3508,7 +3850,7 @@ function DashboardPage({
         )}
 
         {route === "app-networking" && (
-          <EventsView events={showcaseData.events} loading={publicLoading} />
+          <EventsView events={showcaseData.events} loading={publicLoading} showRegister={true} accessToken={marketingAccessToken} />
         )}
 
         {route === "app-mentors" && (
@@ -3528,398 +3870,774 @@ function DashboardPage({
             requests={mentorRequests} 
             onStatusUpdate={handleMentorRequestStatus}
             mentor={summary?.profile || currentUser}
+            feedback={mentorFeedback}
           />
         )}
 
         {route === "app-admin" && isAdmin && (
-          <section className="app-panel rounded-[2.25rem] p-8 lg:p-10">
-            <p className="app-section-eyebrow text-sm font-bold uppercase tracking-[0.2em]">
-              Yönetim
+          <section className="app-panel rounded-[2.25rem] p-8 lg:p-10 border border-white/10 bg-white/5 backdrop-blur-md">
+            <p className="app-section-eyebrow text-sm font-bold uppercase tracking-[0.2em] text-[#9ab0ff]">
+              Yönetim Paneli
             </p>
-            <h2 className="mt-2 text-3xl font-extrabold">
-              Ürün sağlığı, moderasyon ve denetim
+            <h2 className="mt-2 text-3xl font-extrabold text-white">
+              Sistem Yönetimi, Moderasyon ve Denetim
             </h2>
-            <p className="app-section-copy mt-3 max-w-3xl text-sm">
-              Moderasyon, verified talent onaylari, premium durumu ve ekip akislari bu panelden tek yerden yonetilir. Ürün sağlığını ve topluluk güvenini burada izleyebilirsin.
+            <p className="app-section-copy mt-3 max-w-3xl text-sm text-slate-300">
+              Tüm kullanıcı, proje, mentor ve etkinlik yönetimi tek bir noktadan, güvenli bir şekilde gerçekleştirilir.
             </p>
 
+            {/* KPI Cards */}
             <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {[
                 ["Toplam Kullanıcı", adminDashboard?.totals.users_count ?? 0],
-                ["Günlük Aktif Kullanıcı", adminDashboard?.totals.daily_active_users ?? 0],
-                ["Yeni Kayıtlar", adminDashboard?.totals.new_registrations ?? 0],
                 ["Oluşturulan Projeler", adminDashboard?.totals.projects_count ?? 0],
-                ["Eşleşme Sayısı", adminDashboard?.totals.matches_count ?? 0],
-                ["Premium Kullanıcı", adminDashboard?.totals.premium_users_count ?? 0],
+                ["Premium Üyeler", adminDashboard?.totals.premium_users_count ?? 0],
               ].map(([label, value]) => (
                 <article
                   key={String(label)}
-                  className="app-kpi-card rounded-2xl p-5"
+                  className="app-kpi-card rounded-2xl p-5 bg-white/6 border border-white/10"
                 >
-                  <p className="text-xs font-bold uppercase tracking-widest text-ink/42">
+                  <p className="text-xs font-bold uppercase tracking-widest text-white/50">
                     {label}
                   </p>
-                  <p className="mt-2 text-3xl font-extrabold text-ink">{value}</p>
+                  <p className="mt-2 text-3xl font-extrabold text-white">{value}</p>
                 </article>
               ))}
             </div>
 
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl border border-primary/10 bg-primary/5 p-5">
-                <p className="text-xs font-bold uppercase tracking-widest text-primary/60">
-                  Bekleyen Doğrulanmış Yetenek
-                </p>
-                <p className="mt-2 text-2xl font-extrabold text-primary">
-                  {adminDashboard?.queues.pending_verification_requests ?? 0}
-                </p>
-              </div>
-              <div className="app-kpi-card rounded-2xl p-5">
-                <p className="text-xs font-bold uppercase tracking-widest text-ink/42">
-                  Bekleyen Başvurular
-                </p>
-                <p className="mt-2 text-2xl font-extrabold text-ink">
-                  {adminDashboard?.queues.pending_applications ?? 0}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-              <input
-                value={adminSearch}
-                onChange={(e) => setAdminSearch(e.target.value)}
-                placeholder="Ad soyad ile kullanıcı ara"
-                className="app-input"
-              />
-              <button
-                type="button"
-                onClick={() => loadAdminUsers(adminSearch)}
-                className="rounded-2xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90"
-              >
-                Ara
-              </button>
+            {/* Tabs Selector */}
+            <div className="mt-8 border-b border-white/10 flex gap-6 overflow-x-auto">
+              {[
+                { id: "users", label: "Kullanıcı Yönetimi" },
+                { id: "projects", label: "Proje Yönetimi" },
+                { id: "events", label: "Etkinlik Yönetimi" },
+                { id: "guides", label: "Makale Yönetimi" },
+                { id: "mentors", label: "Mentör Yönetimi" },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setAdminTab(tab.id as any)}
+                  className={`pb-4 text-sm font-bold border-b-2 transition whitespace-nowrap ${
+                    adminTab === tab.id
+                      ? "border-primary text-primary animate-pulse-subtle"
+                      : "border-transparent text-white/60 hover:text-white"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
 
             {adminFeedback && (
-              <div className="mt-5 rounded-2xl border border-primary/10 bg-primary/5 px-4 py-3 text-sm text-primary">
+              <div className="mt-5 rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-[#c7d3ff]">
                 {adminFeedback}
               </div>
             )}
 
-            <div className="mt-10 grid gap-8 xl:grid-cols-[0.48fr_0.52fr]">
-              <div>
-                <h3 className="text-lg font-extrabold text-ink">Kullanıcı Yönetimi</h3>
-                <div className="mt-4 space-y-4">
-                  {adminUsers.map((user) => (
-                    <article key={user.id} className="app-subpanel rounded-2xl p-5">
-                      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                        <div>
-                          <p className="text-lg font-bold text-ink">{user.full_name}</p>
-                          <p className="mt-1 text-sm text-ink/58">{user.email}</p>
-                          <p className="mt-1 text-sm text-ink/58">{user.title}</p>
-                          <p className="mt-2 text-xs font-bold uppercase tracking-widest text-primary/55">
-                            {user.is_superuser
-                              ? "Superuser"
-                              : user.is_staff
-                                ? "Admin"
-                                : user.is_mentor
-                                  ? "Mentör"
-                                  : "Normal Kullanıcı"}
-                          </p>
-                        </div>
-                        <div className="flex flex-wrap gap-3">
-                          <button
-                            type="button"
-                            onClick={() => loadAdminUserDetail(user.id)}
-                            className="rounded-full border border-ink/10 bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:border-primary/25 hover:text-primary"
-                          >
-                            Profili İncele
-                          </button>
-                          {!user.is_staff && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleAdminRoleUpdate(user.id, {
-                                  is_staff: true,
-                                  is_superuser: false,
-                                })
-                              }
-                              className="rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/15"
-                            >
-                              Admin Yap
-                            </button>
-                          )}
-                          {user.is_staff && !user.is_superuser && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleAdminRoleUpdate(user.id, {
-                                  is_staff: false,
-                                  is_superuser: false,
-                                })
-                              }
-                              className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-500 transition hover:bg-red-100"
-                            >
-                              Adminliği Kaldır
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-8">
-                <div className="app-subpanel rounded-2xl p-5">
-                  <h3 className="text-lg font-extrabold text-ink">Kullanıcı Detayı</h3>
-                  {selectedAdminUser ? (
-                    <div className="mt-4 space-y-5">
-                      <div>
-                        <p className="text-xl font-bold text-ink">{selectedAdminUser.full_name}</p>
-                        <p className="mt-1 text-sm text-ink/58">{selectedAdminUser.email}</p>
-                        <p className="mt-1 text-sm text-ink/58">{selectedAdminUser.title}</p>
-                      </div>
-
-                      <div className="grid gap-3 sm:grid-cols-3">
-                        <div className="rounded-2xl bg-white p-4">
-                          <p className="text-xs font-bold uppercase tracking-widest text-ink/42">Durum</p>
-                          <p className="mt-2 font-bold text-ink">
-                            {selectedAdminUser.is_active ? "Aktif" : "Askıda"}
-                          </p>
-                        </div>
-                        <div className="rounded-2xl bg-white p-4">
-                          <p className="text-xs font-bold uppercase tracking-widest text-ink/42">Doğrulama</p>
-                          <p className="mt-2 font-bold text-ink">
-                            {selectedAdminUser.is_verified_talent ? "Onaylı" : "Standart"}
-                          </p>
-                        </div>
-                        <div className="rounded-2xl bg-white p-4">
-                          <p className="text-xs font-bold uppercase tracking-widest text-ink/42">Abonelik</p>
-                          <p className="mt-2 font-bold text-ink">
-                            {selectedAdminUser.is_premium ? "Premium" : "Standart"}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="rounded-2xl bg-white p-4">
-                          <p className="text-xs font-bold uppercase tracking-widest text-ink/42">Projeler</p>
-                          <p className="mt-2 text-2xl font-extrabold text-ink">
-                            {selectedAdminUser.metrics.owned_projects_count}
-                          </p>
-                        </div>
-                        <div className="rounded-2xl bg-white p-4">
-                          <p className="text-xs font-bold uppercase tracking-widest text-ink/42">Başvurular</p>
-                          <p className="mt-2 text-2xl font-extrabold text-ink">
-                            {selectedAdminUser.metrics.applications_count}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap gap-3">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleUserModeration(selectedAdminUser.id, {
-                              is_active: !selectedAdminUser.is_active,
-                            })
-                          }
-                          className="rounded-full border border-ink/10 bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:border-primary/25 hover:text-primary"
-                        >
-                          {selectedAdminUser.is_active ? "Askıya Al" : "Tekrar Aktif Et"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleUserModeration(selectedAdminUser.id, {
-                              is_verified_talent: !selectedAdminUser.is_verified_talent,
-                            })
-                          }
-                          className="rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/15"
-                        >
-                          {selectedAdminUser.is_verified_talent
-                            ? "Doğrulanmış Rozeti Kaldır"
-                            : "Doğrulanmış Rozeti Ver"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleUserModeration(selectedAdminUser.id, {
-                              is_premium: !selectedAdminUser.is_premium,
-                            })
-                          }
-                          className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-600 transition hover:bg-amber-100"
-                        >
-                          {selectedAdminUser.is_premium
-                            ? "Premium Üyeliği İptal Et"
-                            : "Premium Yap"}
-                        </button>
-                        {!selectedAdminUser.is_superuser && (
-                          <button
-                            type="button"
-                            onClick={() => handleUserDelete(selectedAdminUser.id)}
-                            className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-500 transition hover:bg-red-100"
-                          >
-                            Kullanıcıyı Sil
-                          </button>
-                        )}
-                      </div>
-
-                      <div className="mt-8 border-t border-ink/5 pt-6">
-                        <h4 className="text-sm font-bold uppercase tracking-widest text-secondary mb-4">Mentörlük ve Finans</h4>
-                        <div className="flex flex-wrap gap-4 items-end">
-                          <label className="flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              checked={selectedAdminUser.is_mentor}
-                              onChange={(e) =>
-                                handleUserModeration(selectedAdminUser.id, {
-                                  is_mentor: e.target.checked,
-                                })
-                              }
-                            />
-                            <span className="text-sm font-bold text-ink">Resmi Mentör</span>
-                          </label>
-                          
-                          {selectedAdminUser.is_mentor && (
-                            <div className="flex-1 min-w-[200px]">
-                              <label className="block text-[10px] font-bold text-ink/40 uppercase mb-1">Görüşme Ücreti ($)</label>
-                              <div className="flex gap-2">
-                                <input 
-                                  type="number" 
-                                  defaultValue={selectedAdminUser.mentor_price} 
-                                  onBlur={(e) => handleUserModeration(selectedAdminUser.id, { mentor_price: Number(e.target.value) })}
-                                  className="w-full rounded-xl border border-ink/10 bg-white px-4 py-2 text-sm"
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="mt-4 text-sm text-ink/58">
-                      Soldaki listeden bir kullanıcı seçtiğinde detay, aktivite ve moderasyon aksiyonları burada görünür.
-                    </p>
-                  )}
-                </div>
-
-                <div className="app-subpanel rounded-2xl p-5">
-                  <h3 className="text-lg font-extrabold text-ink">Doğrulanmış Yetenek Onayları</h3>
-                  <p className="mt-2 text-sm leading-6 text-ink/58">
-                    Kullanıcıların gönderdiği doğrulanmış yetenek başvuruları bu yönetim havuzuna düşer. Yönetim ekibi burada inceleyip onay ya da ret kararı verir.
-                  </p>
-                  <div className="mt-4 space-y-3">
-                    {verificationRequests.length ? (
-                      verificationRequests.map((item) => (
-                        <article key={item.id} className="rounded-2xl bg-white p-4">
-                          <p className="font-bold text-ink">{item.user.full_name}</p>
-                          <p className="mt-1 text-sm text-ink/58">{item.requested_title}</p>
-                          <p className="mt-2 text-sm text-ink/58">{item.note || "Not eklenmemiş."}</p>
-                          <div className="mt-4 flex flex-wrap gap-3">
-                            <button
-                              type="button"
-                              onClick={() => handleVerificationReview(item.id, "approved")}
-                              className="rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/15"
-                            >
-                              Onayla
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleVerificationReview(item.id, "rejected")}
-                              className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-500 transition hover:bg-red-100"
-                            >
-                              Reddet
-                            </button>
-                          </div>
-                        </article>
-                      ))
-                    ) : (
-                      <div className="rounded-2xl bg-white p-4 text-sm text-ink/58">
-                        İncelenmeyi bekleyen verification isteği yok.
-                      </div>
-                    )}
+            {/* Tab: Users */}
+            {adminTab === "users" && (
+              <div className="mt-8 grid gap-8 xl:grid-cols-[0.48fr_0.52fr]">
+                <div>
+                  <div className="flex gap-4 mb-6">
+                    <input
+                      value={adminSearch}
+                      onChange={(e) => setAdminSearch(e.target.value)}
+                      placeholder="Ad soyad veya e-posta ile kullanıcı ara"
+                      className="app-input w-full bg-black/20 border border-white/10 text-white rounded-xl placeholder-white/30"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => loadAdminUsers(adminSearch)}
+                      className="rounded-2xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90 border-none outline-none"
+                    >
+                      Ara
+                    </button>
                   </div>
-                </div>
-
-                <div className="app-subpanel rounded-2xl p-5">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <h3 className="text-lg font-extrabold text-ink">Proje & Ekip Yönetimi</h3>
-                    <div className="flex w-full gap-3 sm:w-auto">
-                      <input
-                        value={adminProjectSearch}
-                        onChange={(e) => setAdminProjectSearch(e.target.value)}
-                        placeholder="Proje veya kurucu ara"
-                        className="app-input bg-white"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => loadAdminProjects(adminProjectSearch)}
-                        className="rounded-2xl bg-primary px-5 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90"
-                      >
-                        Ara
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 space-y-3">
-                    {adminProjects.map((project) => (
-                      <article key={project.id} className="rounded-2xl bg-white p-4">
-                        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="space-y-4">
+                    {nonMentorAdminUsers.map((user) => (
+                      <article key={user.id} className={`app-subpanel rounded-2xl p-5 border transition ${selectedAdminUser?.id === user.id ? 'border-primary bg-white/10' : 'border-white/10 bg-white/6 hover:bg-white/8'}`}>
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                           <div>
-                            <p className="font-bold text-ink">{project.title}</p>
-                            <p className="mt-1 text-sm text-ink/58">
-                              {project.owner.full_name} · {project.summary}
-                            </p>
-                            <p className="mt-2 text-xs font-bold uppercase tracking-widest text-ink/42">
-                              Başvuru: {project.applications_count ?? 0} · Kabul: {project.accepted_applications_count ?? 0}
-                            </p>
+                            <p className="text-lg font-bold text-white">{user.full_name}</p>
+                            <p className="mt-1 text-sm text-slate-300">{user.email}</p>
+                            <p className="mt-1 text-sm text-slate-300">{user.title}</p>
+                            <div className="mt-2 flex gap-2 flex-wrap">
+                              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-slate-300">
+                                {user.is_superuser
+                                  ? "Superuser"
+                                  : user.is_staff
+                                    ? "Admin"
+                                    : user.is_mentor
+                                      ? "Mentör"
+                                      : "Kullanıcı"}
+                              </span>
+                              {user.is_verified_talent && (
+                                <span className="rounded-full bg-primary/20 px-3 py-1 text-xs font-bold text-primary">
+                                  Onaylı
+                                </span>
+                              )}
+                              {user.is_premium && (
+                                <span className="rounded-full bg-amber-500/20 px-3 py-1 text-xs font-bold text-amber-500">
+                                  Premium
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex flex-wrap gap-3">
+                          <div>
                             <button
                               type="button"
-                              onClick={() => loadAdminProjectDetail(project.id)}
-                              className="rounded-full border border-ink/10 bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:border-primary/25 hover:text-primary"
+                              onClick={() => loadAdminUserDetail(user.id)}
+                              className="rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
                             >
-                              Detayı Aç
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleProjectDelete(project.id)}
-                              className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-500 transition hover:bg-red-100"
-                            >
-                              Kaldır
+                              İncele & Düzenle
                             </button>
                           </div>
                         </div>
                       </article>
                     ))}
+                    {!nonMentorAdminUsers.length && (
+                      <div className="text-center p-8 text-slate-400 border border-dashed border-white/10 rounded-2xl">
+                        Kullanıcı yönetiminde listelenecek standart kullanıcı bulunamadı.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-8">
+                  {/* User Details */}
+                  <div className="app-subpanel rounded-2xl p-5 border border-white/10 bg-white/6">
+                    <h3 className="text-lg font-extrabold text-white">Kullanıcı Moderasyonu</h3>
+                    {selectedAdminUser ? (
+                      <div className="mt-4 space-y-5">
+                        <div>
+                          <p className="text-xl font-bold text-white">{selectedAdminUser.full_name}</p>
+                          <p className="mt-1 text-sm text-slate-300">{selectedAdminUser.email}</p>
+                          <p className="mt-1 text-sm text-slate-300">{selectedAdminUser.title || "Unvan belirtilmemiş"}</p>
+                        </div>
+
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div className="rounded-2xl bg-white/6 border border-white/10 p-4">
+                            <p className="text-xs font-bold uppercase tracking-widest text-white/50">Hesap Durumu</p>
+                            <p className="mt-2 font-bold text-white">
+                              {selectedAdminUser.is_active ? "Aktif" : "Askıya Alınmış"}
+                            </p>
+                          </div>
+                          <div className="rounded-2xl bg-white/6 border border-white/10 p-4">
+                            <p className="text-xs font-bold uppercase tracking-widest text-white/50">Yetenek Doğrulama</p>
+                            <p className="mt-2 font-bold text-white">
+                              {selectedAdminUser.is_verified_talent ? "Onaylı Yetenek" : "Standart Hesap"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-3">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleUserModeration(selectedAdminUser.id, {
+                                  is_active: !selectedAdminUser.is_active,
+                              })
+                            }
+                            className="rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
+                          >
+                            {selectedAdminUser.is_active ? "Askıya Al" : "Aktif Et"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleUserModeration(selectedAdminUser.id, {
+                                is_verified_talent: !selectedAdminUser.is_verified_talent,
+                              })
+                            }
+                            className="rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/15"
+                          >
+                            {selectedAdminUser.is_verified_talent
+                              ? "Doğrulanmış Rozeti Kaldır"
+                              : "Doğrulanmış Rozeti Ver"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleUserModeration(selectedAdminUser.id, {
+                                is_premium: !selectedAdminUser.is_premium,
+                              })
+                            }
+                            className="rounded-full border border-amber-500/20 bg-amber-500/10 px-4 py-2 text-sm font-semibold text-amber-500 transition hover:bg-amber-500/15"
+                          >
+                            {selectedAdminUser.is_premium ? "Premium İptal Et" : "Premium Yap"}
+                          </button>
+                          {!selectedAdminUser.is_superuser && (
+                            <button
+                              type="button"
+                              onClick={() => handleUserDelete(selectedAdminUser.id)}
+                              className="rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-500 transition hover:bg-red-500/15"
+                            >
+                              Kullanıcıyı Sil
+                            </button>
+                          )}
+                        </div>
+
+
+                      </div>
+                    ) : (
+                      <p className="mt-4 text-sm text-slate-400">
+                        Detaylı moderasyon aksiyonları için listeden bir kullanıcı seçin.
+                      </p>
+                    )}
                   </div>
 
-                  {selectedAdminProject && (
-                    <div className="mt-5 rounded-2xl bg-white p-5">
-                      <p className="text-lg font-bold text-ink">{selectedAdminProject.title}</p>
-                      <p className="mt-2 text-sm text-ink/62">
-                        {selectedAdminProject.problem_statement || selectedAdminProject.summary}
-                      </p>
-                      <p className="mt-3 text-xs font-bold uppercase tracking-widest text-ink/42">
-                        Tech Stack: {(selectedAdminProject.tech_stack || []).join(", ") || "-"}
-                      </p>
-                      <div className="mt-4 space-y-3">
-                        {(selectedAdminProject.applications || []).map((application) => (
-                          <div key={application.id} className="rounded-2xl border border-ink/8 bg-[#F7F8FC] p-4">
-                            <p className="font-semibold text-ink">
-                              {application.applicant.full_name} · {application.status}
-                            </p>
-                            <p className="mt-1 text-sm text-ink/58">{application.message}</p>
-                          </div>
-                        ))}
-                      </div>
+                  {/* Verification requests approval */}
+                  <div className="app-subpanel rounded-2xl p-5 border border-white/10 bg-white/6">
+                    <h3 className="text-lg font-extrabold text-white">Yetenek Doğrulama Talepleri</h3>
+                    <div className="mt-4 space-y-3">
+                      {verificationRequests.length ? (
+                        verificationRequests.map((item) => (
+                          <article key={item.id} className="rounded-2xl bg-white/6 p-4 shadow-sm border border-white/10">
+                            <p className="font-bold text-white">{item.user.full_name}</p>
+                            <p className="mt-1 text-sm text-slate-300">Unvan Talebi: {item.requested_title}</p>
+                            <p className="mt-2 text-sm text-slate-300 bg-black/20 p-3 rounded-xl italic">"{item.note || "Açıklama belirtilmemiş."}"</p>
+                            {item.portfolio_url && (
+                              <p className="mt-2 text-sm text-primary font-semibold">
+                                Portfolyo: <a href={item.portfolio_url} target="_blank" rel="noopener noreferrer" className="hover:underline">{item.portfolio_url}</a>
+                              </p>
+                            )}
+                            <div className="mt-4 flex flex-wrap gap-3">
+                              <button
+                                type="button"
+                                onClick={() => handleVerificationReview(item.id, "approved")}
+                                className="rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/15"
+                              >
+                                Onayla
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleVerificationReview(item.id, "rejected")}
+                                className="rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-500 transition hover:bg-red-500/15"
+                              >
+                                Reddet
+                              </button>
+                            </div>
+                          </article>
+                        ))
+                      ) : (
+                        <div className="rounded-2xl bg-white/4 p-4 text-sm text-slate-400 text-center border border-dashed border-white/10">
+                          Bekleyen yetenek doğrulama talebi bulunmamaktadır.
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+
+            {/* Tab: Projects */}
+            {adminTab === "projects" && (
+              <div className="mt-8 grid gap-8 xl:grid-cols-[0.55fr_0.45fr]">
+                <div>
+                  <div className="flex gap-4 mb-6">
+                    <input
+                      value={adminProjectSearch}
+                      onChange={(e) => setAdminProjectSearch(e.target.value)}
+                      placeholder="Proje adı veya kurucu adı ile ara"
+                      className="app-input w-full bg-black/20 border border-white/10 text-white rounded-xl placeholder-white/30"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => loadAdminProjects(adminProjectSearch)}
+                      className="rounded-2xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90 border-none outline-none"
+                    >
+                      Ara
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    {adminProjects.length ? (
+                      adminProjects.map((project) => (
+                        <article key={project.id} className={`app-subpanel rounded-2xl p-5 border transition ${selectedAdminProject?.id === project.id ? 'border-primary bg-white/10' : 'border-white/10 bg-white/6 hover:bg-white/8'}`}>
+                          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                            <div>
+                              <p className="text-lg font-bold text-white">{project.title}</p>
+                              <p className="mt-1 text-sm text-slate-300">Kurucu: {project.owner.full_name}</p>
+                              <p className="mt-1 text-sm text-slate-300">{project.summary}</p>
+                              <p className="mt-2 text-xs font-bold uppercase tracking-widest text-white/50">
+                                Başvuru: {project.applications_count} · Ekip: {project.accepted_applications_count}
+                              </p>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => loadAdminProjectDetail(project.id)}
+                                className="rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
+                              >
+                                Detaylar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleProjectDelete(project.id)}
+                                className="rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-500 transition hover:bg-red-500/15"
+                              >
+                                Sil
+                              </button>
+                            </div>
+                          </div>
+                        </article>
+                      ))
+                    ) : (
+                      <div className="text-center p-8 text-slate-400">Kayıtlı proje bulunamadı.</div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="app-subpanel rounded-2xl p-5 border border-white/10 bg-white/6">
+                    <h3 className="text-lg font-extrabold text-white">Proje Detayları</h3>
+                    {selectedAdminProject ? (
+                      <div className="mt-4 space-y-4">
+                        <div>
+                          <h4 className="text-xl font-bold text-white">{selectedAdminProject.title}</h4>
+                          <p className="mt-2 text-sm text-slate-300 leading-relaxed">
+                            {selectedAdminProject.problem_statement || "Açıklama belirtilmemiş."}
+                          </p>
+                        </div>
+                        <div className="border-t border-white/10 pt-4">
+                          <p className="text-xs font-bold uppercase tracking-widest text-white/55 mb-1">Kullanılan Teknolojiler</p>
+                          <p className="text-sm font-semibold text-white">
+                            {(selectedAdminProject.tech_stack || []).join(", ") || "-"}
+                          </p>
+                        </div>
+                        <div className="border-t border-white/10 pt-4">
+                          <p className="text-xs font-bold uppercase tracking-widest text-white/55 mb-3">Ekip Başvuruları ({selectedAdminProject.applications?.length ?? 0})</p>
+                          <div className="space-y-3">
+                            {(selectedAdminProject.applications || []).map((application) => (
+                              <div key={application.id} className="rounded-2xl border border-white/10 bg-black/20 p-4 text-xs">
+                                <div className="flex justify-between items-center mb-1">
+                                  <span className="font-bold text-white">{application.applicant.full_name}</span>
+                                  <span className={`px-2 py-0.5 rounded-full font-bold uppercase tracking-widest ${
+                                    application.status === 'approved' ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'
+                                  }`}>{application.status}</span>
+                                </div>
+                                <p className="text-slate-300 mt-1">"{application.message}"</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="mt-4 text-sm text-slate-400">
+                        Detayları ve başvuruları görüntülemek için soldan bir proje seçin.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Tab: Events */}
+            {adminTab === "events" && (
+              <div className="mt-8 grid gap-8 xl:grid-cols-[0.55fr_0.45fr]">
+                {/* Events list */}
+                <div>
+                  <h3 className="text-lg font-extrabold text-white mb-4">Sistemdeki Etkinlikler</h3>
+                  {adminEventFeedback && (
+                    <div className="mb-4 rounded-xl border border-primary/20 bg-primary/10 px-4 py-2.5 text-xs text-[#c7d3ff]">
+                      {adminEventFeedback}
+                    </div>
+                  )}
+                  <div className="space-y-4">
+                    {adminEvents.length ? (
+                      adminEvents.map((event) => (
+                        <article key={event.id} className="app-subpanel rounded-2xl p-5 border border-white/10 bg-white/6 hover:bg-white/8 transition">
+                          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                            <div>
+                              <div className="flex gap-2 items-center">
+                                <span className="rounded-full bg-primary/20 px-2.5 py-0.5 text-xs font-bold text-primary">
+                                  {event.tag}
+                                </span>
+                                {event.is_online && (
+                                  <span className="rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs font-bold text-green-400">
+                                    Online
+                                  </span>
+                                )}
+                              </div>
+                              <p className="mt-2 text-lg font-bold text-white">{event.title}</p>
+                              <p className="mt-1 text-sm text-slate-300">{event.description}</p>
+                              <p className="mt-2 text-xs font-semibold text-slate-400">
+                                Tarih: {new Date(event.event_date).toLocaleString('tr-TR')} · Konum: {event.location}
+                              </p>
+                            </div>
+                            <div>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteAdminEvent(event.id)}
+                                className="rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-500 transition hover:bg-red-500/15"
+                              >
+                                Etkinliği Sil
+                              </button>
+                            </div>
+                          </div>
+                        </article>
+                      ))
+                    ) : (
+                      <div className="text-center p-8 text-slate-400 border border-dashed border-white/10 rounded-2xl">
+                        Sistemde kayıtlı etkinlik bulunamadı. Sağdaki formdan ilk etkinliği ekleyin!
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Create Event Form */}
+                <div>
+                  <div className="app-subpanel rounded-2xl p-5 border border-white/10 bg-white/6">
+                    <h3 className="text-lg font-extrabold text-white">Yeni Etkinlik Ekle</h3>
+                    <form onSubmit={handleCreateAdminEvent} className="mt-4 space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold text-white/60 uppercase mb-1">Etkinlik Başlığı</label>
+                        <input
+                          required
+                          value={adminEventForm.title}
+                          onChange={(e) => setAdminEventForm({ ...adminEventForm, title: e.target.value })}
+                          placeholder="Örn: Founders Meetup #1"
+                          className="app-input bg-black/20 w-full border border-white/10 text-white rounded-xl placeholder-white/30"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-white/60 uppercase mb-1">Açıklama</label>
+                        <textarea
+                          required
+                          rows={3}
+                          value={adminEventForm.description}
+                          onChange={(e) => setAdminEventForm({ ...adminEventForm, description: e.target.value })}
+                          placeholder="Etkinlik detayları ve gündemi..."
+                          className="app-input bg-black/20 w-full border border-white/10 text-white rounded-xl placeholder-white/30"
+                        />
+                      </div>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <label className="block text-xs font-bold text-white/60 uppercase mb-1">Kategori / Tag</label>
+                          <select
+                            value={adminEventForm.tag}
+                            onChange={(e) => setAdminEventForm({ ...adminEventForm, tag: e.target.value })}
+                            className="app-input bg-black/20 w-full text-white border border-white/10 rounded-xl"
+                          >
+                            <option value="Workshop" className="bg-slate-900">Workshop</option>
+                            <option value="Meetup" className="bg-slate-900">Meetup</option>
+                            <option value="Panel" className="bg-slate-900">Panel</option>
+                            <option value="Networking" className="bg-slate-900">Networking</option>
+                            <option value="Hackathon" className="bg-slate-900">Hackathon</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-white/60 uppercase mb-1">Tarih</label>
+                          <input
+                            required
+                            type="datetime-local"
+                            value={adminEventForm.event_date}
+                            onChange={(e) => setAdminEventForm({ ...adminEventForm, event_date: e.target.value })}
+                            className="app-input bg-black/20 w-full text-sm text-white border border-white/10 rounded-xl"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <label className="block text-xs font-bold text-white/60 uppercase mb-1">Konum / Link</label>
+                          <input
+                            required
+                            value={adminEventForm.location}
+                            onChange={(e) => setAdminEventForm({ ...adminEventForm, location: e.target.value })}
+                            placeholder="Zoom Link veya Fiziksel Adres"
+                            className="app-input bg-black/20 w-full border border-white/10 text-white rounded-xl placeholder-white/30"
+                          />
+                        </div>
+                        <div className="flex items-center h-full pt-6">
+                          <label className="flex items-center gap-2 cursor-pointer text-white">
+                            <input
+                              type="checkbox"
+                              checked={adminEventForm.is_online}
+                              onChange={(e) => setAdminEventForm({ ...adminEventForm, is_online: e.target.checked })}
+                              className="w-4 h-4 text-primary rounded border-white/20 focus:ring-primary bg-black/20"
+                            />
+                            <span className="text-sm font-semibold text-white">Online Etkinlik</span>
+                          </label>
+                        </div>
+                      </div>
+                      <button
+                        type="submit"
+                        className="w-full rounded-2xl bg-primary py-3 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90 border-none outline-none"
+                      >
+                        Etkinlik Oluştur
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {adminTab === "guides" && (
+              <div className="mt-8 grid gap-8 xl:grid-cols-[0.55fr_0.45fr]">
+                <div>
+                  <h3 className="text-lg font-extrabold text-white mb-4">Girişim Merkezi Makaleleri</h3>
+                  {adminGuideFeedback && (
+                    <div className="mb-4 rounded-xl border border-primary/20 bg-primary/10 px-4 py-2.5 text-xs text-[#c7d3ff]">
+                      {adminGuideFeedback}
+                    </div>
+                  )}
+                  <div className="space-y-4">
+                    {adminGuides.length ? (
+                      adminGuides.map((guide) => (
+                        <article key={guide.id} className="app-subpanel rounded-2xl p-5 border border-white/10 bg-white/6 hover:bg-white/8 transition">
+                          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                            <div>
+                              <div className="flex flex-wrap gap-2 items-center">
+                                <span className="rounded-full bg-primary/20 px-2.5 py-0.5 text-xs font-bold text-primary">{guide.tone}</span>
+                                <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-bold text-white/75">{guide.read}</span>
+                                <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${guide.is_published ? "bg-green-500/20 text-green-400" : "bg-amber-500/20 text-amber-300"}`}>
+                                  {guide.is_published ? "Yayında" : "Taslak"}
+                                </span>
+                              </div>
+                              <p className="mt-3 text-lg font-bold text-white">{guide.title}</p>
+                              <p className="mt-2 text-sm text-slate-300">{guide.summary}</p>
+                              <p className="mt-2 text-xs text-white/45">{guide.bullets.length} madde</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleToggleGuidePublish(guide)}
+                                className="rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
+                              >
+                                {guide.is_published ? "Taslağa Al" : "Yayınla"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteAdminGuide(guide.id)}
+                                className="rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-500 transition hover:bg-red-500/15"
+                              >
+                                Sil
+                              </button>
+                            </div>
+                          </div>
+                        </article>
+                      ))
+                    ) : (
+                      <div className="text-center p-8 text-slate-400 border border-dashed border-white/10 rounded-2xl">
+                        Henüz makale yok. Sağdaki formdan ilk makaleyi ekleyin.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="app-subpanel rounded-2xl p-5 border border-white/10 bg-white/6">
+                    <h3 className="text-lg font-extrabold text-white">Yeni Makale Ekle</h3>
+                    <form onSubmit={handleCreateAdminGuide} className="mt-4 space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold text-white/60 uppercase mb-1">Başlık</label>
+                        <input
+                          required
+                          value={adminGuideForm.title}
+                          onChange={(e) => setAdminGuideForm({ ...adminGuideForm, title: e.target.value })}
+                          className="app-input bg-black/20 w-full border border-white/10 text-white rounded-xl"
+                        />
+                      </div>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <label className="block text-xs font-bold text-white/60 uppercase mb-1">Okuma Süresi</label>
+                          <input
+                            required
+                            value={adminGuideForm.read}
+                            onChange={(e) => setAdminGuideForm({ ...adminGuideForm, read: e.target.value })}
+                            className="app-input bg-black/20 w-full border border-white/10 text-white rounded-xl"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-white/60 uppercase mb-1">Kategori</label>
+                          <input
+                            required
+                            value={adminGuideForm.tone}
+                            onChange={(e) => setAdminGuideForm({ ...adminGuideForm, tone: e.target.value })}
+                            className="app-input bg-black/20 w-full border border-white/10 text-white rounded-xl"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-white/60 uppercase mb-1">Özet</label>
+                        <textarea
+                          required
+                          rows={3}
+                          value={adminGuideForm.summary}
+                          onChange={(e) => setAdminGuideForm({ ...adminGuideForm, summary: e.target.value })}
+                          className="app-input bg-black/20 w-full border border-white/10 text-white rounded-xl"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-white/60 uppercase mb-1">Madde İçeriği</label>
+                        <textarea
+                          required
+                          rows={8}
+                          value={adminGuideForm.bullets}
+                          onChange={(e) => setAdminGuideForm({ ...adminGuideForm, bullets: e.target.value })}
+                          placeholder="Her satıra bir madde yazın"
+                          className="app-input bg-black/20 w-full border border-white/10 text-white rounded-xl"
+                        />
+                      </div>
+                      <label className="flex items-center gap-2 cursor-pointer text-white">
+                        <input
+                          type="checkbox"
+                          checked={adminGuideForm.is_published}
+                          onChange={(e) => setAdminGuideForm({ ...adminGuideForm, is_published: e.target.checked })}
+                          className="w-4 h-4 text-primary rounded border-white/20 focus:ring-primary bg-black/20"
+                        />
+                        <span className="text-sm font-semibold text-white">Yayında Başlat</span>
+                      </label>
+                      <button type="submit" className="w-full rounded-2xl bg-primary py-3 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90">
+                        Makaleyi Kaydet
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Tab: Mentors */}
+            {adminTab === "mentors" && (
+              <div className="mt-8 grid gap-8 xl:grid-cols-[0.55fr_0.45fr]">
+                {/* Active Mentors list */}
+                <div>
+                  <h3 className="text-lg font-extrabold text-white mb-4">Sistemdeki Aktif Mentörler</h3>
+                  <div className="space-y-4">
+                    {adminMentors.length ? (
+                      adminMentors.map((mentor) => (
+                        <article key={mentor.id} className="app-subpanel rounded-2xl p-5 border border-white/10 bg-white/6 hover:bg-white/8 transition">
+                          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                            <div>
+                              <div className="flex gap-2 items-center">
+                                <p className="text-lg font-bold text-white">{mentor.full_name}</p>
+                                <span className="rounded-full bg-primary/20 px-2.5 py-0.5 text-xs font-bold text-primary">
+                                  {formatTRY(mentor.mentor_price)}/Saat
+                                </span>
+                              </div>
+                              <p className="mt-1 text-sm text-slate-300">{mentor.email}</p>
+                              <p className="mt-1 text-sm text-slate-300">{mentor.title || "Unvan belirtilmemiş"}</p>
+                              <div className="mt-2 flex gap-2 flex-wrap">
+                                {mentor.is_verified_talent && (
+                                  <span className="rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs font-bold text-green-400">
+                                    Doğrulanmış
+                                  </span>
+                                )}
+                                {mentor.is_premium && (
+                                  <span className="rounded-full bg-amber-500/20 px-2.5 py-0.5 text-xs font-bold text-amber-500">
+                                    Premium
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex flex-col sm:flex-row gap-2 items-end">
+                              <div className="w-24">
+                                <label className="block text-[8px] font-bold text-white/55 uppercase mb-0.5">Ücret (TL)</label>
+                                <input
+                                  type="number"
+                                  value={mentor.mentor_price}
+                                  onChange={(e) => handleUserModeration(mentor.id, { is_mentor: true, mentor_price: Number(e.target.value) })}
+                                  className="w-full rounded-xl border border-white/10 bg-black/20 px-2 py-1 text-xs text-white outline-none focus:border-primary"
+                                />
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleUserModeration(mentor.id, { is_mentor: false })}
+                                className="rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-500 transition hover:bg-red-500/15"
+                              >
+                                Kaldır
+                              </button>
+                            </div>
+                          </div>
+                        </article>
+                      ))
+                    ) : (
+                      <div className="text-center p-8 text-slate-400 border border-dashed border-white/10 rounded-2xl">
+                        Sistemde kayıtlı mentör bulunamadı. Sağdaki formdan manuel mentör ekleyebilirsiniz.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Manual Mentor Add Form */}
+                <div>
+                  <div className="app-subpanel rounded-2xl p-5 border border-white/10 bg-white/6 shadow-halo">
+                    <h3 className="text-lg font-extrabold text-white">Manuel Mentör Ekle</h3>
+                    <p className="mt-2 text-sm text-slate-300">
+                      Sisteme sıfırdan yeni bir resmi mentör profili ekleyebilirsiniz.
+                    </p>
+                    {manualMentorFeedback && (
+                      <div className="mt-4 rounded-xl border border-primary/20 bg-primary/10 px-4 py-2 text-xs text-[#c7d3ff]">
+                        {manualMentorFeedback}
+                      </div>
+                    )}
+                    <form onSubmit={handleCreateManualMentor} className="mt-4 space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold text-white/60 uppercase mb-1">Ad Soyad</label>
+                        <input
+                          required
+                          type="text"
+                          value={manualMentorForm.full_name}
+                          onChange={(e) => setManualMentorForm({ ...manualMentorForm, full_name: e.target.value })}
+                          placeholder="Örn: Kerem Tunç"
+                          className="app-input w-full bg-black/20 border border-white/10 text-white rounded-xl placeholder-white/30"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-white/60 uppercase mb-1">E-posta</label>
+                        <input
+                          required
+                          type="email"
+                          value={manualMentorForm.email}
+                          onChange={(e) => setManualMentorForm({ ...manualMentorForm, email: e.target.value })}
+                          placeholder="Örn: mentor@foundrly.com"
+                          className="app-input w-full bg-black/20 border border-white/10 text-white rounded-xl placeholder-white/30"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-white/60 uppercase mb-1">Şifre</label>
+                        <input
+                          required
+                          type="password"
+                          value={manualMentorForm.password}
+                          onChange={(e) => setManualMentorForm({ ...manualMentorForm, password: e.target.value })}
+                          placeholder="••••••••"
+                          className="app-input w-full bg-black/20 border border-white/10 text-white rounded-xl placeholder-white/30"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-white/60 uppercase mb-1">Unvan</label>
+                        <input
+                          required
+                          type="text"
+                          value={manualMentorForm.title}
+                          onChange={(e) => setManualMentorForm({ ...manualMentorForm, title: e.target.value })}
+                          placeholder="Örn: Startup Mentörü & SaaS Uzmanı"
+                          className="app-input w-full bg-black/20 border border-white/10 text-white rounded-xl placeholder-white/30"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-white/60 uppercase mb-1">Mentörlük Saat Ücreti ($)</label>
+                        <input
+                          required
+                          type="number"
+                          value={manualMentorForm.mentor_price}
+                          onChange={(e) => setManualMentorForm({ ...manualMentorForm, mentor_price: Number(e.target.value) })}
+                          placeholder="25"
+                          className="app-input w-full bg-black/20 border border-white/10 text-white rounded-xl placeholder-white/30"
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        className="w-full rounded-2xl bg-primary py-3 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90 border-none outline-none"
+                      >
+                        Mentör Hesabı Oluştur
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            )}
           </section>
         )}
       </main>
@@ -3941,6 +4659,7 @@ export default function App() {
     users: [],
     threads: [],
     events: [],
+    guides: [],
   });
   const [publicLoading, setPublicLoading] = useState(false);
   const [premiumFeedback, setPremiumFeedback] = useState("");
@@ -3951,10 +4670,22 @@ export default function App() {
     return stored ? (JSON.parse(stored) as CurrentUser) : null;
   });
 
+  useEffect(() => {
+    const stored = localStorage.getItem("foundrly_current_user");
+    setMarketingUser(stored ? (JSON.parse(stored) as CurrentUser) : null);
+  }, [route]);
+
   const loadPublicData = async () => {
     setPublicLoading(true);
     try {
-      const requests: Promise<Response>[] = [fetch("/api/showcase/")];
+      const showcaseHeaders = marketingAccessToken
+        ? {
+            Authorization: `Bearer ${marketingAccessToken}`,
+          }
+        : undefined;
+      const requests: Promise<Response>[] = [
+        fetch("/api/showcase/", showcaseHeaders ? { headers: showcaseHeaders } : undefined),
+      ];
       if (marketingAccessToken) {
         requests.push(
           fetch("/api/mentors/", {
@@ -3979,7 +4710,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (["discover", "teammates", "events", "community", "mentors"].includes(route)) {
+    if (["discover", "teammates", "events", "community", "mentors", "app-networking"].includes(route)) {
       loadPublicData();
     }
   }, [route]);
@@ -4001,14 +4732,36 @@ export default function App() {
     }
   };
 
+  const handleScrollForHash = () => {
+    const hash = window.location.hash;
+    if (hash === "#pricing") {
+      setTimeout(() => {
+        const el = document.getElementById("pricing");
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 100);
+    } else {
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }
+  };
+
+  const prevRouteRef = useRef<RouteName | null>(null);
+
   useEffect(() => {
-    const onHashChange = () => setRoute(getRouteFromHash());
+    const onHashChange = () => {
+      setRoute(getRouteFromHash());
+      setTimeout(handleScrollForHash, 50);
+    };
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "auto" });
+    if (prevRouteRef.current !== route) {
+      handleScrollForHash();
+      prevRouteRef.current = route;
+    }
   }, [route]);
 
   const marketingAccessToken = getStoredAccessToken();
@@ -4133,11 +4886,9 @@ export default function App() {
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(71,93,178,0.25),transparent_30%),radial-gradient(circle_at_80%_18%,rgba(63,177,112,0.15),transparent_25%)]" />
           <header className="sticky top-0 z-50 border-b border-white/10 bg-[#050B18]/72 backdrop-blur-xl relative z-10">
             <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
-              <a href={marketingUser ? "#app-home" : "#home"} className="flex flex-col leading-none">
+              <a href={marketingUser ? "#app-home" : "#home"} className="flex items-center gap-4 leading-none">
+                <img src="/f.jpg" alt="Foundrly" className="h-16 w-16 rounded-xl object-cover shadow-sm" />
                 <span className="text-2xl font-extrabold tracking-tight text-white">Foundrly</span>
-                <span className="text-[11px] font-medium tracking-widest text-[#9ab0ff]/80">
-                  FİKİRLERİ EKİPLERE DÖNÜŞTÜR
-                </span>
               </a>
               <div className="hidden items-center gap-3 md:flex">
                 <a
@@ -4178,6 +4929,10 @@ export default function App() {
         publicMentors={publicMentors}
         setPublicProjects={setPublicProjects}
         setPublicMentors={setPublicMentors}
+        showcaseData={showcaseData}
+        publicLoading={publicLoading}
+        marketingAccessToken={marketingAccessToken}
+        refreshPublicData={loadPublicData}
       />
     );
   }
@@ -4467,8 +5222,8 @@ export default function App() {
         {route === "mentors" && <PublicMentorsView mentors={publicMentors} />}
         {route === "discover" && <DiscoverView projects={showcaseData.projects} loading={publicLoading} />}
         {route === "teammates" && <TeammatesView teammates={showcaseData.users} loading={publicLoading} />}
-        {route === "hub" && <HubView />}
-        {route === "events" && <EventsView events={showcaseData.events} loading={publicLoading} />}
+        {route === "hub" && <HubView guides={showcaseData.guides} />}
+        {route === "events" && <EventsView events={showcaseData.events} loading={publicLoading} showRegister={false} accessToken={marketingAccessToken} />}
       </main>
       <SiteFooter />
     </div>
@@ -4741,85 +5496,8 @@ function TeammatesView({
   );
 }
 
-function HubView() {
-  const [selectedGuide, setSelectedGuide] = useState<null | {
-    id: string;
-    title: string;
-    read: string;
-    tone: string;
-    summary: string;
-    bullets: string[];
-  }>(null);
-  const guides = [
-    {
-      id: "mvp-guide",
-      title: "İlk MVP'nizi 1 Haftada Nasıl Çıkarırsınız?",
-      read: "5 dk okuma",
-      tone: "Yürütme",
-      summary:
-        "Bir haftalık sprintte doğru kapsamı seçmek, temel kullanıcı akışını ayağa kaldırmak ve ilk geri bildirimi almak için odaklı bir plan.",
-      bullets: [
-        "1. Gün: Problemi ve Değer Önerisini Netleştirin. Kullanıcı hangi acısını dindirmek istiyor? Tek bir cümle ile bu probleme nasıl çözüm getirdiğinizi yazın. Bu aşamada 'nice-to-have' özellikleri tamamen listenin dışına atın.",
-        "2. Gün: Akış ve Wireframe. Kullanıcının kayıt olmasından hedefe ulaşmasına kadar geçen en kısa yolu çizin. Teknik karmaşıklığı en aza indirmek için hazır UI kitleri veya standart bileşenler kullanmayı tercih edin.",
-        "3. ve 4. Gün: Temel Fonksiyonların İnşası. Sadece çalışması zorunlu olan 'core' mantığı kodlayın. Veritabanı yapısını basit tutun, gerekirse bazı süreçleri manuel yönetin (Concierge MVP yaklaşımı).",
-        "5. Gün: Test ve Hata Ayıklama. Ürünü kendi başınıza ve bir arkadaşınıza kullandırarak kritik hataları bulun. Mükemmellik aramayın, sadece ürünün ana vaadini yerine getirdiğinden emin olun.",
-        "6. Gün: Yayına Alım ve Dağıtım. Vercel, Fly.io veya benzeri hızlı platformlarla yayına çıkın. İlk 10 kullanıcıyı bulmak için Twitter, LinkedIn veya topluluk gruplarına kişiselleştirilmiş mesajlar gönderin.",
-        "7. Gün: Geri Bildirim ve İterasyon. Gelen ilk tepkileri not alın. Kullanıcılar nerede takılıyor? Hangi özelliği hiç kullanmadılar? Bu verilerle ikinci hafta sprintinizi planlayın.",
-      ],
-    },
-    {
-      id: "cofounder-guide",
-      title: "Doğru Kurucu Ortak Seçiminde Dikkat Edilmesi Gerekenler",
-      read: "8 dk okuma",
-      tone: "Kurucu uyumu",
-      summary:
-        "Kurucu ortak seçiminde yalnızca teknik yetkinliğe değil, karar alma biçimine, tempo uyumuna ve kriz anındaki davranışlara da bakmak gerekir.",
-      bullets: [
-        "Vizyon ve Hedef Hizalaması: Şirketin 5 yıl sonra nerede olmasını istiyorsunuz? Biri exit yapmak isterken diğeri ömür boyu yönetmek istiyorsa kriz kaçınılmazdır. Beklentileri en başta senkronize edin.",
-        "Tamamlayıcı Beceriler: İki tane harika kod yazan yerine, biri ürünü inşa eden diğeri satışı yöneten bir ikili çok daha güçlüdür. Kendi eksiklerinizi dürüstçe listeleyin ve bu boşlukları dolduracak birini arayın.",
-        "Değerler ve Çalışma Etiği: Hafta sonu çalışma, risk alma kapasitesi ve dürüstlük gibi konularda aynı frekansta mısınız? Teknik beceriler öğrenilir ancak karakter ve çalışma disiplini uyumsuzluğu startup'ları bitiren en büyük sebeptir.",
-        "Rol Paylaşımı ve Yetki: Kim hangi alanda son sözü söyleyecek? CEO/CTO ayrımını ve hisse (equity) dağılımını 'sonra konuşuruz' demeden, en başta şeffaf ve adil bir şekilde karara bağlayın.",
-        "Dönemsel Deneme Süreci: Hemen 'evlenmeyin'. Önce 1 aylık bir proje veya MVP üzerinde birlikte çalışın. Stres altında nasıl davrandığınızı, fikir ayrılıklarını nasıl çözdüğünüzü görün.",
-        "Zor Konuşmaları Ertelemeyin: Para, zaman taahhüdü ve olası ayrılık senaryolarını (vesting) en başta konuşun. Kurucu ortak sözleşmesi hazırlamak sadece hukuki değil, psikolojik bir güvencedir.",
-      ],
-    },
-    {
-      id: "pitch-guide",
-      title: "Yatırımcı Sunumu (Pitch Deck) Hazırlama Rehberi",
-      read: "12 dk okuma",
-      tone: "Yatırım hazırlığı",
-      summary:
-        "İyi bir pitch deck; problemi, çözümü, pazarı, çekişimi ve neden bu ekibin kazanacağını kısa ve güçlü bir anlatıyla göstermelidir.",
-      bullets: [
-        "1. Problem Slaydı: Acıyı hissettirin. Çözmeye çalıştığınız sorun neden büyük ve neden şu anki çözümler yetersiz? Hikayeleştirerek yatırımcının empati kurmasını sağlayın.",
-        "2. Çözüm Slaydı: Ürününüzün sihrini gösterin. Karmaşık teknik detaylara boğulmadan, problemin nasıl ortadan kalktığını ve kullanıcıya sağladığı net faydayı anlatın.",
-        "3. Pazar ve Fırsat: Hedef kitleniz kim ve bu pazar ne kadar büyük (TAM, SAM, SOM)? Pazarın büyüme hızı ve sizin bu pastadan neden pay alabileceğinizi kanıtlayın.",
-        "4. İş Modeli: Nasıl para kazanacaksınız? Birim ekonomi, müşteri kazanım maliyeti (CAC) ve ömür boyu değer (LTV) gibi metrikleri (eğer varsa) buraya ekleyin.",
-        "5. Çekişim (Traction): Bugüne kadar neler başardınız? Kullanıcı sayısı, gelir, bekleme listesi veya stratejik ortaklıklar. Yatırımcı hareket halindeki bir trene binmek ister.",
-        "6. Rekabet Analizi: Rakiplerinizden sizi ayıran 'haksız avantajınız' (unfair advantage) nedir? Neden rakipler sizi kolayca kopyalayamaz?",
-        "7. Ekip: Neden bu işi başarmak için dünyadaki en iyi ekip sizsiniz? Geçmiş tecrübeleriniz, teknik yetkinliğiniz ve birbirinizle olan çalışma geçmişinizden bahsedin.",
-        "8. Yol Haritası (Roadmap): Yatırımdan sonraki 12-18 ayda neler yapacaksınız? Hangi özellikler eklenecek, hangi pazarlara girilecek ve hangi aşamaya ulaşılacak?",
-        "9. Yatırım Talebi: Ne kadar para arıyorsunuz ve bu parayı tam olarak nerelerde kullanacaksınız? Başarı kriterleriniz (milestones) neler?",
-        "10. Görsel Tasarım: Az yazı, çok görsel kullanın. Her slaytın tek bir ana fikri olsun ve bu fikir 5 saniyede anlaşılsın. Profesyonel ve tutarlı bir tasarım güven verir.",
-      ],
-    },
-    {
-      id: "portfolio-guide",
-      title: "Açık Kaynak Projelerle Portföy Oluşturmak",
-      read: "6 dk okuma",
-      tone: "Kariyer sermayesi",
-      summary:
-        "Açık kaynak katkıları, profil güvenini artırmanın ve gerçek üretim disiplinini görünür hale getirmenin güçlü yollarından biridir.",
-      bullets: [
-        "Doğru Proje Seçimi: Popüler ama çok karmaşık projeler yerine, aktif olarak kullandığınız veya geliştirmek istediğiniz orta ölçekli kütüphanelere odaklanın. 'Good first issue' etiketli işlerle başlayın.",
-        "Dokümantasyon ve README: Kod yazmak kadar, projenin nasıl çalıştığını anlatmak da önemlidir. İyi bir dokümantasyon, sizin iletişim becerilerinizin ve titizliğinizin göstergesidir.",
-        "Düzenli Katkı (Consistency): Bir günde 1000 satır kod yazıp kaybolmak yerine, haftalık düzenli küçük iyileştirmeler yapın. GitHub grafiğinizdeki süreklilik, disiplininizi kanıtlar.",
-        "İletişim ve Topluluk Etkileşimi: Pull Request (PR) gönderirken neden bu değişikliği yaptığınızı net bir şekilde açıklayın. Gelen yorumları yapıcı karşılayın ve kod kalitesini artırmak için tartışın.",
-        "Kendi Yan Projelerinizi Açın: Sadece başkalarına katkı vermekle kalmayın, kendi küçük araçlarınızı da açık kaynak olarak yayınlayın. Başkalarının sizin kodunuzu kullanması en büyük referanstır.",
-        "Profilinizle Entegre Edin: Açık kaynak başarılarınızı Foundrly, LinkedIn ve portföy sitenizde hikayeleştirerek paylaşın. Hangi problemi çözdüğünüzü ve ne öğrendiğinizi anlatın.",
-      ],
-    },
-  ];
+function HubView({ guides }: { guides: CommunityGuideItem[] }) {
+  const [selectedGuide, setSelectedGuide] = useState<CommunityGuideItem | null>(null);
 
   return (
     <section className="bg-[#06101F] text-white">
@@ -4906,14 +5584,55 @@ function HubView() {
 function EventsView({
   events,
   loading,
+  showRegister = false,
+  accessToken,
 }: {
   events: CommunityEventItem[];
   loading: boolean;
+  showRegister?: boolean;
+  accessToken?: string | null;
 }) {
-  const [registeredEvent, setRegisteredEvent] = useState<number | null>(null);
-  
-  const handleRegister = (eventId: number) => {
-    setRegisteredEvent(eventId);
+  const [registeredEvents, setRegisteredEvents] = useState<number[]>(() => {
+    try {
+      const stored = localStorage.getItem("foundrly_registered_events");
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [registrationFeedback, setRegistrationFeedback] = useState("");
+
+  useEffect(() => {
+    const persistedIds = events.filter((event) => event.is_registered).map((event) => event.id);
+    if (persistedIds.length === 0) return;
+    setRegisteredEvents((current) => Array.from(new Set([...current, ...persistedIds])));
+  }, [events]);
+
+  const handleRegister = async (eventId: number) => {
+    if (accessToken) {
+      try {
+        const response = await fetch("/api/events/register/", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ event: eventId }),
+        });
+
+        if (response.status === 401 || response.status === 403) {
+          setRegistrationFeedback("Etkinliğe kayıt olmak için tekrar giriş yapmalısın.");
+          return;
+        }
+      } catch {
+        setRegistrationFeedback("Kayıt sunucuya iletilemedi. Geçici olarak bu cihazda kayıtlı görünecek.");
+      }
+    }
+
+    const nextList = Array.from(new Set([...registeredEvents, eventId]));
+    setRegisteredEvents(nextList);
+    localStorage.setItem("foundrly_registered_events", JSON.stringify(nextList));
+    setRegistrationFeedback("");
   };
 
   const nextThirtyDayEvents = events.filter((event) => {
@@ -4967,21 +5686,28 @@ function EventsView({
                 </div>
               </div>
 
-              {registeredEvent === event.id ? (
-                <div className="rounded-2xl border border-success/20 bg-success/10 px-6 py-3 text-sm font-bold text-success animate-fadeIn">
-                  ✓ Kayıt alındı. Detaylar mail adresine iletilmiştir.
-                </div>
-              ) : (
-                <button
-                  onClick={() => handleRegister(event.id)}
-                  className="rounded-full border border-white/10 bg-white px-8 py-3 text-sm font-bold text-[#071121] transition hover:bg-[#DDE5FF]"
-                >
-                  Kayıt Ol
-                </button>
+              {showRegister && (
+                registeredEvents.includes(event.id) || event.is_registered ? (
+                  <div className="rounded-2xl border border-success/20 bg-success/10 px-6 py-3 text-sm font-bold text-success animate-fadeIn">
+                    ✓ Kayıt alındı. Detaylar mail adresine iletilmiştir.
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => void handleRegister(event.id)}
+                    className="rounded-full border border-white/10 bg-white px-8 py-3 text-sm font-bold text-[#071121] transition hover:bg-[#DDE5FF]"
+                  >
+                    Kayıt Ol
+                  </button>
+                )
               )}
             </article>
           ))}
         </div>
+        {registrationFeedback && showRegister && (
+          <div className="mt-4 rounded-2xl border border-amber-500/20 bg-amber-500/10 px-5 py-3 text-sm font-medium text-amber-300">
+            {registrationFeedback}
+          </div>
+        )}
         {!loading && events.length === 0 && (
           <div className="mt-8 rounded-[2rem] border border-white/10 bg-white/6 p-8 text-center text-slate-300 shadow-[0_20px_70px_rgba(0,0,0,0.18)] backdrop-blur">
             Yayında etkinlik verisi bulunamadı.
@@ -5003,7 +5729,7 @@ function MentorsView({
 }: {
   mentors: any[],
   onSendRequest: (id: number, msg: string) => void,
-  onConfirmRequest: (id: number) => void,
+  onConfirmRequest: (id: number, action?: string, disputeReason?: string) => void,
   userRequests: any[],
   feedback: string,
   credits: number,
@@ -5011,8 +5737,15 @@ function MentorsView({
 }) {
   const [selectedMentor, setSelectedMentor] = useState<any | null>(null);
   const [message, setMessage] = useState("");
+  const [cardHolder, setCardHolder] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvc, setCardCvc] = useState("");
+  const [sessionPaymentFeedback, setSessionPaymentFeedback] = useState("");
 
-  const pendingConfirmation = userRequests.filter(r => r.status === 'accepted' && !r.user_confirmed);
+  const pendingConfirmation = userRequests.filter((r) => r.status === "offered");
+  const reservedSessions = userRequests.filter((r) => r.status === "paid_reserved");
+  const mentorCompletedSessions = userRequests.filter((r) => r.status === "mentor_completed");
 
   return (
     <section className="app-panel rounded-[2.25rem] p-8 lg:p-10 relative overflow-hidden">
@@ -5052,16 +5785,75 @@ function MentorsView({
                     Zaman: <span className="text-secondary">{req.meeting_time ? new Date(req.meeting_time).toLocaleString('tr-TR') : 'Belirtilmedi'}</span>
                   </p>
                   <p className="text-xs text-white/60">
-                    Teklif: <span className="text-secondary">{req.offered_price > 0 ? `$${req.offered_price}` : 'Ücretsiz (Hak Kullanımı)'}</span>
+                    Teklif: <span className="text-secondary">{req.offered_price > 0 ? formatTRY(req.offered_price) : 'Ücretsiz (Hak Kullanımı)'}</span>
                   </p>
                 </div>
               </div>
               <button 
-                onClick={() => onConfirmRequest(req.id)}
+                onClick={() => onConfirmRequest(req.id, "accept_offer")}
                 className="rounded-xl bg-secondary px-6 py-2 text-sm font-bold text-white shadow-halo transition hover:bg-secondary/90"
               >
-                Zamanı ve Görüşmeyi Onayla
+                Teklifi Kabul Et ve Ödemeyi Rezerve Et
               </button>
+            </article>
+          ))}
+        </div>
+      )}
+
+      {reservedSessions.length > 0 && (
+        <div className="mt-8 space-y-4">
+          <p className="text-xs font-bold uppercase tracking-widest text-primary">Ödemesi Rezerve Edilen Görüşmeler</p>
+          {reservedSessions.map((req) => (
+            <article key={req.id} className="rounded-2xl border border-primary/20 bg-primary/10 p-5 text-sm text-white">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="font-bold">{req.mentor_details?.full_name}</p>
+                  <p className="mt-2 text-white/70">
+                    Ödeme rezerve edildi. Talep mentör paneline düştü; görüşme sonrası mentör tamamlandı işaretlediğinde burada onay adımı açılacak.
+                  </p>
+                  <p className="mt-2 text-xs text-white/60">
+                    Zaman: {req.meeting_time ? new Date(req.meeting_time).toLocaleString("tr-TR") : "Belirtilmedi"} · Tutar: {formatTRY(req.reserved_amount || req.offered_price || 0)}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-3 text-xs font-bold uppercase tracking-wider text-cyan-200">
+                  Siradaki adim: Mentor gorusmeyi tamamlayacak
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+
+      {mentorCompletedSessions.length > 0 && (
+        <div className="mt-8 space-y-4">
+          <p className="text-xs font-bold uppercase tracking-widest text-amber-300">Kullanıcı Onayı Bekleyen Tamamlanmış Görüşmeler</p>
+          {mentorCompletedSessions.map((req) => (
+            <article key={req.id} className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-6 flex flex-col gap-4">
+              <div>
+                <p className="font-bold text-white">{req.mentor_details?.full_name}</p>
+                <p className="mt-2 text-sm text-white/70">
+                  Mentör görüşmenin tamamlandığını bildirdi. Onay verirsen ödeme serbest bırakılacak; sorun varsa itiraz açabilirsin.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() => onConfirmRequest(req.id, "confirm_completion")}
+                  className="rounded-xl bg-success px-6 py-2 text-sm font-bold text-white shadow-halo transition hover:bg-success/90"
+                >
+                  Görüşme Yapıldı, Ödemeyi Serbest Bırak
+                </button>
+                <button
+                  onClick={() => {
+                    const reason = prompt("İtiraz nedeninizi kısaca yazın:");
+                    if (reason?.trim()) {
+                      onConfirmRequest(req.id, "open_dispute", reason.trim());
+                    }
+                  }}
+                  className="rounded-xl border border-red-500/20 bg-red-500/10 px-6 py-2 text-sm font-bold text-red-300 transition hover:bg-red-500/15"
+                >
+                  İtiraz Aç
+                </button>
+              </div>
             </article>
           ))}
         </div>
@@ -5138,7 +5930,10 @@ function MentorsView({
                   <h3 className="text-xl font-bold text-white">{selectedMentor.full_name}</h3>
                   <p className="text-sm text-white/60">{selectedMentor.title}</p>
                   <p className="mt-2 text-sm text-white/68">
-                    İlk 15 dakikalık ücretsiz görüşme hakkın burada kullanılır. Sonraki seanslar için ödeme adımına yönlendirilirsin.
+                    {credits > 0 
+                      ? "Aylık ücretsiz 15 dakikalık görüşme hakkınızı bu uzmanla kullanabilirsiniz." 
+                      : `Aylık ücretsiz hakkınız tükenmiştir. Bu mentörden ek bir seans almak için seans ücreti olan ${formatTRY(selectedMentor.mentor_price || 25)} ödemesini yapmalısınız.`
+                    }
                   </p>
                 </div>
               </div>
@@ -5150,21 +5945,90 @@ function MentorsView({
                   placeholder="Merhaba, projemin ölçeklenebilirliği konusunda tavsiyeye ihtiyacım var..."
                   className="app-input min-h-32"
                 />
-                <button 
-                  onClick={() => {
-                    onSendRequest(selectedMentor.id, message);
-                    setMessage("");
-                    setSelectedMentor(null);
-                  }}
-                  disabled={credits <= 0 || !message.trim()}
-                  className="mt-4 rounded-2xl bg-primary px-8 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90 disabled:opacity-50"
-                >
-                  15 Dakikalık Görüşmeyi Başlat
-                </button>
-                {credits <= 0 && (
-                  <div className="mt-3 rounded-2xl border border-amber-300/20 bg-amber-400/10 px-4 py-3 text-xs font-bold text-amber-100">
-                    Ücretsiz görüşme hakkın kullanıldı. Ek mentör seansı için <a href="#premium" className="underline">ödeme sistemine</a> geç.
+
+                {credits <= 0 ? (
+                  <div className="mt-6 border-t border-white/10 pt-6 space-y-4">
+                    <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4">
+                      <p className="text-sm font-bold text-amber-400">Ek Mentör Seansı Ödemesi</p>
+                      <p className="mt-2 text-xs leading-5 text-slate-300">
+                        Aylık ücretsiz hakkınız dolduğu için, bu seans mentörün kendi belirlediği saatlik ücret tarifesine tabidir. Toplam ödenecek tutar: <span className="font-extrabold text-white">{formatTRY(selectedMentor.mentor_price || 25)}</span>.
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      <input 
+                        value={cardHolder} 
+                        onChange={(e) => setCardHolder(e.target.value)} 
+                        placeholder="Kart üzerindeki isim" 
+                        className="app-input text-sm bg-black/20" 
+                      />
+                      <input 
+                        value={cardNumber} 
+                        onChange={(e) => setCardNumber(e.target.value)} 
+                        placeholder="Kart numarası" 
+                        className="app-input text-sm bg-black/20" 
+                      />
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <input 
+                          value={cardExpiry} 
+                          onChange={(e) => setCardExpiry(e.target.value)} 
+                          placeholder="SKT (AA/YY)" 
+                          className="app-input text-sm bg-black/20" 
+                        />
+                        <input 
+                          value={cardCvc} 
+                          onChange={(e) => setCardCvc(e.target.value)} 
+                          placeholder="CVC" 
+                          className="app-input text-sm bg-black/20" 
+                        />
+                      </div>
+                    </div>
+
+                    {sessionPaymentFeedback && (
+                      <div className="rounded-2xl border border-success/20 bg-success/12 px-4 py-3 text-xs text-white">
+                        {sessionPaymentFeedback}
+                      </div>
+                    )}
+
+                    <button 
+                      onClick={() => {
+                        if (!message.trim()) {
+                          setSessionPaymentFeedback("Lütfen mentöre iletilecek mesajınızı doldurun.");
+                          return;
+                        }
+                        if (!cardHolder.trim() || !cardNumber.trim() || !cardExpiry.trim() || !cardCvc.trim()) {
+                          setSessionPaymentFeedback("Ek seans ödemesi için kart bilgilerini doldurmalısınız.");
+                          return;
+                        }
+                        setSessionPaymentFeedback("Ödeme başarıyla alındı! Talebiniz mentöre iletiliyor...");
+                        setTimeout(() => {
+                          onSendRequest(selectedMentor.id, message);
+                          setMessage("");
+                          setSelectedMentor(null);
+                          setCardHolder("");
+                          setCardNumber("");
+                          setCardExpiry("");
+                          setCardCvc("");
+                          setSessionPaymentFeedback("");
+                        }, 2000);
+                      }}
+                      className="w-full rounded-2xl bg-secondary px-8 py-3.5 text-sm font-bold text-white shadow-halo transition hover:bg-secondary/90"
+                    >
+                      Ödemeyi Yap ve Seansı Talep Et ({formatTRY(selectedMentor.mentor_price || 25)})
+                    </button>
                   </div>
+                ) : (
+                  <button 
+                    onClick={() => {
+                      onSendRequest(selectedMentor.id, message);
+                      setMessage("");
+                      setSelectedMentor(null);
+                    }}
+                    disabled={!message.trim()}
+                    className="mt-4 rounded-2xl bg-primary px-8 py-3.5 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90 disabled:opacity-50"
+                  >
+                    15 Dakikalık Ücretsiz Görüşmeyi Başlat
+                  </button>
                 )}
               </div>
             </div>
@@ -5188,7 +6052,7 @@ function MentorsView({
                   <div className="flex justify-between items-center mb-4">
                     <p className="flex-1 text-xs leading-relaxed text-white/64 line-clamp-2">{m.bio}</p>
                     <span className="ml-3 whitespace-nowrap text-lg font-black text-secondary">
-                      {m.mentor_price > 0 ? `$${m.mentor_price}` : "Ücretsiz"}
+                      {m.mentor_price > 0 ? formatTRY(m.mentor_price) : "Ücretsiz"}
                     </span>
                   </div>
                   <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/38">
@@ -5218,13 +6082,30 @@ function MentorsView({
 function MentorPanelView({
   requests,
   onStatusUpdate,
-  mentor
+  mentor,
+  feedback,
 }: {
   requests: any[],
-  onStatusUpdate: (id: number, status: string, price?: number, time?: string) => void,
-  mentor: CurrentUser | null
+  onStatusUpdate: (id: number, action: string, price?: number, time?: string) => void,
+  mentor: CurrentUser | null,
+  feedback: string,
 }) {
   const [newPrice, setNewPrice] = useState(mentor?.mentor_price || 0);
+  const sortedRequests = [...requests].sort((a, b) => {
+    const statusPriority: Record<string, number> = {
+      paid_reserved: 0,
+      pending: 1,
+      mentor_completed: 2,
+      offered: 3,
+      disputed: 4,
+      released: 5,
+      declined: 6,
+    };
+    const left = statusPriority[a.status] ?? 99;
+    const right = statusPriority[b.status] ?? 99;
+    if (left !== right) return left - right;
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
 
   const handleUpdatePrice = async () => {
     const accessToken = localStorage.getItem("foundrly_access_token");
@@ -5243,109 +6124,162 @@ function MentorPanelView({
   };
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-6 text-white">
       <div className="grid gap-6 md:grid-cols-3">
-        <div className="rounded-[2rem] border border-ink/10 bg-white p-6 shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-widest text-ink/40">Toplam Kazanç</p>
-          <p className="mt-2 text-3xl font-black text-secondary">${mentor?.mentor_balance || 0}</p>
-          <p className="mt-1 text-[10px] text-ink/40 font-bold uppercase">Komisyon Sonrası Net</p>
+        <div className="app-kpi-card rounded-2xl p-6 border border-white/10 bg-white/6 shadow-halo">
+          <p className="text-xs font-bold uppercase tracking-widest text-white/50">Toplam Kazanç</p>
+          <p className="mt-2 text-3xl font-extrabold text-[#9ab0ff]">{formatTRY(mentor?.mentor_balance || 0)}</p>
+          <p className="mt-1 text-[10px] text-white/40 font-bold uppercase">Komisyon Sonrası Net</p>
         </div>
-        <div className="rounded-[2rem] border border-ink/10 bg-white p-6 shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-widest text-ink/40">Görüşme Ücretim</p>
+        <div className="app-kpi-card rounded-2xl p-6 border border-white/10 bg-white/6 shadow-halo">
+          <p className="text-xs font-bold uppercase tracking-widest text-white/50">Görüşme Ücretim</p>
           <div className="mt-2 flex items-center gap-2">
-            <span className="text-3xl font-black text-ink">$</span>
+            <span className="text-3xl font-extrabold text-white">₺</span>
             <input 
               type="number" 
               value={newPrice} 
               onChange={(e) => setNewPrice(Number(e.target.value))}
-              className="w-20 text-3xl font-black text-ink bg-transparent outline-none focus:text-primary"
+              className="w-20 text-3xl font-extrabold text-white bg-transparent outline-none focus:text-primary"
             />
           </div>
           <button onClick={handleUpdatePrice} className="mt-2 text-[10px] font-bold text-primary uppercase hover:underline">Kaydet</button>
         </div>
-        <div className="rounded-[2rem] border border-ink/10 bg-white p-6 shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-widest text-ink/40">Aktif Talepler</p>
-          <p className="mt-2 text-3xl font-black text-ink">{requests.filter(r => r.status === 'pending').length}</p>
-          <p className="mt-1 text-[10px] text-ink/40 font-bold uppercase">Bekleyen Yanıtlar</p>
+        <div className="app-kpi-card rounded-2xl p-6 border border-white/10 bg-white/6 shadow-halo">
+          <p className="text-xs font-bold uppercase tracking-widest text-white/50">Aktif Talepler</p>
+          <p className="mt-2 text-3xl font-extrabold text-white">{requests.filter(r => r.status === 'pending' || r.status === 'offered').length}</p>
+          <p className="mt-1 text-[10px] text-white/40 font-bold uppercase">Bekleyen Yanıtlar</p>
         </div>
       </div>
 
-      <div className="rounded-[2.25rem] border border-ink/10 bg-white p-8 shadow-sm lg:p-10">
-        <p className="text-sm font-bold uppercase tracking-[0.2em] text-secondary/70">
-          Yönetim Paneli
+      <div className="app-panel rounded-[2.25rem] border border-white/10 bg-white/5 backdrop-blur-md p-8 lg:p-10">
+        <p className="app-section-eyebrow text-sm font-bold uppercase tracking-[0.2em] text-[#9ab0ff]">
+          Mentör Paneli
         </p>
-        <h2 className="mt-2 text-3xl font-extrabold text-ink">
+        <h2 className="mt-2 text-3xl font-extrabold text-white">
           Mentörlük Talepleri
         </h2>
-        <p className="mt-2 text-ink/60">Kullanıcılardan gelen birebir görüşme taleplerini buradan görebilirsiniz.</p>
+        <p className="app-section-copy mt-2 text-sm text-slate-300">Kullanıcılardan gelen birebir görüşme taleplerini buradan görebilirsiniz.</p>
+        {feedback && (
+          <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-[#c7d3ff]">
+            {feedback}
+          </div>
+        )}
+        <div className="mt-4 rounded-2xl border border-cyan-400/15 bg-cyan-400/8 px-4 py-3 text-xs text-cyan-100">
+          Kullanici odemeyi rezerve ettiginde talep listenin en ustune tasinir. O asamada "Gorusmeyi Tamamlandi Olarak Isaretle" butonu aktif olur.
+        </div>
 
         <div className="mt-10 space-y-4">
-          {requests.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-ink/15 p-10 text-center text-sm text-ink/40">
+          {sortedRequests.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-white/10 p-10 text-center text-sm text-slate-400 bg-white/4">
               Henüz bekleyen talep bulunmuyor.
             </div>
           ) : (
-            requests.map((req) => (
-              <article key={req.id} className="rounded-2xl border border-ink/10 bg-[#F7F8FC] p-6">
+            sortedRequests.map((req) => (
+              <article key={req.id} className="app-subpanel rounded-2xl border border-white/10 bg-white/6 p-6 hover:bg-white/8 transition">
                 <div className="flex justify-between items-start">
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-bold text-ink">{req.user_details?.full_name || "Kullanıcı"}</p>
+                      <p className="text-sm font-bold text-white">{req.user_details?.full_name || "Kullanıcı"}</p>
                       {req.price_at_request > 0 ? (
-                        <span className="text-[10px] font-bold bg-secondary text-white px-2 py-0.5 rounded-full">Paid: ${req.price_at_request}</span>
+                        <span className="text-[10px] font-bold bg-secondary/20 text-[#9ab0ff] px-2 py-0.5 rounded-full border border-secondary/30">Ödeme: {formatTRY(req.price_at_request)}</span>
                       ) : (
-                        <span className="text-[10px] font-bold bg-primary text-white px-2 py-0.5 rounded-full">Credit</span>
+                        <span className="text-[10px] font-bold bg-primary/20 text-primary px-2 py-0.5 rounded-full border border-primary/30">Credit</span>
                       )}
                     </div>
-                    <p className="text-xs text-ink/40">{formatJoinedDate(req.created_at)}</p>
+                    <p className="text-xs text-slate-400 mt-1">{formatJoinedDate(req.created_at)}</p>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${req.status === 'pending' ? 'bg-amber-500/10 text-amber-600' : req.status === 'accepted' ? 'bg-primary/10 text-primary' : 'bg-success/10 text-success'}`}>
-                    {req.status} {req.status === 'accepted' && !req.user_confirmed && '(Onay Bekliyor)'} {req.status === 'accepted' && req.user_confirmed && '(Onaylandı)'}
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase border ${
+                    req.status === 'pending'
+                      ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                      : req.status === 'offered'
+                        ? 'bg-primary/20 text-primary border-primary/30'
+                        : req.status === 'paid_reserved'
+                          ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30'
+                          : req.status === 'mentor_completed'
+                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                            : req.status === 'released'
+                              ? 'bg-success/20 text-success border-success/30'
+                              : 'bg-red-500/20 text-red-300 border-red-500/30'
+                  }`}>
+                    {req.status_label || req.status}
                   </span>
                 </div>
-                <p className="mt-4 text-sm text-ink/70 leading-relaxed italic">"{req.message}"</p>
+                <p className="mt-4 text-sm text-slate-200 leading-relaxed italic">"{req.message}"</p>
                 {req.meeting_time && (
-                  <p className="mt-2 text-xs font-bold text-primary uppercase">Önerilen Zaman: {new Date(req.meeting_time).toLocaleString('tr-TR')}</p>
+                  <p className="mt-3 text-xs font-bold text-[#9ab0ff] uppercase">Önerilen Zaman: {new Date(req.meeting_time).toLocaleString('tr-TR')}</p>
                 )}
                 <div className="mt-6 flex gap-3">
                   {req.status === 'pending' && (
-                    <div className="flex flex-col w-full gap-3">
+                    <div className="flex flex-col w-full gap-3 mt-4 border-t border-white/10 pt-4">
                       <div className="flex flex-col gap-3">
                         <div className="flex items-center gap-3">
-                          <span className="text-xs font-bold text-ink/40 uppercase">Ücret Teklifi ($):</span>
+                          <span className="text-xs font-bold text-white/50 uppercase">Ücret Teklifi (TL):</span>
                           <input 
                             type="number" 
                             placeholder="Ücret" 
-                            className="w-24 rounded-lg border border-ink/10 px-3 py-1 text-sm bg-white"
+                            className="w-32 app-input text-sm bg-black/20"
                             id={`offer-${req.id}`}
                           />
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="text-xs font-bold text-ink/40 uppercase">Görüşme Zamanı:</span>
+                          <span className="text-xs font-bold text-white/50 uppercase">Görüşme Zamanı:</span>
                           <input 
                             type="datetime-local" 
-                            className="rounded-lg border border-ink/10 px-3 py-1 text-sm bg-white"
+                            className="w-64 app-input text-sm bg-black/20"
                             id={`time-${req.id}`}
                           />
                         </div>
                       </div>
-                      <div className="flex gap-3">
+                      <div className="flex gap-3 mt-2">
                         <button 
                           onClick={() => {
                             const val = (document.getElementById(`offer-${req.id}`) as HTMLInputElement)?.value;
                             const timeVal = (document.getElementById(`time-${req.id}`) as HTMLInputElement)?.value;
-                            onStatusUpdate(req.id, 'accepted', Number(val) || 0, timeVal);
+                            if (!timeVal) {
+                              alert("Lütfen görüşme zamanını seçin.");
+                              return;
+                            }
+                            if (req.price_at_request !== 0 && !val) {
+                              alert("Lütfen ücret teklifini girin.");
+                              return;
+                            }
+                            onStatusUpdate(req.id, 'offer', Number(val) || 0, timeVal);
                           }} 
-                          className="rounded-xl bg-primary px-6 py-2 text-xs font-bold text-white shadow-halo"
+                          className="rounded-xl bg-primary px-6 py-2.5 text-xs font-bold text-white shadow-halo hover:bg-primary/90 transition"
                         >
                           Zaman ve Ücret Öner
                         </button>
-                        <button onClick={() => onStatusUpdate(req.id, 'completed')} className="rounded-xl border border-ink/10 bg-white px-6 py-2 text-xs font-bold text-ink">Reddet</button>
+                        <button 
+                          onClick={() => onStatusUpdate(req.id, 'decline')} 
+                          className="rounded-xl border border-white/10 bg-white/10 px-6 py-2.5 text-xs font-bold text-white hover:bg-white/20 transition"
+                        >
+                          Reddet
+                        </button>
                       </div>
                     </div>
                   )}
-                  {req.status === 'accepted' && (
-                    <button onClick={() => onStatusUpdate(req.id, 'completed')} className="rounded-xl bg-success px-6 py-2 text-xs font-bold text-white shadow-halo">Görüşmeyi Tamamla & Bakiyeyi Al</button>
+                  {req.status === 'offered' && (
+                    <div className="rounded-xl border border-primary/20 bg-primary/10 px-4 py-3 text-xs text-[#c7d3ff]">
+                      Kullanıcı teklifinizi kabul edip ödemeyi rezerve ettiğinde burada devam aksiyonu açılacak.
+                    </div>
+                  )}
+                  {req.status === 'paid_reserved' && (
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                      <button onClick={() => onStatusUpdate(req.id, 'mark_completed')} className="rounded-xl bg-success px-6 py-2.5 text-xs font-bold text-white shadow-halo hover:bg-success/90 transition">Görüşmeyi Tamamlandı Olarak İşaretle</button>
+                      <span className="text-xs text-cyan-100/80">
+                        Odeme rezerve edildi. Gorusme yapildiysa bu adimdan sonra kullaniciya final onayi acilir.
+                      </span>
+                    </div>
+                  )}
+                  {req.status === 'mentor_completed' && (
+                    <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-xs text-amber-200">
+                      Kullanıcı onayı bekleniyor. Onay gelince ödeme serbest bırakılacak.
+                    </div>
+                  )}
+                  {req.status === 'disputed' && (
+                    <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs text-red-200">
+                      İtiraz açıldı. Admin incelemesi tamamlanana kadar ödeme bekletilir.
+                    </div>
                   )}
                 </div>
               </article>
