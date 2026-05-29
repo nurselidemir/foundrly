@@ -91,7 +91,7 @@ const testimonials = [
 const pricing = [
   {
     name: "Ücretsiz",
-    price: "$0",
+    price: "₺0",
     note: "Sonsuza kadar ücretsiz",
     cta: "Ücretsiz Başla",
     href: "#register",
@@ -106,8 +106,8 @@ const pricing = [
   },
   {
     name: "Premium",
-    price: "$5",
-    note: "ay başına · $48/yıl",
+    price: "₺199",
+    note: "aylık · ₺1.990/yıl",
     cta: "Premium'a Geç",
     href: "#premium",
     items: [

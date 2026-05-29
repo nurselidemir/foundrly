@@ -326,6 +326,9 @@ struct ProfileView: View {
             .background(FoundrlyTheme.background.ignoresSafeArea())
             .navigationTitle("Profilim")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                viewModel.feedbackMessage = ""
+            }
         }
     }
 

@@ -3,8 +3,8 @@ import Foundation
 struct EventService {
     private let client = APIClient()
 
-    func loadShowcase() async throws -> ShowcaseResponse {
-        try await client.send(path: "api/showcase/")
+    func loadShowcase(token: String? = nil) async throws -> ShowcaseResponse {
+        try await client.send(path: "api/showcase/", token: token)
     }
 
     func registerEvent(token: String, eventId: Int) async throws {

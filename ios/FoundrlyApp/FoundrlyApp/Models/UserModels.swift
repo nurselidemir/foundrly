@@ -108,11 +108,12 @@ struct PublicProfile: Codable, Identifiable {
     let reviews: [PublicReview]
     let recent_projects: [PublicProfileProject]
     let eligible_review_applications: [EligibleReviewApplication]
+    let active_application_id: Int?
 
     enum CodingKeys: String, CodingKey {
         case id, full_name, title, bio, skills, interests
         case is_verified_talent, is_premium, date_joined, average_rating, reviews_count, reviews
-        case recent_projects, eligible_review_applications
+        case recent_projects, eligible_review_applications, active_application_id
     }
 
     init(from decoder: Decoder) throws {
@@ -130,6 +131,7 @@ struct PublicProfile: Codable, Identifiable {
         reviews = try container.decode([PublicReview].self, forKey: .reviews)
         recent_projects = try container.decode([PublicProfileProject].self, forKey: .recent_projects)
         eligible_review_applications = try container.decode([EligibleReviewApplication].self, forKey: .eligible_review_applications)
+        active_application_id = try container.decodeIfPresent(Int.self, forKey: .active_application_id)
 
         average_rating = try container.decodeFlexibleDoubleIfPresent(forKey: .average_rating)
     }

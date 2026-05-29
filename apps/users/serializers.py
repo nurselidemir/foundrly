@@ -84,6 +84,7 @@ class PublicUserProfileSerializer(serializers.ModelSerializer):
     reviews = serializers.SerializerMethodField()
     recent_projects = serializers.SerializerMethodField()
     eligible_review_applications = serializers.SerializerMethodField()
+    active_application_id = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -103,7 +104,29 @@ class PublicUserProfileSerializer(serializers.ModelSerializer):
             "reviews",
             "recent_projects",
             "eligible_review_applications",
+            "active_application_id",
         ]
+
+    def get_active_application_id(self, obj):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated or request.user.id == obj.id:
+            return None
+
+        from apps.projects.models import TeamApplication
+
+        application = (
+            TeamApplication.objects.filter(
+                status__in=["accepted", "pending"]
+            )
+            .filter(
+                (
+                    Q(project__owner=request.user, applicant=obj)
+                    | Q(project__owner=obj, applicant=request.user)
+                )
+            )
+            .first()
+        )
+        return application.id if application else None
 
     def get_average_rating(self, obj):
         value = obj.received_reviews.aggregate(avg=Avg("rating"))["avg"]

@@ -6,7 +6,10 @@ struct PublicProfileView: View {
     let userId: Int
 
     @State private var selectedApplicationId = ""
-    @State private var rating = 5
+    @State private var communicationRating = 5
+    @State private var teamworkRating = 5
+    @State private var reliabilityRating = 5
+    @State private var technicalRating = 5
     @State private var reviewComment = ""
 
     var body: some View {
@@ -24,6 +27,27 @@ struct PublicProfileView: View {
                         HStack(spacing: 8) {
                             badge(profile.is_premium ? "Premium" : "Topluluk Üyesi", tint: profile.is_premium ? FoundrlyTheme.primary : .white.opacity(0.14))
                             badge(profile.is_verified_talent ? "Doğrulanmış" : "Doğrulanmamış", tint: profile.is_verified_talent ? FoundrlyTheme.accent : .white.opacity(0.14))
+                        }
+
+                        if let threadId = profile.active_application_id, let meId = session.currentUser?.id, meId != profile.id {
+                            Button {
+                                Task {
+                                    await viewModel.selectThread(session: session, applicationId: threadId)
+                                    viewModel.selectedTabTag = session.isAdmin ? 2 : (session.isMentor ? 2 : 3)
+                                }
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "message.fill")
+                                    Text("Mesaj Gönder / Sohbet Başlat")
+                                        .fontWeight(.bold)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(FoundrlyTheme.primary)
+                                .foregroundStyle(.white)
+                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            }
+                            .padding(.top, 5)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -91,10 +115,40 @@ struct PublicProfileView: View {
                             .background(FoundrlyTheme.surfaceRaised)
                             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
 
-                            Stepper("Puan: \(rating)", value: $rating, in: 1...5)
-                                .padding()
-                                .background(FoundrlyTheme.surfaceRaised)
-                                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("Değerlendirme Kriterleri")
+                                    .font(.subheadline.bold())
+                                    .foregroundStyle(FoundrlyTheme.textSecondary)
+
+                                Stepper("İletişim: \(communicationRating) Puan", value: $communicationRating, in: 1...5)
+                                    .padding(.horizontal)
+                                    .padding(.vertical, 8)
+                                    .background(FoundrlyTheme.surfaceRaised)
+                                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+                                Stepper("Takım Çalışması: \(teamworkRating) Puan", value: $teamworkRating, in: 1...5)
+                                    .padding(.horizontal)
+                                    .padding(.vertical, 8)
+                                    .background(FoundrlyTheme.surfaceRaised)
+                                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+                                Stepper("Güvenilirlik: \(reliabilityRating) Puan", value: $reliabilityRating, in: 1...5)
+                                    .padding(.horizontal)
+                                    .padding(.vertical, 8)
+                                    .background(FoundrlyTheme.surfaceRaised)
+                                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+                                Stepper("Teknik Yetkinlik: \(technicalRating) Puan", value: $technicalRating, in: 1...5)
+                                    .padding(.horizontal)
+                                    .padding(.vertical, 8)
+                                    .background(FoundrlyTheme.surfaceRaised)
+                                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                
+                                Text("* Genel puan, kriterlerin ortalaması alınarak hesaplanır.")
+                                    .font(.caption)
+                                    .italic()
+                                    .foregroundStyle(FoundrlyTheme.textSecondary)
+                            }
 
                             TextField("Yorumun", text: $reviewComment, axis: .vertical)
                                 .padding()
@@ -103,12 +157,13 @@ struct PublicProfileView: View {
 
                             Button("Yorumu Gönder") {
                                 guard let applicationId = Int(selectedApplicationId), !reviewComment.isEmpty else { return }
+                                let averageRating = Int(round(Double(communicationRating + teamworkRating + reliabilityRating + technicalRating) / 4.0))
                                 Task {
                                     await viewModel.submitReview(
                                         session: session,
                                         userId: userId,
                                         applicationId: applicationId,
-                                        rating: rating,
+                                        rating: averageRating,
                                         comment: reviewComment
                                     )
                                     reviewComment = ""

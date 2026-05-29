@@ -41,8 +41,8 @@ def _get_accessible_message_application(user, application_id):
     except TeamApplication.DoesNotExist as exc:
         raise serializers.ValidationError("Mesajlasma kaydi bulunamadi.") from exc
 
-    if application.status != "accepted":
-        raise PermissionDenied("Mesajlasma sadece accepted basvurular icin acilir.")
+    if application.status not in {"accepted", "pending"}:
+        raise PermissionDenied("Mesajlasma sadece accepted veya pending basvurular icin acilir.")
 
     if user.id not in {application.project.owner_id, application.applicant_id}:
         raise PermissionDenied("Bu mesajlasma kaydina erisemezsiniz.")
@@ -306,7 +306,7 @@ class MessageThreadListView(APIView):
         applications = (
             TeamApplication.objects.select_related("project__owner", "applicant", "project")
             .prefetch_related("messages__sender")
-            .filter(status="accepted")
+            .filter(status__in=["accepted", "pending"])
             .filter(Q(project__owner=user) | Q(applicant=user))
             .distinct()
             .order_by("-created_at")

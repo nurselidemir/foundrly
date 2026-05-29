@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import FoundrlyLanding from "./components/marketing/FoundrlyLanding";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "";
+
 type HealthState = { status: "loading" | "ready" | "error"; message: string };
 type PremiumSubscriptionSummary = {
   plan: "monthly" | "yearly";
@@ -439,6 +441,7 @@ const APP_NAV_BASE = [
   { label: "Mesajlar", href: "#app-messages" },
   { label: "Mentörler", href: "#app-mentors" },
   { label: "YZ Ekip Kurucu", href: "#app-ai-builder" },
+  { label: "Premium", href: "#premium" },
   { label: "Profilim", href: "#app-profile" },
 ];
 
@@ -664,7 +667,7 @@ const BUILDER_STORIES = [
 const PLANS = [
   {
     name: "Ücretsiz",
-    price: "$0",
+    price: "₺0",
     period: "sonsuza kadar",
     desc: "Platformu keşfetmek için başla.",
     cta: "Ücretsiz Başla",
@@ -681,8 +684,8 @@ const PLANS = [
   },
   {
     name: "Premium",
-    price: "$5",
-    period: "/ ay · $48/yıl",
+    price: "₺199",
+    period: "/ ay · ₺1.990/yıl",
     desc: "Daha hızlı eşleş, daha görünür ol, daha güçlü ekip kur.",
     cta: "Premium'a Geç",
     ctaClass: "bg-white text-primary hover:bg-white/90",
@@ -939,8 +942,8 @@ function PremiumSimulationPage({
                   "YZ Ekip Kurucu ile aday kalitesini yükselt",
                   "Premium kurucu görünürlüğü ile daha iyi başvuru al",
                   "Doğrulanmış yetenek başvurusu ile güven sinyalini güçlendir",
-                  "Her ay 1 ücretsiz 15 dakikalık mentör görüşmesi aç",
-                  "İlk ücretsiz görüşmeden sonra ek seansları ödeme sistemi ile başlat",
+                  "Alanında uzman mentör havuzuna doğrudan erişim sağla",
+                  "Görüşme seanslarını güvenli ödeme sistemi ile rezerve et",
                 ].map((item) => (
                   <div key={item} className="flex items-start gap-3 text-sm text-white/78">
                     <span className="mt-1 h-2.5 w-2.5 rounded-full bg-aurum" />
@@ -975,7 +978,7 @@ function PremiumSimulationPage({
                   <div className="rounded-[1.4rem] border border-success/20 bg-success/10 px-4 py-4 text-sm leading-7 text-white/82">
                     <p className="text-xs font-bold uppercase tracking-[0.22em] text-success">Premium aktif</p>
                     <p className="mt-2">
-                      Hesabın şu anda premium özelliklere erişebiliyor. Her ay 1 ücretsiz 15 dakikalık mentör görüşmen var; ek seanslar için ödeme adımını kullanabilirsin.
+                      Hesabın şu anda premium özelliklere erişebiliyor. Uzman mentörlerden dilediğin zaman doğrudan güvenli ödeme seanslarıyla görüşme talebi gönderebilirsin.
                     </p>
                     {subscriptionState?.subscription && (
                       <p className="mt-3 text-sm text-white/70">
@@ -1031,8 +1034,8 @@ function PremiumSimulationPage({
                         className={`rounded-2xl border px-4 py-4 text-left transition ${selectedPlan === "monthly" ? "border-white/24 bg-white text-[#08101f] shadow-[0_10px_30px_rgba(255,255,255,0.12)]" : "border-white/12 bg-[#101b38] text-white"}`}
                       >
                         <span className="block text-xs font-bold uppercase tracking-[0.2em]">Aylık Plan</span>
-                        <span className="mt-2 block text-2xl font-black">$5</span>
-                        <span className="mt-2 block text-sm opacity-75">Her ay 1 ücretsiz 15 dk mentör görüşmesi</span>
+                        <span className="mt-2 block text-2xl font-black">₺199</span>
+                        <span className="mt-2 block text-sm opacity-75">Birebir mentörlük seansı talep edebilme</span>
                       </button>
                       <button
                         type="button"
@@ -1040,7 +1043,7 @@ function PremiumSimulationPage({
                         className={`rounded-2xl border px-4 py-4 text-left transition ${selectedPlan === "yearly" ? "border-white/24 bg-white text-[#08101f] shadow-[0_10px_30px_rgba(255,255,255,0.12)]" : "border-white/12 bg-[#101b38] text-white"}`}
                       >
                         <span className="block text-xs font-bold uppercase tracking-[0.2em]">Yıllık Plan</span>
-                        <span className="mt-2 block text-2xl font-black">$48</span>
+                        <span className="mt-2 block text-2xl font-black">₺1.990</span>
                         <span className="mt-2 block text-sm opacity-75">12 ay kesintisiz premium akış</span>
                       </button>
                     </div>
@@ -1081,9 +1084,9 @@ function PremiumSimulationPage({
                       <span className="block text-xs font-bold uppercase tracking-[0.22em] text-primary/60">
                         Aylık erişim
                       </span>
-                      <span className="mt-2 block text-3xl font-black">$5</span>
+                      <span className="mt-2 block text-3xl font-black">₺199</span>
                       <span className="mt-2 block text-sm leading-6 text-ink/65">
-                        Premium katmanı anında aç, görünürlüğünü artır ve her ay 1 ücretsiz 15 dakikalık mentör görüşmesi kazan.
+                        Premium katmanı anında aç, görünürlüğünü artır ve mentörlerden seans talep edebilme yetkisine sahip ol.
                       </span>
                     </button>
                     <button
@@ -1094,9 +1097,9 @@ function PremiumSimulationPage({
                       <span className="block text-xs font-bold uppercase tracking-[0.22em] text-white/55">
                         Yıllık erişim
                       </span>
-                      <span className="mt-2 block text-3xl font-black">$48</span>
+                      <span className="mt-2 block text-3xl font-black">₺1.990</span>
                       <span className="mt-2 block text-sm leading-6 text-white/68">
-                        En iyi fiyatla tüm premium akışlara ve her ay yenilenen ücretsiz mentör görüşme hakkına eriş.
+                        En iyi fiyatla tüm premium akışlara ve mentörlerden seans talep edebilme hakkına eriş.
                       </span>
                     </button>
                   </div>
@@ -1240,7 +1243,7 @@ function AuthPage({
 
     try {
       if (isRegister) {
-        const registerResponse = await fetch("/api/auth/register/", {
+        const registerResponse = await fetch(API_BASE_URL + "/api/auth/register/", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -1265,7 +1268,7 @@ function AuthPage({
         setPassword("");
         window.location.hash = `#login${nextSuffix}`;
       } else {
-        const tokenResponse = await fetch("/api/auth/token/", {
+        const tokenResponse = await fetch(API_BASE_URL + "/api/auth/token/", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
@@ -1279,7 +1282,7 @@ function AuthPage({
         localStorage.setItem("foundrly_access_token", tokenData.access);
         localStorage.setItem("foundrly_refresh_token", tokenData.refresh);
 
-        const meResponse = await fetch("/api/users/me/", {
+        const meResponse = await fetch(API_BASE_URL + "/api/users/me/", {
           headers: {
             Authorization: `Bearer ${tokenData.access}`,
           },
@@ -1635,12 +1638,16 @@ function DashboardPage({
   const [publicProfileLoading, setPublicProfileLoading] = useState(false);
   const [reviewForm, setReviewForm] = useState({
     application_id: "",
-    rating: 5,
+    communication: 5,
+    teamwork: 5,
+    reliability: 5,
+    technical: 5,
     comment: "",
   });
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [onboardingRole, setOnboardingRole] = useState("Founder");
   const [onboardingSkills, setOnboardingSkills] = useState<string[]>(["React", "AI"]);
+  const [manualSkill, setManualSkill] = useState("");
   const [onboardingGoal, setOnboardingGoal] = useState("Build a startup team");
   const nonMentorAdminUsers = adminUsers.filter((user) => !user.is_mentor);
 
@@ -1688,11 +1695,11 @@ function DashboardPage({
   const loadDashboard = async () => {
     if (!authHeaders) return;
     const [summaryResponse, threadsResponse, projectsResponse, receivedResponse, sentResponse] = await Promise.all([
-      fetch("/api/dashboard/summary/", { headers: authHeaders }),
-      fetch("/api/messages/threads/", { headers: authHeaders }),
-      fetch("/api/projects/", { headers: authHeaders }),
-      fetch("/api/applications/?received=true", { headers: authHeaders }),
-      fetch("/api/applications/?mine=true", { headers: authHeaders }),
+      fetch(API_BASE_URL + "/api/dashboard/summary/", { headers: authHeaders }),
+      fetch(API_BASE_URL + "/api/messages/threads/", { headers: authHeaders }),
+      fetch(API_BASE_URL + "/api/projects/", { headers: authHeaders }),
+      fetch(API_BASE_URL + "/api/applications/?received=true", { headers: authHeaders }),
+      fetch(API_BASE_URL + "/api/applications/?mine=true", { headers: authHeaders }),
     ]);
 
     let premiumStatus = false;
@@ -1708,9 +1715,9 @@ function DashboardPage({
     if (premiumStatus) {
       try {
         const [recRes, mentorsRes, userReqRes] = await Promise.all([
-          fetch("/api/dashboard/recommended-projects/", { headers: authHeaders }),
-          fetch("/api/mentors/", { headers: authHeaders }),
-          fetch("/api/mentors/requests/", { headers: authHeaders }),
+          fetch(API_BASE_URL + "/api/dashboard/recommended-projects/", { headers: authHeaders }),
+          fetch(API_BASE_URL + "/api/mentors/", { headers: authHeaders }),
+          fetch(API_BASE_URL + "/api/mentors/requests/", { headers: authHeaders }),
         ]);
         if (recRes.ok) setRecommendedProjects(await recRes.json());
         if (mentorsRes.ok) setMentors(await mentorsRes.json());
@@ -1720,7 +1727,7 @@ function DashboardPage({
 
     if (mentorStatus) {
       try {
-        const reqRes = await fetch("/api/mentors/my-requests/", { headers: authHeaders });
+        const reqRes = await fetch(API_BASE_URL + "/api/mentors/my-requests/", { headers: authHeaders });
         if (reqRes.ok) setMentorRequests(await reqRes.json());
       } catch (e) {}
     } else {
@@ -1766,7 +1773,10 @@ function DashboardPage({
         application_id: data.eligible_review_applications[0]?.application_id
           ? String(data.eligible_review_applications[0].application_id)
           : "",
-        rating: 5,
+        communication: 5,
+        teamwork: 5,
+        reliability: 5,
+        technical: 5,
         comment: "",
       });
     } catch (error) {
@@ -1785,7 +1795,13 @@ function DashboardPage({
       setPublicProfileFeedback("Yorum bırakmak için giriş yapmalısın.");
       return;
     }
-    setPublicProfileFeedback("");
+    const ratingAverage = Math.round(
+      (reviewForm.communication +
+        reviewForm.teamwork +
+        reviewForm.reliability +
+        reviewForm.technical) /
+        4
+    );
     const response = await fetch(`/api/users/${publicProfileId}/reviews/`, {
       method: "POST",
       headers: {
@@ -1794,7 +1810,7 @@ function DashboardPage({
       },
       body: JSON.stringify({
         application_id: Number(reviewForm.application_id),
-        rating: reviewForm.rating,
+        rating: ratingAverage,
         comment: reviewForm.comment,
       }),
     });
@@ -1819,7 +1835,7 @@ function DashboardPage({
 
   const loadAdminDashboard = async () => {
     if (!authHeaders || !isAdmin) return;
-    const response = await fetch("/api/admin/dashboard/", { headers: authHeaders });
+    const response = await fetch(API_BASE_URL + "/api/admin/dashboard/", { headers: authHeaders });
     if (response.ok) {
       setAdminDashboard(await response.json());
     }
@@ -1835,7 +1851,7 @@ function DashboardPage({
 
   const loadVerificationRequests = async () => {
     if (!authHeaders || !isAdmin) return;
-    const response = await fetch("/api/admin/verification-requests/?status=pending", {
+    const response = await fetch(API_BASE_URL + "/api/admin/verification-requests/?status=pending", {
       headers: authHeaders,
     });
     if (response.ok) {
@@ -1862,7 +1878,7 @@ function DashboardPage({
 
   const loadAdminEvents = async () => {
     if (!authHeaders || !isAdmin) return;
-    const response = await fetch("/api/admin/events/", { headers: authHeaders });
+    const response = await fetch(API_BASE_URL + "/api/admin/events/", { headers: authHeaders });
     if (response.ok) {
       setAdminEvents(await response.json());
     }
@@ -1870,7 +1886,7 @@ function DashboardPage({
 
   const loadAdminMentors = async () => {
     if (!authHeaders || !isAdmin) return;
-    const response = await fetch("/api/admin/mentors/", { headers: authHeaders });
+    const response = await fetch(API_BASE_URL + "/api/admin/mentors/", { headers: authHeaders });
     if (response.ok) {
       setAdminMentors(await response.json());
     }
@@ -1878,7 +1894,7 @@ function DashboardPage({
 
   const loadAdminGuides = async () => {
     if (!authHeaders || !isAdmin) return;
-    const response = await fetch("/api/admin/guides/", { headers: authHeaders });
+    const response = await fetch(API_BASE_URL + "/api/admin/guides/", { headers: authHeaders });
     if (response.ok) {
       setAdminGuides(await response.json());
     }
@@ -1889,7 +1905,7 @@ function DashboardPage({
     if (!authHeaders || !isAdmin) return;
     setAdminEventFeedback("");
     try {
-      const response = await fetch("/api/admin/events/", {
+      const response = await fetch(API_BASE_URL + "/api/admin/events/", {
         method: "POST",
         headers: authHeaders,
         body: JSON.stringify(adminEventForm),
@@ -1939,7 +1955,7 @@ function DashboardPage({
     if (!authHeaders || !isAdmin) return;
     setAdminGuideFeedback("");
     try {
-      const response = await fetch("/api/admin/guides/", {
+      const response = await fetch(API_BASE_URL + "/api/admin/guides/", {
         method: "POST",
         headers: authHeaders,
         body: JSON.stringify({
@@ -2019,7 +2035,7 @@ function DashboardPage({
         ...manualMentorForm,
         is_mentor: true,
       };
-      const response = await fetch("/api/admin/users/create/", {
+      const response = await fetch(API_BASE_URL + "/api/admin/users/create/", {
         method: "POST",
         headers: authHeaders,
         body: JSON.stringify(payload),
@@ -2106,7 +2122,7 @@ function DashboardPage({
     if (!authHeaders) return;
     setMentorFeedback("");
     try {
-      const response = await fetch("/api/mentors/requests/", {
+      const response = await fetch(API_BASE_URL + "/api/mentors/requests/", {
         method: "POST",
         headers: authHeaders,
         body: JSON.stringify({ mentor: mentorId, message }),
@@ -2181,7 +2197,7 @@ function DashboardPage({
     formData.append("profile_picture", file);
 
     try {
-      const response = await fetch("/api/users/me/profile-picture/", {
+      const response = await fetch(API_BASE_URL + "/api/users/me/profile-picture/", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -2200,7 +2216,7 @@ function DashboardPage({
   const handleSendFriendRequest = async (receiverId: number) => {
     if (!authHeaders) return;
     try {
-      const response = await fetch("/api/friend-requests/", {
+      const response = await fetch(API_BASE_URL + "/api/friend-requests/", {
         method: "POST",
         headers: authHeaders,
         body: JSON.stringify({ receiver: receiverId }),
@@ -2249,13 +2265,13 @@ function DashboardPage({
       ...baseProfile,
       title,
       bio,
-      skills: Array.from(new Set([...(baseProfile.skills || []), ...onboardingSkills])),
-      interests: Array.from(new Set([...(baseProfile.interests || []), onboardingGoal])),
+      skills: onboardingSkills,
+      interests: [onboardingGoal],
     };
 
     if (authHeaders) {
       try {
-        await fetch("/api/users/me/", {
+        await fetch(API_BASE_URL + "/api/users/me/", {
           method: "PATCH",
           headers: {
             ...authHeaders,
@@ -2327,7 +2343,7 @@ function DashboardPage({
     if (!authHeaders) return;
     setProjectFeedback("");
 
-    const response = await fetch("/api/projects/", {
+    const response = await fetch(API_BASE_URL + "/api/projects/", {
       method: "POST",
       headers: authHeaders,
       body: JSON.stringify({
@@ -2509,7 +2525,7 @@ function DashboardPage({
     }
 
     setBillingFeedback("");
-    const response = await fetch("/api/premium/subscription/", {
+    const response = await fetch(API_BASE_URL + "/api/premium/subscription/", {
       method: "POST",
       headers: authHeaders,
       body: JSON.stringify({ plan }),
@@ -2527,7 +2543,7 @@ function DashboardPage({
   const handleApplicationSubmit = async (projectId: number) => {
     if (!authHeaders || !applicationMessage.trim()) return;
     setApplicationFeedback("");
-    const response = await fetch("/api/applications/", {
+    const response = await fetch(API_BASE_URL + "/api/applications/", {
       method: "POST",
       headers: authHeaders,
       body: JSON.stringify({
@@ -2574,7 +2590,7 @@ function DashboardPage({
     event.preventDefault();
     if (!authHeaders) return;
     setVerifiedFeedback("");
-    const response = await fetch("/api/verification-requests/", {
+    const response = await fetch(API_BASE_URL + "/api/verification-requests/", {
       method: "POST",
       headers: authHeaders,
       body: JSON.stringify(verifiedForm),
@@ -2592,20 +2608,20 @@ function DashboardPage({
     <div className="min-h-screen bg-[#050B18] font-sans text-white antialiased relative overflow-hidden">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(71,93,178,0.25),transparent_30%),radial-gradient(circle_at_80%_18%,rgba(63,177,112,0.15),transparent_25%),radial-gradient(circle_at_50%_110%,rgba(71,93,178,0.18),transparent_40%)]" />
       <header className="sticky top-0 z-50 border-b border-white/10 bg-[#050B18]/72 backdrop-blur-xl relative z-10">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
-          <a href={isAdmin ? "#app-admin" : isMentor ? "#app-mentor-panel" : "#app-home"} className="flex items-center gap-4 leading-none">
-            <img src="/f.jpg" alt="Foundrly" className="h-16 w-16 rounded-xl object-cover shadow-sm" />
-            <span className="text-2xl font-extrabold tracking-tight text-white">
+        <div className="flex w-full items-center justify-between px-4 py-4 lg:px-6">
+          <a href={isAdmin ? "#app-admin" : isMentor ? "#app-mentor-panel" : "#app-home"} className="flex items-center gap-4 leading-none mr-6">
+            <img src="/f.jpg" alt="Foundrly" className="h-12 w-12 lg:h-16 lg:w-16 rounded-xl object-cover shadow-sm" />
+            <span className="text-xl lg:text-2xl font-extrabold tracking-tight text-white">
               Foundrly
             </span>
           </a>
 
-          <nav className="hidden gap-3 md:flex md:flex-wrap md:justify-end">
+          <nav className="hidden md:flex md:flex-wrap md:items-center md:justify-end gap-x-3 lg:gap-x-5 gap-y-3">
             {appNav.map((item) => (
               <a
                 key={item.href}
                 href={item.href}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                className={`rounded-full px-3 lg:px-4 py-2 text-[12px] lg:text-sm font-bold transition whitespace-nowrap ${
                   window.location.hash === item.href ||
                   (item.href === "#app-home" && window.location.hash === "#dashboard")
                     ? "bg-primary text-white shadow-halo"
@@ -2635,103 +2651,154 @@ function DashboardPage({
       </header>
 
       <main className="relative z-10 mx-auto max-w-7xl px-6 py-10 lg:px-10">
-        {route === "app-home" && (
-          <div className="space-y-6">
-            {onboardingOpen && (
-              <section className="relative overflow-hidden rounded-[2.5rem] border border-primary/20 bg-[radial-gradient(circle_at_top_left,rgba(71,93,178,0.28),transparent_30%),linear-gradient(180deg,#0A1223,#0B1529)] p-8 text-white shadow-[0_30px_120px_rgba(0,0,0,0.35)] lg:p-10">
-                <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white/10 to-transparent" />
-                <div className="relative flex flex-col gap-8 xl:flex-row xl:items-start xl:justify-between">
-                   <div className="max-w-2xl">
-                    <p className="text-xs font-bold uppercase tracking-[0.28em] text-white/52">İlk Kurulum</p>
-                    <h2 className="mt-4 text-4xl font-extrabold tracking-tight">Kurucu sinyalinizi bir dakikadan kısa sürede şekillendirin.</h2>
-                    <p className="mt-4 text-base leading-8 text-slate-300">
-                      Bunu proje keşfini keskinleştirmek, YZ eşleşme kalitesini artırmak ve doğru ekip arkadaşlarının sizi daha hızlı bulmasını sağlamak için kullanıyoruz.
-                    </p>
-                  </div>
+        {onboardingOpen && (
+          <section className="mb-10 relative overflow-hidden rounded-[2.5rem] border border-primary/20 bg-[radial-gradient(circle_at_top_left,rgba(71,93,178,0.28),transparent_30%),linear-gradient(180deg,#0A1223,#0B1529)] p-8 text-white shadow-[0_30px_120px_rgba(0,0,0,0.35)] lg:p-10">
+            <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white/10 to-transparent" />
+            <div className="relative flex flex-col gap-8 xl:flex-row xl:items-start xl:justify-between">
+               <div className="max-w-2xl">
+                <p className="text-xs font-bold uppercase tracking-[0.28em] text-white/52">Profil Ayarları</p>
+                <h2 className="mt-4 text-4xl font-extrabold tracking-tight">Kurucu sinyalinizi güncelleyin.</h2>
+                <p className="mt-4 text-base leading-8 text-slate-300">
+                  Bunu proje keşfini keskinleştirmek, YZ eşleşme kalitesini artırmak ve doğru ekip arkadaşlarının sizi daha hızlı bulmasını sağlamak için kullanıyoruz.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOnboardingOpen(false)}
+                className="rounded-full border border-white/12 px-4 py-2 text-sm font-semibold text-white/70 transition hover:bg-white/10"
+              >
+                Kapat
+              </button>
+            </div>
+            <div className="relative mt-8 grid gap-6 xl:grid-cols-[1fr_0.9fr]">
+              <div className="grid gap-4 md:grid-cols-2">
+                {ONBOARDING_TRACKS.map((track) => (
                   <button
+                    key={track.key}
                     type="button"
-                    onClick={() => setOnboardingOpen(false)}
-                    className="rounded-full border border-white/12 px-4 py-2 text-sm font-semibold text-white/70 transition hover:bg-white/10"
+                    onClick={() => setOnboardingRole(track.key)}
+                    className={`rounded-[1.75rem] border p-5 text-left transition ${
+                      onboardingRole === track.key
+                        ? "border-white/24 bg-white/12"
+                        : "border-white/10 bg-white/6 hover:border-white/18 hover:bg-white/8"
+                    }`}
                   >
-                    Şimdilik Geç
+                    <p className="text-lg font-bold text-white">{track.title}</p>
+                    <p className="mt-2 text-sm leading-7 text-slate-300">{track.body}</p>
                   </button>
+                ))}
+              </div>
+              <div className="rounded-[2rem] border border-white/10 bg-white/6 p-6 backdrop-blur">
+                <p className="text-xs font-bold uppercase tracking-[0.24em] text-white/45">Sinyal Girişleri</p>
+                <div className="mt-5">
+                  <p className="text-sm font-semibold text-white">Öne Çıkan Beceriler</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {ONBOARDING_SKILLS.slice(0, 12).map((skill) => {
+                      const active = onboardingSkills.includes(skill);
+                      return (
+                        <button
+                          key={skill}
+                          type="button"
+                          onClick={() =>
+                            setOnboardingSkills((current) =>
+                              current.includes(skill)
+                                ? current.filter((item) => item !== skill)
+                                : [...current, skill]
+                            )
+                          }
+                          className={`rounded-full px-3 py-2 text-xs font-bold transition ${
+                            active ? "bg-white text-[#091222]" : "border border-white/10 bg-black/20 text-white/72"
+                          }`}
+                        >
+                           {skill}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-4 flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Farklı bir beceri yazın... (Örn: Three.js)"
+                      value={manualSkill}
+                      onChange={(e) => setManualSkill(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && manualSkill.trim()) {
+                          e.preventDefault();
+                          const s = manualSkill.trim();
+                          if (!onboardingSkills.includes(s)) {
+                            setOnboardingSkills([...onboardingSkills, s]);
+                          }
+                          setManualSkill("");
+                        }
+                      }}
+                      className="app-input flex-1 !py-2 !text-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (manualSkill.trim()) {
+                          const s = manualSkill.trim();
+                          if (!onboardingSkills.includes(s)) {
+                            setOnboardingSkills([...onboardingSkills, s]);
+                          }
+                          setManualSkill("");
+                        }
+                      }}
+                      className="rounded-xl bg-white/10 px-4 py-2 text-xs font-bold text-white transition hover:bg-white/20"
+                    >
+                      Ekle
+                    </button>
+                  </div>
+                  {onboardingSkills.length > 0 && (
+                    <div className="mt-4 flex flex-wrap gap-2 border-t border-white/5 pt-4">
+                      {onboardingSkills.map((s) => (
+                        <span key={s} className="flex items-center gap-1 rounded-full bg-primary/20 px-3 py-1 text-[11px] font-bold text-primary">
+                          {s}
+                          <button
+                            type="button"
+                            onClick={() => setOnboardingSkills(onboardingSkills.filter((item) => item !== s))}
+                            className="ml-1 hover:text-white"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div className="relative mt-8 grid gap-6 xl:grid-cols-[1fr_0.9fr]">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {ONBOARDING_TRACKS.map((track) => (
+                <div className="mt-6">
+                  <p className="text-sm font-semibold text-white">Birincil Hedef</p>
+                  <div className="mt-3 grid gap-2">
+                    {ONBOARDING_GOALS.map((goal) => (
                       <button
-                        key={track.key}
+                        key={goal}
                         type="button"
-                        onClick={() => setOnboardingRole(track.key)}
-                        className={`rounded-[1.75rem] border p-5 text-left transition ${
-                          onboardingRole === track.key
-                            ? "border-white/24 bg-white/12"
-                            : "border-white/10 bg-white/6 hover:border-white/18 hover:bg-white/8"
+                        onClick={() => setOnboardingGoal(goal)}
+                        className={`rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${
+                          onboardingGoal === goal
+                            ? "border-success/30 bg-success/12 text-white"
+                            : "border-white/10 bg-black/20 text-white/72 hover:border-white/20"
                         }`}
                       >
-                        <p className="text-lg font-bold text-white">{track.title}</p>
-                        <p className="mt-2 text-sm leading-7 text-slate-300">{track.body}</p>
+                        {goal}
                       </button>
                     ))}
                   </div>
-                  <div className="rounded-[2rem] border border-white/10 bg-white/6 p-6 backdrop-blur">
-                    <p className="text-xs font-bold uppercase tracking-[0.24em] text-white/45">Sinyal Girişleri</p>
-                    <div className="mt-5">
-                      <p className="text-sm font-semibold text-white">Öne Çıkan Beceriler</p>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {ONBOARDING_SKILLS.map((skill) => {
-                          const active = onboardingSkills.includes(skill);
-                          return (
-                            <button
-                              key={skill}
-                              type="button"
-                              onClick={() =>
-                                setOnboardingSkills((current) =>
-                                  current.includes(skill)
-                                    ? current.filter((item) => item !== skill)
-                                    : [...current.slice(-2), skill]
-                                )
-                              }
-                              className={`rounded-full px-3 py-2 text-xs font-bold transition ${
-                                active ? "bg-white text-[#091222]" : "border border-white/10 bg-black/20 text-white/72"
-                              }`}
-                            >
-                               {skill}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                    <div className="mt-6">
-                      <p className="text-sm font-semibold text-white">Birincil Hedef</p>
-                      <div className="mt-3 grid gap-2">
-                        {ONBOARDING_GOALS.map((goal) => (
-                          <button
-                            key={goal}
-                            type="button"
-                            onClick={() => setOnboardingGoal(goal)}
-                            className={`rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${
-                              onboardingGoal === goal
-                                ? "border-success/30 bg-success/12 text-white"
-                                : "border-white/10 bg-black/20 text-white/72 hover:border-white/20"
-                            }`}
-                          >
-                            {goal}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={completeOnboarding}
-                      className="mt-6 w-full rounded-2xl bg-[linear-gradient(135deg,#5b73db_0%,#475DB2_45%,#3FB170_100%)] px-6 py-3 text-sm font-bold text-white shadow-[0_16px_45px_rgba(71,93,178,0.36)] transition hover:scale-[1.01]"
-                    >
-                      Sinyalleri Kaydet ve Başla
-                    </button>
-                  </div>
                 </div>
-              </section>
-            )}
+                <button
+                  type="button"
+                  onClick={completeOnboarding}
+                  className="mt-6 w-full rounded-2xl bg-[linear-gradient(135deg,#5b73db_0%,#475DB2_45%,#3FB170_100%)] px-6 py-3 text-sm font-bold text-white shadow-[0_16px_45px_rgba(71,93,178,0.36)] transition hover:scale-[1.01]"
+                >
+                  Sinyalleri Kaydet ve Başla
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {route === "app-home" && (
+          <div className="space-y-6">
 
             <section className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/5 text-white p-8 shadow-halo backdrop-blur lg:p-10">
               <div className="absolute inset-x-0 top-0 h-28 bg-[radial-gradient(circle_at_top_left,rgba(71,93,178,0.18),transparent_46%),radial-gradient(circle_at_80%_0%,rgba(63,177,112,0.1),transparent_28%)]" />
@@ -2977,7 +3044,7 @@ function DashboardPage({
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     {[
                       ["Açık Sohbetler", threads.length],
-                      ["Mentör Kredileri", summary?.profile.mentor_credits ?? currentUser?.mentor_credits ?? 0],
+                      ["Üyelik Tipi", isPremium ? "Premium" : "Standart"],
                       ["Gönderilen Başvurular", sentApplications.length],
                       ["Premium Görünürlük", isPremium ? "Aktif" : "Pasif"],
                     ].map(([label, value]) => (
@@ -3462,6 +3529,11 @@ function DashboardPage({
                         {(summary?.profile.is_premium || currentUser?.is_premium) && <span className="rounded-full bg-primary/14 px-3 py-1 text-xs font-bold text-[#9ab0ff]">Premium Üye</span>}
                         {(summary?.profile.is_mentor || currentUser?.is_mentor) && <span className="rounded-full bg-secondary/10 px-3 py-1 text-xs font-bold text-secondary">Resmi Mentör</span>}
                       </div>
+                      <div className="mt-6 flex flex-wrap gap-3">
+                        <button type="button" onClick={() => setOnboardingOpen(true)} className="rounded-xl border border-white/12 bg-white/6 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-white/10">
+                          Profilimi Düzenle
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -3517,8 +3589,8 @@ function DashboardPage({
             {!summary?.profile.is_premium && !currentUser?.is_premium ? (
               <div className="app-panel rounded-[2rem] border-primary/18 p-6 shadow-halo backdrop-blur">
                 <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#9ab0ff]">Premium</p>
-                <h3 className="mt-2 text-2xl font-extrabold text-white">YZ Ekip Kurucu, mentör kredileri ve verified başvurusu için premium'a geç</h3>
-                    <p className="mt-2 max-w-3xl text-sm leading-7 text-white/68">Premium hesabı aktive edildiğinde yapay zeka destekli aday sıralaması açılır, profil görünürlüğün yükselir ve her ay 1 ücretsiz 15 dakikalık mentör görüşmesi hakkı kazanırsın. Sonraki seanslar ödeme sistemi ile ilerler.</p>
+                <h3 className="mt-2 text-2xl font-extrabold text-white">YZ Ekip Kurucu ve verified başvurusu için premium'a geç</h3>
+                    <p className="mt-2 max-w-3xl text-sm leading-7 text-white/68">Premium hesabı aktive edildiğinde yapay zeka destekli aday sıralaması açılır, profil görünürlüğün yükselir ve mentörlerden birebir seans talep edebilirsin. Seanslar doğrudan güvenli ödeme sistemi ile rezerve edilir.</p>
                 {billingFeedback && <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-[#c7d3ff]">{billingFeedback}</div>}
                 <div className="mt-5 flex flex-wrap gap-3">
                   <a href="#premium" className="rounded-2xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90">Premium Sayfasına Git</a>
@@ -3528,17 +3600,31 @@ function DashboardPage({
                 </div>
               </div>
             ) : (
-              <div className="app-panel rounded-[2rem] border-amber-300/25 p-6 shadow-halo backdrop-blur">
-                <p className="text-sm font-bold uppercase tracking-[0.2em] text-amber-300/75">Doğrulanmış Yetenek Başvurusu</p>
-                <h3 className="mt-2 text-2xl font-extrabold text-white">Yeteneklerini doğrula ve vitrinde öne çık</h3>
-                <p className="mt-2 max-w-3xl text-sm leading-7 text-white/68">Premium üye olduğun için doğrulanmış yetenek rozetine başvurabilirsin. Onaylandığında profilindeki güven sinyali daha güçlü görünür ve eşleşme kaliten yükselir.</p>
-                <form className="mt-6 space-y-4" onSubmit={handleVerifiedSubmit}>
-                  <input type="text" required placeholder="Başvurduğun unvan" value={verifiedForm.requested_title} onChange={(e) => setVerifiedForm({ ...verifiedForm, requested_title: e.target.value })} className="app-input" />
-                  <input type="url" required placeholder="Portfolyo URL" value={verifiedForm.portfolio_url} onChange={(e) => setVerifiedForm({ ...verifiedForm, portfolio_url: e.target.value })} className="app-input" />
-                  <textarea placeholder="Eklemek istediğin notlar..." value={verifiedForm.note} onChange={(e) => setVerifiedForm({ ...verifiedForm, note: e.target.value })} className="app-input min-h-24" />
-                  {verifiedFeedback && <div className="rounded-2xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">{verifiedFeedback}</div>}
-                  <button type="submit" className="rounded-2xl bg-amber-500 px-6 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-amber-600">Rozet Başvurusu Yap</button>
-                </form>
+              <div className="space-y-6">
+                <div className="app-panel rounded-[2rem] border-primary/18 p-6 shadow-halo backdrop-blur">
+                  <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#9ab0ff]">Premium</p>
+                  <h3 className="mt-2 text-2xl font-extrabold text-white">Premium aktif</h3>
+                  <p className="mt-2 max-w-3xl text-sm leading-7 text-white/68">
+                    YZ Ekip Kurucu, Doğrulanmış Yetenek başvurusu ve mentörlere güvenli ödeme seansları ile erişim gibi tüm premium ayrıcalıklara sahipsiniz.
+                  </p>
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    <a href="#premium" className="rounded-2xl border border-white/12 bg-white/6 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10">
+                      Üyeliğimi Yönet
+                    </a>
+                  </div>
+                </div>
+                <div className="app-panel rounded-[2rem] border-amber-300/25 p-6 shadow-halo backdrop-blur">
+                  <p className="text-sm font-bold uppercase tracking-[0.2em] text-amber-300/75">Doğrulanmış Yetenek Başvurusu</p>
+                  <h3 className="mt-2 text-2xl font-extrabold text-white">Yeteneklerini doğrula ve vitrinde öne çık</h3>
+                  <p className="mt-2 max-w-3xl text-sm leading-7 text-white/68">Premium üye olduğun için doğrulanmış yetenek rozetine başvurabilirsin. Onaylandığında profilindeki güven sinyali daha güçlü görünür ve eşleşme kaliten yükselir.</p>
+                  <form className="mt-6 space-y-4" onSubmit={handleVerifiedSubmit}>
+                    <input type="text" required placeholder="Başvurduğun unvan" value={verifiedForm.requested_title} onChange={(e) => setVerifiedForm({ ...verifiedForm, requested_title: e.target.value })} className="app-input" />
+                    <input type="url" required placeholder="Portfolyo URL" value={verifiedForm.portfolio_url} onChange={(e) => setVerifiedForm({ ...verifiedForm, portfolio_url: e.target.value })} className="app-input" />
+                    <textarea placeholder="Eklemek istediğin notlar..." value={verifiedForm.note} onChange={(e) => setVerifiedForm({ ...verifiedForm, note: e.target.value })} className="app-input min-h-24" />
+                    {verifiedFeedback && <div className="rounded-2xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">{verifiedFeedback}</div>}
+                    <button type="submit" className="rounded-2xl bg-amber-500 px-6 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-amber-600">Rozet Başvurusu Yap</button>
+                  </form>
+                </div>
               </div>
             )}
           </section>
@@ -3564,6 +3650,19 @@ function DashboardPage({
                         {publicProfile.is_premium ? " · Premium" : ""}
                       </p>
                       <p className="mt-4 text-sm leading-7 text-white/68">{publicProfile.bio || "Bu kullanıcı henüz biyografi eklememiş."}</p>
+                      
+                      {currentUser && currentUser.id !== publicProfile.id && publicProfile.active_application_id && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            loadThreadDetail(publicProfile.active_application_id!);
+                            setRoute("app-messages");
+                          }}
+                          className="mt-5 flex items-center gap-2 rounded-2xl bg-primary px-6 py-3.5 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90"
+                        >
+                          <span className="text-base">💬</span> Sohbet Başlat / Mesaj Gönder
+                        </button>
+                      )}
                     </div>
                     <div className="grid min-w-[280px] gap-3 sm:grid-cols-2">
                       <div className="app-soft-card rounded-2xl p-4">
@@ -3642,17 +3741,58 @@ function DashboardPage({
                     {currentUser && publicProfile.eligible_review_applications.length > 0 && (
                       <form className="mt-6 space-y-4 rounded-2xl border border-primary/20 bg-primary/10 p-5" onSubmit={handleCreateReview}>
                         <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary/60">Birlikte Çalışma Yorumu</p>
-                        <select value={reviewForm.application_id} onChange={(e) => setReviewForm((current) => ({ ...current, application_id: e.target.value }))} className="app-input" required>
-                          {publicProfile.eligible_review_applications.map((item) => (
-                            <option key={item.application_id} value={item.application_id}>{item.project_title}</option>
-                          ))}
-                        </select>
-                        <select value={reviewForm.rating} onChange={(e) => setReviewForm((current) => ({ ...current, rating: Number(e.target.value) }))} className="app-input">
-                          {[5, 4, 3, 2, 1].map((rating) => (
-                            <option key={rating} value={rating}>{rating} puan</option>
-                          ))}
-                        </select>
-                        <textarea value={reviewForm.comment} onChange={(e) => setReviewForm((current) => ({ ...current, comment: e.target.value }))} placeholder="Birlikte çalışma deneyimini kısaca yaz." className="app-input min-h-28" required />
+                        
+                        <div>
+                          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-white/50">Proje Seçimi</label>
+                          <select value={reviewForm.application_id} onChange={(e) => setReviewForm((current) => ({ ...current, application_id: e.target.value }))} className="app-input" required>
+                            {publicProfile.eligible_review_applications.map((item) => (
+                              <option key={item.application_id} value={item.application_id}>{item.project_title}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-white/50">İletişim</label>
+                            <select value={reviewForm.communication} onChange={(e) => setReviewForm((current) => ({ ...current, communication: Number(e.target.value) }))} className="app-input">
+                              {[5, 4, 3, 2, 1].map((rating) => (
+                                <option key={rating} value={rating}>{rating} Puan</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-white/50">Takım Çalışması</label>
+                            <select value={reviewForm.teamwork} onChange={(e) => setReviewForm((current) => ({ ...current, teamwork: Number(e.target.value) }))} className="app-input">
+                              {[5, 4, 3, 2, 1].map((rating) => (
+                                <option key={rating} value={rating}>{rating} Puan</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-white/50">Güvenilirlik</label>
+                            <select value={reviewForm.reliability} onChange={(e) => setReviewForm((current) => ({ ...current, reliability: Number(e.target.value) }))} className="app-input">
+                              {[5, 4, 3, 2, 1].map((rating) => (
+                                <option key={rating} value={rating}>{rating} Puan</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-white/50">Teknik Yetkinlik</label>
+                            <select value={reviewForm.technical} onChange={(e) => setReviewForm((current) => ({ ...current, technical: Number(e.target.value) }))} className="app-input">
+                              {[5, 4, 3, 2, 1].map((rating) => (
+                                <option key={rating} value={rating}>{rating} Puan</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-white/50">Yorumunuz</label>
+                          <textarea value={reviewForm.comment} onChange={(e) => setReviewForm((current) => ({ ...current, comment: e.target.value }))} placeholder="Birlikte çalışma deneyimini kısaca yaz." className="app-input min-h-28" required />
+                        </div>
+                        
+                        <p className="text-xs text-white/42 italic">* Değerlendirme kriterlerinin ortalaması genel puanı belirleyecektir.</p>
+                        
                         <button type="submit" className="rounded-2xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90">Yorumu Kaydet</button>
                       </form>
                     )}
@@ -3809,7 +3949,15 @@ function DashboardPage({
                               </div>
                               <div className="app-soft-card rounded-2xl p-4">
                                 <p className="text-xs font-bold uppercase tracking-widest text-white/40">Neden bu aday?</p>
-                                <p className="mt-2 text-sm font-semibold text-white">Yüksek teknik örtüşme, ilgi uyumu ve rol uygunluğu.</p>
+                                <p className="mt-2 text-[13px] font-semibold text-white">
+                                  {match.score >= 90
+                                    ? "Proje vizyonunuzla ve teknik gereksinimlerinizle mükemmel seviyede eşleşiyor."
+                                    : match.score >= 80
+                                    ? "İhtiyaç duyduğunuz teknik altyapıya sahip, güçlü bir aday profili çiziyor."
+                                    : match.score >= 70
+                                    ? "Temel becerilerde uyum sağlıyor, proje detayları üzerine görüşülebilir."
+                                    : "İlgili alanlarda deneyimi olan, potansiyel olarak değerlendirilebilecek bir aday."}
+                                </p>
                               </div>
                             </div>
                             <button onClick={() => openPublicProfile(match.user.id)} className="mt-5 w-full rounded-xl border border-white/12 bg-white/6 py-3 text-sm font-bold text-white transition hover:bg-primary hover:border-primary">Profili İncele</button>
@@ -4659,11 +4807,11 @@ export default function App() {
           }
         : undefined;
       const requests: Promise<Response>[] = [
-        fetch("/api/showcase/", showcaseHeaders ? { headers: showcaseHeaders } : undefined),
+        fetch(API_BASE_URL + "/api/showcase/", showcaseHeaders ? { headers: showcaseHeaders } : undefined),
       ];
       if (marketingAccessToken) {
         requests.push(
-          fetch("/api/mentors/", {
+          fetch(API_BASE_URL + "/api/mentors/", {
             headers: {
               Authorization: `Bearer ${marketingAccessToken}`,
             },
@@ -4696,7 +4844,7 @@ export default function App() {
       return;
     }
     try {
-      const response = await fetch("/api/premium/subscription/", {
+      const response = await fetch(API_BASE_URL + "/api/premium/subscription/", {
         headers: {
           Authorization: `Bearer ${marketingAccessToken}`,
         },
@@ -4768,7 +4916,7 @@ export default function App() {
     setPremiumLoading(true);
     setPremiumFeedback("");
     try {
-      const response = await fetch("/api/premium/subscription/", {
+      const response = await fetch(API_BASE_URL + "/api/premium/subscription/", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${marketingAccessToken}`,
@@ -4781,7 +4929,7 @@ export default function App() {
         throw new Error(await parseError(response));
       }
 
-      const meResponse = await fetch("/api/users/me/", {
+      const meResponse = await fetch(API_BASE_URL + "/api/users/me/", {
         headers: {
           Authorization: `Bearer ${marketingAccessToken}`,
         },
@@ -4809,7 +4957,7 @@ export default function App() {
     setPremiumLoading(true);
     setPremiumFeedback("");
     try {
-      const response = await fetch("/api/premium/subscription/", {
+      const response = await fetch(API_BASE_URL + "/api/premium/subscription/", {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${marketingAccessToken}`,
@@ -4820,7 +4968,7 @@ export default function App() {
         throw new Error(await parseError(response));
       }
 
-      const meResponse = await fetch("/api/users/me/", {
+      const meResponse = await fetch(API_BASE_URL + "/api/users/me/", {
         headers: {
           Authorization: `Bearer ${marketingAccessToken}`,
         },
@@ -4890,7 +5038,7 @@ export default function App() {
               subscriptionState={premiumSubscriptionState}
               onStartSimulation={runPremiumSimulation}
               onCancelSubscription={cancelPremiumSubscription}
-              feedback={premiumLoading ? "Premium erişimin hazırlanıyor…" : premiumFeedback}
+              feedback={premiumLoading ? "İşlem yapılıyor, lütfen bekleyin…" : premiumFeedback}
             />
           </div>
           <SiteFooter />
@@ -5231,15 +5379,41 @@ const ONBOARDING_TRACKS = [
     body: "Ciddi takımları ve projeleri keşfetmek, hızlı öğrenmek ve doğru ekibe dahil olmak.",
   },
 ];
-
 const ONBOARDING_SKILLS = [
   "React",
+  "Vue",
+  "Next.js",
+  "TypeScript",
+  "Tailwind CSS",
+  "Node.js",
+  "Python",
   "Django",
-  "Ürün Tasarımı",
+  "FastAPI",
+  "Go",
+  "Rust",
+  "Java",
+  "Kotlin",
+  "Swift",
+  "Flutter",
+  "React Native",
+  "PostgreSQL",
+  "MongoDB",
+  "Redis",
+  "AWS",
+  "Docker",
+  "Kubernetes",
+  "Yapay Zeka (LLM)",
+  "Makine Öğrenmesi",
+  "Veri Bilimi",
+  "Ürün Tasarımı (UX/UI)",
+  "Figma",
+  "Ürün Yönetimi",
   "Büyüme & Pazarlama",
-  "Veri Analizi",
-  "iOS",
-  "Yapay Zeka",
+  "SEO",
+  "Proje Yönetimi",
+  "İş Geliştirme",
+  "Finans & Yatırım",
+  "Satış",
 ];
 
 const ONBOARDING_GOALS = [
@@ -5273,6 +5447,13 @@ function DiscoverView({
           .includes(searchTerm)
       )
     : projects;
+
+  const sortedProjects = [...filteredProjects].sort((a, b) => {
+    if (a.is_premium_highlighted && !b.is_premium_highlighted) return -1;
+    if (!a.is_premium_highlighted && b.is_premium_highlighted) return 1;
+    return 0;
+  });
+
   const premiumProjects = filteredProjects.filter((project) => project.is_premium_highlighted).length;
   const activeFounders = new Set(filteredProjects.map((project) => project.owner.id)).size;
 
@@ -5313,7 +5494,7 @@ function DiscoverView({
 
         <div className="mt-8 grid gap-6 xl:grid-cols-[1fr_300px]">
           <div className="grid gap-6 md:grid-cols-2">
-            {filteredProjects.map((project) => (
+            {sortedProjects.map((project) => (
               <article
                 key={project.id}
                 className="group rounded-[2rem] border border-white/10 bg-white/6 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.22)] backdrop-blur transition hover:-translate-y-1 hover:border-white/18 hover:bg-white/8"
@@ -5409,6 +5590,12 @@ function TeammatesView({
   teammates: ShowcaseUser[];
   loading: boolean;
 }) {
+  const sortedTeammates = [...teammates].sort((a, b) => {
+    if (a.is_premium && !b.is_premium) return -1;
+    if (!a.is_premium && b.is_premium) return 1;
+    return 0;
+  });
+
   const verifiedCount = teammates.filter((teammate) => teammate.is_verified_talent).length;
   return (
     <section className="bg-[#06101F] text-white">
@@ -5429,7 +5616,7 @@ function TeammatesView({
         </div>
 
         <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-          {teammates.map((teammate) => (
+          {sortedTeammates.map((teammate) => (
             <article
               key={teammate.id}
               className="rounded-[2rem] border border-white/10 bg-white/6 p-6 text-left shadow-[0_22px_70px_rgba(0,0,0,0.2)] backdrop-blur transition hover:-translate-y-1 hover:border-white/18"
@@ -5586,7 +5773,7 @@ function EventsView({
   const handleRegister = async (eventId: number) => {
     if (accessToken) {
       try {
-        const response = await fetch("/api/events/register/", {
+        const response = await fetch(API_BASE_URL + "/api/events/register/", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -5733,16 +5920,9 @@ function MentorsView({
             Mentörlük Programı
           </h2>
           <p className="mt-2 max-w-2xl text-base leading-7 text-white/68">
-            Projeni bir üst seviyeye taşımak için alanında uzman mentörlerden birebir yönlendirme al. Premium üyelerin her ay 1 ücretsiz 15 dakikalık görüşme hakkı vardır; sonraki seanslar ödeme sistemi ile açılır.
+            Projeni bir üst seviyeye taşımak için alanında uzman mentörlerden birebir yönlendirme al. Mentör görüşmeleri doğrudan ödeme sistemi üzerinden rezerve edilir.
           </p>
         </div>
-        {isPremium && (
-          <div className="app-soft-card rounded-2xl px-6 py-4 text-center">
-            <p className="text-xs font-bold uppercase tracking-widest text-[#9ab0ff]/80">Kalan Hak</p>
-            <p className="text-3xl font-black text-primary">{credits}</p>
-            <p className="text-[10px] font-bold text-white/45 uppercase">Görüşme / Ay</p>
-          </div>
-        )}
       </div>
 
       {pendingConfirmation.length > 0 && (
@@ -5760,7 +5940,7 @@ function MentorsView({
                     Zaman: <span className="text-secondary">{req.meeting_time ? new Date(req.meeting_time).toLocaleString('tr-TR') : 'Belirtilmedi'}</span>
                   </p>
                   <p className="text-xs text-white/60">
-                    Teklif: <span className="text-secondary">{req.offered_price > 0 ? formatTRY(req.offered_price) : 'Ücretsiz (Hak Kullanımı)'}</span>
+                    Teklif: <span className="text-secondary">{formatTRY(req.offered_price || 25)}</span>
                   </p>
                 </div>
               </div>
@@ -5847,10 +6027,10 @@ function MentorsView({
               </div>
             </div>
             <p className="mt-5 max-w-xl text-sm leading-7 text-slate-300">
-              Standart planda mentör havuzunu görebilir, ancak birebir görüşme talebi oluşturamazsın. Premium ile her ay 1 ücretsiz 15 dakikalık görüşme hakkı açılır. İlk görüşmeden sonraki ek seanslar ödeme sistemi ile ilerler.
+              Standart planda mentör havuzunu görebilir, ancak birebir görüşme talebi oluşturamazsın. Premium ile mentör havuzundan birebir seans talepleri oluşturabilirsin. Seanslar doğrudan ödeme sistemi üzerinden rezerve edilir.
             </p>
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
-              {["Her ay 1 ücretsiz görüşme", "İlk seans 15 dakika", "Sonrası ödeme sistemi"].map((item) => (
+              {["Birebir Görüşme Yetkisi", "Doğrudan Seans Talebi", "Güvenli Ödeme Sistemi"].map((item) => (
                 <div key={item} className="rounded-2xl border border-white/8 bg-white/6 px-4 py-4 text-sm font-semibold text-white/82 backdrop-blur">
                   {item}
                 </div>
@@ -5872,7 +6052,7 @@ function MentorsView({
               {[
                 ["Birebir mentör görüşmeleri", "Projene göre doğru uzmanla daha hızlı eşleş."],
                 ["Daha net yönlendirme", "Teknik, ürün ve büyüme tarafında somut geri bildirim al."],
-                ["Görüşme modeli", "İlk 15 dakikalık görüşme ücretsizdir; devam eden veya yeni seanslar ödeme sistemi ile açılır."],
+                ["Görüşme modeli", "Görüşmeler mentörün belirlediği seans ücreti ile doğrudan ödeme adımıyla rezerve edilir."],
               ].map(([title, body]) => (
                 <article key={String(title)} className="rounded-2xl border border-white/8 bg-black/20 p-4">
                   <p className="font-bold text-white">{title}</p>
@@ -5905,10 +6085,7 @@ function MentorsView({
                   <h3 className="text-xl font-bold text-white">{selectedMentor.full_name}</h3>
                   <p className="text-sm text-white/60">{selectedMentor.title}</p>
                   <p className="mt-2 text-sm text-white/68">
-                    {credits > 0 
-                      ? "Aylık ücretsiz 15 dakikalık görüşme hakkınızı bu uzmanla kullanabilirsiniz." 
-                      : `Aylık ücretsiz hakkınız tükenmiştir. Bu mentörden ek bir seans almak için seans ücreti olan ${formatTRY(selectedMentor.mentor_price || 25)} ödemesini yapmalısınız.`
-                    }
+                    Bu mentörden görüşme talep etmek için seans ücreti olan {formatTRY(selectedMentor.mentor_price || 25)} ödemesini yapmalısınız.
                   </p>
                 </div>
               </div>
@@ -5921,90 +6098,76 @@ function MentorsView({
                   className="app-input min-h-32"
                 />
 
-                {credits <= 0 ? (
-                  <div className="mt-6 border-t border-white/10 pt-6 space-y-4">
-                    <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4">
-                      <p className="text-sm font-bold text-amber-400">Ek Mentör Seansı Ödemesi</p>
-                      <p className="mt-2 text-xs leading-5 text-slate-300">
-                        Aylık ücretsiz hakkınız dolduğu için, bu seans mentörün kendi belirlediği saatlik ücret tarifesine tabidir. Toplam ödenecek tutar: <span className="font-extrabold text-white">{formatTRY(selectedMentor.mentor_price || 25)}</span>.
-                      </p>
-                    </div>
-
-                    <div className="space-y-3">
-                      <input 
-                        value={cardHolder} 
-                        onChange={(e) => setCardHolder(e.target.value)} 
-                        placeholder="Kart üzerindeki isim" 
-                        className="app-input text-sm bg-black/20" 
-                      />
-                      <input 
-                        value={cardNumber} 
-                        onChange={(e) => setCardNumber(e.target.value)} 
-                        placeholder="Kart numarası" 
-                        className="app-input text-sm bg-black/20" 
-                      />
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <input 
-                          value={cardExpiry} 
-                          onChange={(e) => setCardExpiry(e.target.value)} 
-                          placeholder="SKT (AA/YY)" 
-                          className="app-input text-sm bg-black/20" 
-                        />
-                        <input 
-                          value={cardCvc} 
-                          onChange={(e) => setCardCvc(e.target.value)} 
-                          placeholder="CVC" 
-                          className="app-input text-sm bg-black/20" 
-                        />
-                      </div>
-                    </div>
-
-                    {sessionPaymentFeedback && (
-                      <div className="rounded-2xl border border-success/20 bg-success/12 px-4 py-3 text-xs text-white">
-                        {sessionPaymentFeedback}
-                      </div>
-                    )}
-
-                    <button 
-                      onClick={() => {
-                        if (!message.trim()) {
-                          setSessionPaymentFeedback("Lütfen mentöre iletilecek mesajınızı doldurun.");
-                          return;
-                        }
-                        if (!cardHolder.trim() || !cardNumber.trim() || !cardExpiry.trim() || !cardCvc.trim()) {
-                          setSessionPaymentFeedback("Ek seans ödemesi için kart bilgilerini doldurmalısınız.");
-                          return;
-                        }
-                        setSessionPaymentFeedback("Ödeme başarıyla alındı! Talebiniz mentöre iletiliyor...");
-                        setTimeout(() => {
-                          onSendRequest(selectedMentor.id, message);
-                          setMessage("");
-                          setSelectedMentor(null);
-                          setCardHolder("");
-                          setCardNumber("");
-                          setCardExpiry("");
-                          setCardCvc("");
-                          setSessionPaymentFeedback("");
-                        }, 2000);
-                      }}
-                      className="w-full rounded-2xl bg-secondary px-8 py-3.5 text-sm font-bold text-white shadow-halo transition hover:bg-secondary/90"
-                    >
-                      Ödemeyi Yap ve Seansı Talep Et ({formatTRY(selectedMentor.mentor_price || 25)})
-                    </button>
+                <div className="mt-6 border-t border-white/10 pt-6 space-y-4">
+                  <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4">
+                    <p className="text-sm font-bold text-amber-400">Mentör Seansı Ödemesi</p>
+                    <p className="mt-2 text-xs leading-5 text-slate-300">
+                      Bu seans mentörün kendi belirlediği saatlik ücret tarifesine tabidir. Toplam ödenecek tutar: <span className="font-extrabold text-white">{formatTRY(selectedMentor.mentor_price || 25)}</span>.
+                    </p>
                   </div>
-                ) : (
+
+                  <div className="space-y-3">
+                    <input 
+                      value={cardHolder} 
+                      onChange={(e) => setCardHolder(e.target.value)} 
+                      placeholder="Kart üzerindeki isim" 
+                      className="app-input text-sm bg-black/20" 
+                    />
+                    <input 
+                      value={cardNumber} 
+                      onChange={(e) => setCardNumber(e.target.value)} 
+                      placeholder="Kart numarası" 
+                      className="app-input text-sm bg-black/20" 
+                    />
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <input 
+                        value={cardExpiry} 
+                        onChange={(e) => setCardExpiry(e.target.value)} 
+                        placeholder="SKT (AA/YY)" 
+                        className="app-input text-sm bg-black/20" 
+                      />
+                      <input 
+                        value={cardCvc} 
+                        onChange={(e) => setCardCvc(e.target.value)} 
+                        placeholder="CVC" 
+                        className="app-input text-sm bg-black/20" 
+                      />
+                    </div>
+                  </div>
+
+                  {sessionPaymentFeedback && (
+                    <div className="rounded-2xl border border-success/20 bg-success/12 px-4 py-3 text-xs text-white">
+                      {sessionPaymentFeedback}
+                    </div>
+                  )}
+
                   <button 
                     onClick={() => {
-                      onSendRequest(selectedMentor.id, message);
-                      setMessage("");
-                      setSelectedMentor(null);
+                      if (!message.trim()) {
+                        setSessionPaymentFeedback("Lütfen mentöre iletilecek mesajınızı doldurun.");
+                        return;
+                      }
+                      if (!cardHolder.trim() || !cardNumber.trim() || !cardExpiry.trim() || !cardCvc.trim()) {
+                        setSessionPaymentFeedback("Seans ödemesi için kart bilgilerini doldurmalısınız.");
+                        return;
+                      }
+                      setSessionPaymentFeedback("Ödeme başarıyla alındı! Talebiniz mentöre iletiliyor...");
+                      setTimeout(() => {
+                        onSendRequest(selectedMentor.id, message);
+                        setMessage("");
+                        setSelectedMentor(null);
+                        setCardHolder("");
+                        setCardNumber("");
+                        setCardExpiry("");
+                        setCardCvc("");
+                        setSessionPaymentFeedback("");
+                      }, 2000);
                     }}
-                    disabled={!message.trim()}
-                    className="mt-4 rounded-2xl bg-primary px-8 py-3.5 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90 disabled:opacity-50"
+                    className="w-full rounded-2xl bg-secondary px-8 py-3.5 text-sm font-bold text-white shadow-halo transition hover:bg-secondary/90"
                   >
-                    15 Dakikalık Ücretsiz Görüşmeyi Başlat
+                    Ödemeyi Yap ve Seansı Talep Et ({formatTRY(selectedMentor.mentor_price || 25)})
                   </button>
-                )}
+                </div>
               </div>
             </div>
           ) : (
@@ -6027,11 +6190,11 @@ function MentorsView({
                   <div className="flex justify-between items-center mb-4">
                     <p className="flex-1 text-xs leading-relaxed text-white/64 line-clamp-2">{m.bio}</p>
                     <span className="ml-3 whitespace-nowrap text-lg font-black text-secondary">
-                      {m.mentor_price > 0 ? formatTRY(m.mentor_price) : "Ücretsiz"}
+                      {formatTRY(m.mentor_price || 25)}
                     </span>
                   </div>
                   <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/38">
-                    Premium üyeler için ilk 15 dakika ücretsizdir. Ek seanslar ödeme sistemi ile açılır.
+                    Görüşmeler seans ücreti ile doğrudan ödeme adımıyla rezerve edilir.
                   </p>
                   <div className="flex flex-wrap gap-1 mb-6">
                     {m.skills.slice(0, 3).map((s: string) => (
@@ -6086,7 +6249,7 @@ function MentorPanelView({
     const accessToken = localStorage.getItem("foundrly_access_token");
     if (!accessToken) return;
     try {
-      await fetch("/api/users/me/", {
+      await fetch(API_BASE_URL + "/api/users/me/", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

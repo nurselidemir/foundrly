@@ -139,6 +139,9 @@ struct CreateProjectView: View {
             }
             .navigationTitle("Proje Oluştur")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                viewModel.feedbackMessage = ""
+            }
         }
     }
 }

@@ -65,8 +65,8 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 export default function PricingPage() {
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
 
-  const monthlyPrice = billing === "monthly" ? "$5" : "$4";
-  const yearlyNote = billing === "monthly" ? "Aylık ödeme" : "Yıllık $48 · 2 ay bedava";
+  const monthlyPrice = billing === "monthly" ? "₺199" : "₺165";
+  const yearlyNote = billing === "monthly" ? "Aylık ödeme" : "Yıllık ₺1.990 · 2 ay bedava";
 
   return (
     <div className="min-h-screen bg-[#050B18] text-white">

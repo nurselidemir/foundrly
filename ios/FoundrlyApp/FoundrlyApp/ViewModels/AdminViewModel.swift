@@ -10,7 +10,21 @@ final class AdminViewModel: ObservableObject {
     @Published var guides: [GuideItem] = []
     @Published var mentors: [MentorSummary] = []
     @Published var verifications: [AdminVerificationItem] = []
-    @Published var feedbackMessage = ""
+    @Published var feedbackMessage = "" {
+        didSet {
+            let msg = feedbackMessage
+            if !msg.isEmpty {
+                Task {
+                    try? await Task.sleep(nanoseconds: 3_000_000_000)
+                    Task { @MainActor in
+                        if self.feedbackMessage == msg {
+                            self.feedbackMessage = ""
+                        }
+                    }
+                }
+            }
+        }
+    }
     @Published var isLoading = false
     @Published var searchText = ""
 

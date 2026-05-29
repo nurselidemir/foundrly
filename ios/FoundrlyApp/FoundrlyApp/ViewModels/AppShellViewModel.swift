@@ -18,7 +18,22 @@ final class AppShellViewModel: ObservableObject {
     @Published var selectedThread: ThreadDetail?
     @Published var selectedPublicProfile: PublicProfile?
     @Published var messageDraft = ""
-    @Published var feedbackMessage = ""
+    @Published var feedbackMessage = "" {
+        didSet {
+            let msg = feedbackMessage
+            if !msg.isEmpty {
+                Task {
+                    try? await Task.sleep(nanoseconds: 3_000_000_000)
+                    Task { @MainActor in
+                        if self.feedbackMessage == msg {
+                            self.feedbackMessage = ""
+                        }
+                    }
+                }
+            }
+        }
+    }
+    @Published var selectedTabTag = 0
     @Published var isLoading = false
 
     private let service = DashboardService()
@@ -57,7 +72,7 @@ final class AppShellViewModel: ObservableObject {
             }
 
             // Load events, guides & showcase users via EventService
-            let showcase = try? await EventService().loadShowcase()
+            let showcase = try? await EventService().loadShowcase(token: token)
             self.events = showcase?.events ?? []
             self.guides = showcase?.guides ?? []
             self.showcaseUsers = showcase?.users ?? []
@@ -214,7 +229,7 @@ final class AppShellViewModel: ObservableObject {
 
     func loadEvents(session: AppSession) async {
         do {
-            let showcase = try await EventService().loadShowcase()
+            let showcase = try await EventService().loadShowcase(token: session.accessToken)
             self.events = showcase.events
             self.guides = showcase.guides
             self.showcaseUsers = showcase.users

@@ -23,7 +23,6 @@ const NAV_ITEMS: NavItem[] = [
   { icon: "🤖", label: "YZ Takım Kurucu", href: "#app-ai-builder", badge: "premium" },
   { icon: "💬", label: "Mesajlar", href: "#app-messages", badge: "count" },
   { icon: "🎓", label: "Mentörler", href: "#app-mentors" },
-  { icon: "🌐", label: "Ağ Kurma", href: "#app-networking" },
   { icon: "🎤", label: "Etkinlikler", href: "#events" },
   { icon: "👤", label: "Profilim", href: "#app-profile" },
   { icon: "⭐", label: "Premium", href: "#premium", badge: "gold" },
