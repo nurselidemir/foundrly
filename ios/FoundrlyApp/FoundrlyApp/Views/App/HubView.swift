@@ -116,5 +116,8 @@ struct HubView: View {
         }
         .navigationTitle("Girişim Merkezi")
         .navigationBarTitleDisplayMode(.inline)
+        .task {
+            await viewModel.loadEvents(session: session)
+        }
     }
 }
