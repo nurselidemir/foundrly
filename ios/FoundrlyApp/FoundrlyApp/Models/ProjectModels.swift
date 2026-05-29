@@ -10,7 +10,7 @@ struct ProjectCard: Codable, Identifiable {
     let needed_roles: [String]?
     let is_premium_highlighted: Bool
     let created_at: String
-    let updated_at: String
+    let updated_at: String?
 }
 
 struct DashboardMetrics: Codable {
