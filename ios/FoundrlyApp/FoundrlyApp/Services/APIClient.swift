@@ -18,7 +18,7 @@ enum APIError: LocalizedError {
 }
 
 struct APIClient {
-    var baseURL = URL(string: "http://localhost:8000")!
+    var baseURL = URL(string: "https://foundrly-backend-lamb.onrender.com")!
 
     func send<T: Decodable>(
         path: String,

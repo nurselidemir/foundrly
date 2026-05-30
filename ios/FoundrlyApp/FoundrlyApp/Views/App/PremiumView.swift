@@ -28,7 +28,7 @@ struct PremiumView: View {
                             .foregroundStyle(.white)
                             .tracking(2)
                         
-                        Text("Girişimcilik serüveninde sınırları kaldır. Ekibini kur, mentörlüğe eriş ve öne çık.")
+                        Text("Girişimcilik serüveninde sınırları kaldır. Ekibini kur, görünürlüğünü artır ve daha doğru eşleşmeler yakala.")
                             .font(.subheadline)
                             .foregroundStyle(FoundrlyTheme.textSecondary)
                             .multilineTextAlignment(.center)
@@ -60,10 +60,10 @@ struct PremiumView: View {
                             .padding(.bottom, 4)
                         
                         featureRow(icon: "sparkles", title: "AI Takım Eşleşmeleri", description: "Yapay zeka projen için en uyumlu takım arkadaşlarını bulur.")
-                        featureRow(icon: "checkmark.seal", title: "Doğrulanmış Yetenek Başvurusu", description: "Başvurularınızda rozetinizle öne çıkın ve güven kazanın.")
-                        featureRow(icon: "bolt.fill", title: "Proje Görünürlük Artışı", description: "Oluşturduğunuz projeler keşfet sekmesinde en üst sırada yer alır.")
-                        featureRow(icon: "person.2.fill", title: "Mentörlük Erişimi", description: "Ekosistemin en iyi mentörlerinden birebir destek alın.")
-                        featureRow(icon: "slider.horizontal.3", title: "Gelişmiş Filtreler", description: "Projeleri ve yetenekleri en detaylı kriterlerle arayın.")
+                        featureRow(icon: "bolt.fill", title: "Proje Görünürlük Artışı", description: "Oluşturduğunuz projeler keşfet sekmesinde daha görünür olur.")
+                        featureRow(icon: "slider.horizontal.3", title: "Gelişmiş Filtreler", description: "Projeleri daha hedefli şekilde inceleyip uygun ekiplere daha hızlı ulaşırsın.")
+                        featureRow(icon: "person.3.fill", title: "Güçlü Profil Sunumu", description: "Profilin, becerilerin ve ilgi alanların daha etkili şekilde öne çıkar.")
+                        featureRow(icon: "message.fill", title: "Hızlı İşbirliği", description: "Doğru projeleri bulup mesajlaşma akışına daha hızlı geçersin.")
                     }
                     .foundrlyCard()
                     

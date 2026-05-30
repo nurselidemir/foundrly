@@ -12,6 +12,7 @@ Bu repository şu anda şunları içerir:
 - Docker ile çalışan local geliştirme ortamı
 - Premium, verified talent, mentörlük, mesajlaşma, proje başvurusu ve AI matching akışları
 - Premium/futuristic bir landing page ve geliştirilmiş uygulama içi web deneyimi
+- SwiftUI tabanlı, backend ile senkron çalışan iOS istemcisi
 
 ---
 
@@ -51,11 +52,23 @@ Web tarafında şu alanlar mevcut:
 - public discovery sayfaları
 - community ve teammate keşif sayfaları
 - giriş yapılmış kullanıcı dashboard’u
+- `Projelerim` ve başvurduğum projeler alanı
 - proje yönetimi akışları
 - AI Team Builder akışı
 - profil ve public profil sayfaları
 - mentörlük akışları
 - admin / moderasyon akışları
+
+Mobil tarafta şu an aktif kapsam:
+- web ile aynı auth / profil alanları
+- proje keşfi, başvuru, mesajlaşma
+- AI Team Builder
+- etkinlikler ve girişim merkezi
+
+Mobilde özellikle devre dışı bırakılan alanlar:
+- mentörlük kullanıcı akışları
+- doğrulanmış yetenek başvurusu
+- keşfette ayrı kullanıcı / ekip üyeleri sekmesi
 
 Yakın zamanda geliştirilen başlıca alanlar:
 - premium dark-mode landing deneyimi
@@ -291,6 +304,7 @@ Sunum için pratik bir akış:
 
 - `/#app-home`
 - `/#app-create`
+- `/#app-projects`
 - `/#app-messages`
 - `/#app-profile`
 - `/#app-ai-builder`
@@ -457,8 +471,11 @@ PATCH /api/verification-requests/<id>/review/
 ```text
 GET   /api/mentors/
 POST  /api/mentors/requests/
+GET   /api/mentors/requests/
 GET   /api/mentors/my-requests/
 PATCH /api/mentors/requests/<id>/status/
+PATCH /api/mentors/requests/<id>/confirm/
+POST  /api/mentors/requests/<id>/messages/
 ```
 
 ### Admin
@@ -546,23 +563,39 @@ Frontend tarafında şu teknolojiler kullanılır:
 
 ## iOS Durumu
 
-`ios/FoundrlyApp/` altında SwiftUI tabanlı iOS konsept uygulama kaynakları bulunur.
+`ios/FoundrlyApp/` altında SwiftUI tabanlı iOS istemcisi ve hazır Xcode projesi bulunur.
 
 Hazır ekranlar ve akışlar:
 - auth
 - home
 - discover
+- project detail
+- create project
+- my projects
 - messages
-- mentors
 - profile
 - AI builder
-- community
+- events
+- hub / girişim merkezi
 
 Önemli not:
-- bu repository içinde hazır `.xcodeproj` dosyası yok
-- çalıştırmak için Xcode’da yeni bir iOS App oluşturup Swift dosyalarını manuel eklemek gerekir
+- proje dosyası hazırdır: `ios/FoundrlyApp/FoundrlyApp/FoundrlyApp.xcodeproj`
+- uygulama production backend URL’ine bağlanacak şekilde ayarlanmıştır
+- kayıt formu backend ile ortak alanları kullanır: `full_name`, `email`, `password`, `title`, `bio`, `skills`, `interests`
+- mobil arayüzde mentörlük ve doğrulanmış yetenek başvurusu akışları bilinçli olarak kapatılmıştır
 
-Yani iOS tarafı kaynak olarak hazırdır ama tam paketlenmiş, tek tıkla açılan bir Xcode projesi halinde değildir.
+Telefona yüklemek için:
+
+```bash
+open /Users/nurselidemir/Projects/foundrly-backend/ios/FoundrlyApp/FoundrlyApp/FoundrlyApp.xcodeproj
+```
+
+Sonra Xcode içinde:
+1. Apple hesabını `Signing & Capabilities` altında seç
+2. Gerekirse `Bundle Identifier` alanını benzersiz yap
+3. Cihazını seçip `Run` bas
+
+Ücretsiz Apple ID ile yüklenen build genelde yaklaşık 7 gün geçerli olur; sonra tekrar Xcode’dan yüklemek gerekir.
 
 ---
 

@@ -5,7 +5,7 @@ struct AuthFlowView: View {
     private let highlights: [(title: String, body: String)] = [
         ("Takımını daha hızlı kur", "Kurucular, geliştiriciler ve tasarımcılar aynı ürün içinde buluşur."),
         ("AI ile daha doğru eşleş", "Premium üyeler için uyum skoru ve proje bazlı aday önerileri hazır."),
-        ("Toplulukta görünür ol", "Hackathonlar, mentörler ve verified talent akışıyla daha güçlü ilerle.")
+        ("Toplulukta görünür ol", "Hackathonlar, proje ekipleri ve mesajlaşma akışıyla daha güçlü ilerle.")
     ]
 
     var body: some View {
@@ -24,7 +24,7 @@ struct AuthFlowView: View {
                         HStack(spacing: 12) {
                             heroMetric("AI eşleşme", "Premium")
                             heroMetric("Topluluk", "Canlı")
-                            heroMetric("Mentör ağı", "Hazır")
+                            heroMetric("Proje akışı", "Hazır")
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)

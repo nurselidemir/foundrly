@@ -133,11 +133,11 @@ struct ProjectDetailView: View {
                         .foundrlyCard()
                     }
                     
-                    // Ekip Üyeleri Section
+                    // Mevcut Takım Section
                     let teamMembers = viewModel.receivedApplications.filter { $0.project == project.id && $0.status == "accepted" }
                     
                     VStack(alignment: .leading, spacing: 14) {
-                        Text("Ekip Üyeleri")
+                        Text("Mevcut Takım")
                             .font(.headline.weight(.bold))
                             .foregroundStyle(FoundrlyTheme.textPrimary)
                         

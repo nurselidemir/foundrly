@@ -69,7 +69,7 @@ struct HomeView: View {
                                             Text("Foundrly Premium'a Katıl")
                                                 .font(.subheadline.bold())
                                                 .foregroundStyle(.white)
-                                            Text("Yapay zeka ekip kurucusu ve doğrulanmış yetenek rozetini aç.")
+                                            Text("Yapay zeka ekip kurucusunu ve gelişmiş proje görünürlüğünü aç.")
                                                 .font(.caption2)
                                                 .foregroundStyle(.white.opacity(0.8))
                                                 .multilineTextAlignment(.leading)
@@ -326,12 +326,6 @@ struct HomeView: View {
                                         HubView(viewModel: viewModel)
                                     } label: {
                                         quickNavCard("Rehberler", icon: "book.fill", desc: "Girişim merkezi")
-                                    }
-                                    
-                                    NavigationLink {
-                                        MentorshipUserView(viewModel: viewModel)
-                                    } label: {
-                                        quickNavCard("Mentörlük", icon: "signature", desc: "Görüşme taleplerim")
                                     }
                                     
                                     NavigationLink {

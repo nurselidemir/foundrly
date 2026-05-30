@@ -13,11 +13,6 @@ struct ProfileView: View {
     @State private var skillsString = ""
     @State private var interestsString = ""
 
-    // Verification states
-    @State private var verificationTitle = ""
-    @State private var verificationPortfolio = ""
-    @State private var verificationNote = ""
-
     var body: some View {
         NavigationStack {
             ZStack {
@@ -198,34 +193,20 @@ struct ProfileView: View {
                                     }
                                 }
                                 
-                                if session.isMentor {
-                                    NavigationLink {
-                                        MentorsView(viewModel: viewModel)
-                                    } label: {
-                                        menuRow(title: "Mentör Paneli", icon: "signature", color: FoundrlyTheme.success)
-                                    }
-                                }
-                                
                                 NavigationLink {
                                     PremiumView(viewModel: viewModel)
                                 } label: {
                                     menuRow(title: "Premium Üyelik", icon: "crown.fill", color: FoundrlyTheme.accent)
                                 }
-                                
-                                NavigationLink {
-                                    MentorshipUserView(viewModel: viewModel)
-                                } label: {
-                                    menuRow(title: "Mentörlük Taleplerim", icon: "person.2.fill", color: FoundrlyTheme.primary)
-                                }
                             }
                             .foundrlyCard()
 
-                            // Premium & Verification Area
+                            // Premium Area
                             if !user.is_premium {
                                 VStack(alignment: .leading, spacing: 12) {
                                     Text("Premium Ayrıcalıkları")
                                         .font(.headline)
-                                    Text("AI ekip eşleşmeleri, doğrulanmış yetenek rozeti ve daha yüksek görünürlük için Premium'a yükseltin.")
+                                    Text("AI ekip eşleşmeleri, daha yüksek görünürlük ve gelişmiş keşif araçları için Premium'a yükseltin.")
                                         .font(.caption)
                                         .foregroundStyle(FoundrlyTheme.textSecondary)
                                     
@@ -238,62 +219,6 @@ struct ProfileView: View {
                                             .frame(maxWidth: .infinity)
                                             .padding()
                                             .background(FoundrlyTheme.primary)
-                                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                                    }
-                                }
-                                .foundrlyCard()
-                            } else if !user.is_verified_talent {
-                                VStack(alignment: .leading, spacing: 12) {
-                                    Text("Doğrulanmış Yetenek Başvurusu")
-                                        .font(.headline)
-                                    Text("Profilinize doğrulanmış yetenek rozeti eklenmesi için başvurunuzu iletin.")
-                                        .font(.caption)
-                                        .foregroundStyle(FoundrlyTheme.textSecondary)
-                                    
-                                    VStack(spacing: 10) {
-                                        TextField("Başvuru Ünvanı", text: $verificationTitle)
-                                            .textFieldStyle(.plain)
-                                            .padding(10)
-                                            .background(FoundrlyTheme.surfaceRaised)
-                                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                                            .foregroundStyle(.white)
-                                        
-                                        TextField("Portfolyo URL", text: $verificationPortfolio)
-                                            .textFieldStyle(.plain)
-                                            .padding(10)
-                                            .background(FoundrlyTheme.surfaceRaised)
-                                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                                            .foregroundStyle(.white)
-                                        
-                                        TextField("Notunuz", text: $verificationNote, axis: .vertical)
-                                            .textFieldStyle(.plain)
-                                            .lineLimit(2...3)
-                                            .padding(10)
-                                            .background(FoundrlyTheme.surfaceRaised)
-                                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                                            .foregroundStyle(.white)
-                                    }
-                                    .font(.caption)
-                                    
-                                    Button {
-                                        Task {
-                                            await viewModel.submitVerification(
-                                                session: session,
-                                                requestedTitle: verificationTitle,
-                                                portfolioURL: verificationPortfolio,
-                                                note: verificationNote
-                                            )
-                                            verificationTitle = ""
-                                            verificationPortfolio = ""
-                                            verificationNote = ""
-                                        }
-                                    } label: {
-                                        Text("Başvuruyu Gönder")
-                                            .font(.subheadline.bold())
-                                            .foregroundStyle(.black)
-                                            .frame(maxWidth: .infinity)
-                                            .padding()
-                                            .background(FoundrlyTheme.accent)
                                             .clipShape(RoundedRectangle(cornerRadius: 16))
                                     }
                                 }

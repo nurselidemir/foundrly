@@ -33,33 +33,6 @@ struct AppShellView: View {
                         .tag(3)
                 }
                 .tint(FoundrlyTheme.error)
-            } else if session.isMentor {
-                TabView(selection: $viewModel.selectedTabTag) {
-                    MentorsView(viewModel: viewModel)
-                        .tabItem {
-                            Label("Mentörlük", systemImage: "signature")
-                        }
-                        .tag(0)
-
-                    DiscoverView(viewModel: viewModel)
-                        .tabItem {
-                            Label("Keşfet", systemImage: "sparkle.magnifyingglass")
-                        }
-                        .tag(1)
-
-                    MessagesView(viewModel: viewModel)
-                        .tabItem {
-                            Label("Mesajlar", systemImage: "message.fill")
-                        }
-                        .tag(2)
-
-                    ProfileView(viewModel: viewModel)
-                        .tabItem {
-                            Label("Profil", systemImage: "person.crop.circle.fill")
-                        }
-                        .tag(3)
-                }
-                .tint(FoundrlyTheme.success)
             } else {
                 TabView(selection: $viewModel.selectedTabTag) {
                     HomeView(viewModel: viewModel)
