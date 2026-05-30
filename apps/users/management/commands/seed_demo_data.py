@@ -20,6 +20,7 @@ from django.utils import timezone
 from apps.projects.models import ApplicationMessage, Project, TeamApplication
 from apps.users.models import (
     CommunityEvent,
+    CommunityGuide,
     CommunityThread,
     FriendRequest,
     MentorRequest,
@@ -514,7 +515,84 @@ class Command(BaseCommand):
             signal_label="Yeni başlık",
         )
 
-        # ── 12. Etkinlikler ──────────────────────────────────────────────────
+        # ── 12. Girişim merkezi rehberleri ─────────────────────────────────
+        self._upsert_guide(
+            title="Sıfırdan MVP cikarmak icin 7 gunluk hizli plan",
+            read="5 dk okuma",
+            tone="Urun & MVP",
+            summary=(
+                "Fikri dogrulamak icin gereksiz ozellikleri ayiklayip bir hafta icinde "
+                "ilk test edilebilir urunu cikarmaya odaklanan hizli plan."
+            ),
+            bullets=[
+                "Temel problemi tek cumlede tanimla.",
+                "Ilk surumde sadece cekirdek akisi koru.",
+                "Bekleme listesi ve geri bildirim formu ile ilgiyi olc.",
+            ],
+            is_published=True,
+        )
+        self._upsert_guide(
+            title="Dogru co-founder secimi icin 5 kritik sinyal",
+            read="7 dk okuma",
+            tone="Kurucu Ortak & Ekip",
+            summary=(
+                "Kurucu ortak seciminde teknik beceriden daha onemli olan uyum, "
+                "calisma disiplini ve uzun vadeli vizyon sinyallerini ozetler."
+            ),
+            bullets=[
+                "Beceri tamamlayiciligina bak.",
+                "Zor anlarda iletisim tarzini test et.",
+                "Hak edis ve hisse dagilimini en basta netlestir.",
+            ],
+            is_published=True,
+        )
+        self._upsert_guide(
+            title="Pitch deck hazirlarken yatirimcinin ilk baktigi 10 sey",
+            read="8 dk okuma",
+            tone="Yatirim & Pitching",
+            summary=(
+                "Yatirimci sunumunda hikaye akisini guclendiren, pazari ve takimi net gosteren "
+                "en kritik slayt ve mesajlari anlatir."
+            ),
+            bullets=[
+                "Problem ve cozum eslesmesini net kur.",
+                "Pazar buyuklugunu abartmadan anlat.",
+                "Takimin bu isi neden yapabilecegini kanitla.",
+            ],
+            is_published=True,
+        )
+        self._upsert_guide(
+            title="Ilk 100 kullaniciya reklamsiz ulasmak icin pratik taktikler",
+            read="6 dk okuma",
+            tone="Buyume & Pazarlama",
+            summary=(
+                "Topluluk, birebir iletisim ve icerik odakli dagitimla ilk sadik kullanicilari "
+                "kazanmaya yardimci olacak yalnizca uygulanabilir taktikler."
+            ),
+            bullets=[
+                "Nis topluluklarda birebir gorus.",
+                "Erken kullanicilar icin referans dongusu kur.",
+                "Her hafta tek buyume kanali test et.",
+            ],
+            is_published=True,
+        )
+        self._upsert_guide(
+            title="Hisse paylasiminda adil model kurmak icin baslangic rehberi",
+            read="9 dk okuma",
+            tone="Kurucu Ortak & Ekip",
+            summary=(
+                "Emek, zaman ve nakit katkilarini daha adil yoneten dinamik hisse paylasim "
+                "mantigini erken asama ekipler icin sade sekilde aciklar."
+            ),
+            bullets=[
+                "Statik 50-50 dagilimi otomatik secme.",
+                "Katki tiplerini olculebilir hale getir.",
+                "Kurucular sozlesmesini geciktirme.",
+            ],
+            is_published=True,
+        )
+
+        # ── 13. Etkinlikler ──────────────────────────────────────────────────
         today = timezone.localdate()
         self._upsert_event(
             title="Foundrly Yapay Zeka Hackathonu 2026",
@@ -689,6 +767,13 @@ class Command(BaseCommand):
     def _upsert_event(self, **kwargs):
         """Etkinliği oluştur veya güncelle."""
         CommunityEvent.objects.update_or_create(
+            title=kwargs["title"],
+            defaults=kwargs,
+        )
+
+    def _upsert_guide(self, **kwargs):
+        """Girişim merkezi rehberini oluştur veya güncelle."""
+        CommunityGuide.objects.update_or_create(
             title=kwargs["title"],
             defaults=kwargs,
         )
