@@ -3,6 +3,14 @@ import FoundrlyLanding from "./components/marketing/FoundrlyLanding";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 const apiUrl = (path: string) => `${API_BASE_URL.replace(/\/$/, "")}${path}`;
+const getApplicationStatusLabel = (status: string) => {
+  const labels: Record<string, string> = {
+    pending: "Beklemede",
+    accepted: "Kabul Edildi",
+    rejected: "Reddedildi",
+  };
+  return labels[status] || status;
+};
 
 type HealthState = { status: "loading" | "ready" | "error"; message: string };
 type PremiumSubscriptionSummary = {
@@ -34,6 +42,7 @@ type RouteName =
   | "contact"
   | "app-home"
   | "app-discover"
+  | "app-projects"
   | "app-create"
   | "app-messages"
   | "app-profile"
@@ -101,6 +110,8 @@ type ProjectCard = {
   tech_stack?: string[];
   needed_roles?: string[];
   is_premium_highlighted: boolean;
+  applications?: TeamApplication[];
+  has_approved_access?: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -438,8 +449,9 @@ const FOOTER_SUPPORT_LINKS = [
 const APP_NAV_BASE = [
   { label: "Anasayfa", href: "#app-home" },
   { label: "Keşfet", href: "#app-discover" },
+  { label: "Projelerim", href: "#app-projects" },
   { label: "Proje Oluştur", href: "#app-create" },
-  { label: "Etkinlikler", href: "#app-events" },
+  { label: "Etkinlikler", href: "#app-networking" },
   { label: "Mesajlar", href: "#app-messages" },
   { label: "Mentörler", href: "#app-mentors" },
   { label: "YZ Ekip Kurucu", href: "#app-ai-builder" },
@@ -746,6 +758,8 @@ function getRouteFromHash(): RouteName {
       return "app-home";
     case "#app-discover":
       return "app-discover";
+    case "#app-projects":
+      return "app-projects";
     case "#app-create":
       return "app-create";
     case "#app-messages":
@@ -759,6 +773,7 @@ function getRouteFromHash(): RouteName {
     case "#app-mentor-panel":
       return "app-mentor-panel";
     case "#app-events":
+    case "#app-networking":
       return "app-networking";
     case "#app-admin":
       return "app-admin";
@@ -1568,6 +1583,7 @@ function DashboardPage({
 }) {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [threads, setThreads] = useState<MessageThread[]>([]);
+  const [managedProjects, setManagedProjects] = useState<ProjectCard[]>([]);
   const [receivedApplications, setReceivedApplications] = useState<TeamApplication[]>([]);
   const [sentApplications, setSentApplications] = useState<TeamApplication[]>([]);
   const [selectedThread, setSelectedThread] = useState<ThreadDetail | null>(null);
@@ -1585,6 +1601,7 @@ function DashboardPage({
     tech_stack: "",
     needed_roles: "",
   });
+  const [editingProjectId, setEditingProjectId] = useState<number | null>(null);
   const [projectFeedback, setProjectFeedback] = useState("");
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
   const [adminSearch, setAdminSearch] = useState("");
@@ -1658,10 +1675,11 @@ function DashboardPage({
   const accessToken = getStoredAccessToken();
   const storedUser = localStorage.getItem("foundrly_current_user");
   const currentUser = storedUser ? (JSON.parse(storedUser) as CurrentUser) : null;
-  const myProjects = publicProjects.filter((project) => project.owner.id === currentUser?.id);
-  const myProjectsWithApplications = myProjects.map((project) => ({
+  const myProjectsWithApplications = managedProjects.map((project) => ({
     ...project,
-    applications: receivedApplications.filter((application) => application.project === project.id),
+    applications:
+      project.applications ||
+      receivedApplications.filter((application) => application.project === project.id),
   }));
   const effectiveProfile = summary?.profile || currentUser;
   const profileStrength = [
@@ -1696,12 +1714,24 @@ function DashboardPage({
   }
   const publicProfileId = route === "app-member" ? getPublicProfileIdFromHash() : null;
 
+  const resetProjectComposer = () => {
+    setEditingProjectId(null);
+    setProjectForm({
+      title: "",
+      summary: "",
+      problem_statement: "",
+      tech_stack: "",
+      needed_roles: "",
+    });
+  };
+
   const loadDashboard = async () => {
     if (!authHeaders) return;
-    const [summaryResponse, threadsResponse, projectsResponse, receivedResponse, sentResponse] = await Promise.all([
+    const [summaryResponse, threadsResponse, projectsResponse, myProjectsResponse, receivedResponse, sentResponse] = await Promise.all([
       fetch(apiUrl("/api/dashboard/summary/"), { headers: authHeaders }),
       fetch(apiUrl("/api/messages/threads/"), { headers: authHeaders }),
       fetch(apiUrl("/api/projects/"), { headers: authHeaders }),
+      fetch(apiUrl("/api/projects/?mine=true"), { headers: authHeaders }),
       fetch(apiUrl("/api/applications/?received=true"), { headers: authHeaders }),
       fetch(apiUrl("/api/applications/?mine=true"), { headers: authHeaders }),
     ]);
@@ -1745,6 +1775,10 @@ function DashboardPage({
 
     if (projectsResponse.ok) {
       setPublicProjects(await projectsResponse.json());
+    }
+
+    if (myProjectsResponse.ok) {
+      setManagedProjects(await myProjectsResponse.json());
     }
 
     if (receivedResponse.ok) {
@@ -2143,7 +2177,7 @@ function DashboardPage({
     }
   };
 
-  const handleMentorRequestStatus = async (requestId: number, action: string, offeredPrice?: number, meetingTime?: string) => {
+  const handleMentorRequestStatus = async (requestId: number, action: string, meetingTime?: string) => {
     if (!authHeaders) return;
     try {
       setMentorFeedback("");
@@ -2152,11 +2186,13 @@ function DashboardPage({
         headers: authHeaders,
         body: JSON.stringify({ 
           action,
-          offered_price: offeredPrice,
           meeting_time: meetingTime
         }),
       });
       if (response.ok) {
+        if (action === "offer") {
+          setMentorFeedback("Gorusme zamani kullaniciya gonderildi. Onay verdiginde talep bir sonraki asamaya gececek.");
+        }
         loadDashboard();
       } else {
         setMentorFeedback(await parseError(response));
@@ -2192,6 +2228,25 @@ function DashboardPage({
       }
     } catch (e) {
       setMentorFeedback("Talep guncellenirken baglanti hatasi olustu.");
+    }
+  };
+
+  const handleMentorRequestMessage = async (requestId: number, content: string) => {
+    if (!authHeaders) return;
+    try {
+      setMentorFeedback("");
+      const response = await fetch(apiUrl(`/api/mentors/requests/${requestId}/messages/`), {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({ content }),
+      });
+      if (response.ok) {
+        loadDashboard();
+      } else {
+        setMentorFeedback(await parseError(response));
+      }
+    } catch (e) {
+      setMentorFeedback("Mesaj gonderilirken baglanti hatasi olustu.");
     }
   };
 
@@ -2342,6 +2397,19 @@ function DashboardPage({
     }
   };
 
+  const startProjectEdit = (project: ProjectCard) => {
+    setEditingProjectId(project.id);
+    setProjectFeedback("");
+    setProjectForm({
+      title: project.title,
+      summary: project.summary || "",
+      problem_statement: project.problem_statement || "",
+      tech_stack: project.tech_stack?.join(", ") || "",
+      needed_roles: project.needed_roles?.join(", ") || "",
+    });
+    window.location.hash = "#app-create";
+  };
+
   const handleProjectCreate = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!authHeaders) return;
@@ -2371,6 +2439,32 @@ function DashboardPage({
     });
     setProjectFeedback("Proje başarıyla oluşturuldu.");
     loadDashboard();
+  };
+
+  const handleProjectUpdate = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!authHeaders || !editingProjectId) return;
+    setProjectFeedback("");
+
+    const response = await fetch(apiUrl(`/api/projects/${editingProjectId}/`), {
+      method: "PATCH",
+      headers: authHeaders,
+      body: JSON.stringify({
+        ...projectForm,
+        tech_stack: projectForm.tech_stack.split(",").map((item) => item.trim()).filter(Boolean),
+        needed_roles: projectForm.needed_roles.split(",").map((item) => item.trim()).filter(Boolean),
+      }),
+    });
+
+    if (!response.ok) {
+      setProjectFeedback(await parseError(response));
+      return;
+    }
+
+    setProjectFeedback("Proje başarıyla güncellendi.");
+    await loadDashboard();
+    window.location.hash = "#app-projects";
+    resetProjectComposer();
   };
 
   const handleSendMessage = async (event: React.FormEvent) => {
@@ -2502,7 +2596,7 @@ function DashboardPage({
     }
   };
 
-  const handleProjectDelete = async (projectId: number) => {
+  const handleAdminProjectDelete = async (projectId: number) => {
     if (!authHeaders) return;
     setAdminFeedback("");
     const response = await fetch(apiUrl(`/api/admin/projects/${projectId}/`), {
@@ -2519,6 +2613,32 @@ function DashboardPage({
     setSelectedAdminProject(null);
     loadAdminProjects(adminProjectSearch);
     loadAdminDashboard();
+  };
+
+  const handleOwnedProjectDelete = async (projectId: number) => {
+    if (!authHeaders) return;
+    if (!confirm("Bu projeyi silmek istediğinize emin misiniz?")) return;
+    setProjectFeedback("");
+    const response = await fetch(apiUrl(`/api/projects/${projectId}/`), {
+      method: "DELETE",
+      headers: authHeaders,
+    });
+
+    if (!response.ok) {
+      setProjectFeedback(await parseError(response));
+      return;
+    }
+
+    setProjectFeedback("Proje kaldırıldı.");
+    if (editingProjectId === projectId) {
+      resetProjectComposer();
+    }
+    await loadDashboard();
+  };
+
+  const openApplicationThread = async (applicationId: number) => {
+    await loadThreadDetail(applicationId);
+    window.location.hash = "#app-messages";
   };
 
   const startPremiumSimulation = async (plan: "monthly" | "yearly") => {
@@ -2988,7 +3108,7 @@ function DashboardPage({
                                       >
                                         {application.applicant.full_name}
                                       </button>
-                                      <p className="mt-1 text-xs uppercase tracking-widest text-white/40">{application.status}</p>
+                                      <p className="mt-1 text-xs uppercase tracking-widest text-white/40">{getApplicationStatusLabel(application.status)}</p>
                                     </div>
                                     {application.status === "pending" && (
                                       <div className="flex flex-wrap gap-2">
@@ -3027,7 +3147,7 @@ function DashboardPage({
                           </p>
                           <button type="button" onClick={() => openPublicProfile(application.applicant.id)} className="font-bold text-white transition hover:text-[#9ab0ff]">{application.applicant.full_name}</button>
                           <p className="mt-1 text-sm text-white/60">{application.message}</p>
-                          <p className="mt-2 text-xs font-bold uppercase tracking-widest text-white/42">{application.status}</p>
+                          <p className="mt-2 text-xs font-bold uppercase tracking-widest text-white/42">{getApplicationStatusLabel(application.status)}</p>
                           {application.status === "pending" && (
                             <div className="mt-4 flex gap-3">
                               <button type="button" onClick={() => handleApplicationStatus(application.id, "accepted")} className="rounded-full bg-success px-4 py-2 text-sm font-semibold text-white transition hover:bg-success/90">Kabul Et</button>
@@ -3063,13 +3183,217 @@ function DashboardPage({
           </div>
         )}
 
+        {route === "app-projects" && (
+          <section className="space-y-6">
+            <section className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/5 p-8 shadow-halo backdrop-blur lg:p-10">
+              <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top_left,rgba(71,93,178,0.18),transparent_44%),radial-gradient(circle_at_80%_0%,rgba(63,177,112,0.1),transparent_28%)]" />
+              <div className="relative flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+                <div className="max-w-3xl">
+                  <p className="app-section-eyebrow text-sm font-bold uppercase tracking-[0.24em]">Projelerim</p>
+                  <h1 className="mt-3 text-4xl font-extrabold leading-tight">Projelerini yönet, başvuruları değerlendir ve ekip konuşmalarını başlat.</h1>
+                  <p className="mt-4 max-w-2xl text-base leading-8 text-slate-300">
+                    Her proje için gelen başvuruları tek ekranda gör. İlanını düzenle, sil, başvuran profiline git ve tek tıkla mesaj akışını aç.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  <a href="#app-create" onClick={() => resetProjectComposer()} className="rounded-2xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90">
+                    Yeni Proje Oluştur
+                  </a>
+                </div>
+              </div>
+            </section>
+
+            {projectFeedback && (
+              <div className="rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-[#c7d3ff]">
+                {projectFeedback}
+              </div>
+            )}
+
+            <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+              <div className="space-y-4">
+                <article className="rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.2)] backdrop-blur">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-widest text-[#9ab0ff]">Başvurduğum Projeler</p>
+                      <h3 className="mt-2 text-2xl font-extrabold text-white">Gönderdiğin başvuruları ve durumlarını takip et</h3>
+                      <p className="mt-3 max-w-3xl text-sm leading-7 text-white/68">
+                        Hangi projeye ne zaman başvurduğunu, kabul veya red durumunu ve uygun olduğunda mesaj akışını buradan takip edebilirsin.
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border border-white/8 bg-black/20 px-4 py-3 text-center">
+                      <p className="text-xs font-bold uppercase tracking-widest text-white/42">Toplam başvuru</p>
+                      <p className="mt-2 text-2xl font-black text-white">{sentApplications.length}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 space-y-3">
+                    {sentApplications.length ? (
+                      sentApplications.map((application) => (
+                        <div key={application.id} className="rounded-[1.5rem] border border-white/8 bg-black/20 p-4">
+                          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                            <div>
+                              <p className="text-base font-bold text-white">
+                                {application.project_details?.title || `Proje #${application.project}`}
+                              </p>
+                              {application.project_details?.owner && (
+                                <button
+                                  type="button"
+                                  onClick={() => openPublicProfile(application.project_details!.owner.id)}
+                                  className="mt-1 text-left text-sm text-white/60 transition hover:text-[#9ab0ff]"
+                                >
+                                  {application.project_details.owner.full_name} · {application.project_details.owner.title}
+                                </button>
+                              )}
+                              <p className="mt-3 text-sm leading-6 text-white/68">{application.message}</p>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs font-bold text-white/75">
+                                {getApplicationStatusLabel(application.status)}
+                              </span>
+                              {application.status === "accepted" && (
+                                <button
+                                  type="button"
+                                  onClick={() => void openApplicationThread(application.id)}
+                                  className="rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-xs font-semibold text-[#AFC0FF] transition hover:bg-primary/16"
+                                >
+                                  Mesajları Aç
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="rounded-2xl border border-dashed border-white/12 bg-black/20 p-4 text-sm text-white/55">
+                        Henüz herhangi bir projeye başvurmadın.
+                      </div>
+                    )}
+                  </div>
+                </article>
+
+                {myProjectsWithApplications.length ? (
+                  myProjectsWithApplications.map((project) => (
+                    <article key={project.id} className="rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.2)] backdrop-blur">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="text-2xl font-extrabold text-white">{project.title}</h3>
+                            {project.is_premium_highlighted && (
+                              <span className="rounded-full border border-primary/20 bg-primary/12 px-3 py-1 text-xs font-bold text-[#AFC0FF]">
+                                Premium görünürlük
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-3 max-w-3xl text-sm leading-7 text-white/68">{project.summary}</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <button type="button" onClick={() => startProjectEdit(project)} className="rounded-full border border-white/12 bg-white/6 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10">
+                            Düzenle
+                          </button>
+                          <button type="button" onClick={() => handleOwnedProjectDelete(project.id)} className="rounded-full border border-red-400/20 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-200 transition hover:bg-red-500/16">
+                            Sil
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                        <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
+                          <p className="text-xs font-bold uppercase tracking-widest text-white/42">Toplam başvuru</p>
+                          <p className="mt-2 text-2xl font-black text-white">{project.applications?.length || 0}</p>
+                        </div>
+                        <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
+                          <p className="text-xs font-bold uppercase tracking-widest text-white/42">Bekleyen</p>
+                          <p className="mt-2 text-2xl font-black text-white">{project.applications?.filter((application) => application.status === "pending").length || 0}</p>
+                        </div>
+                        <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
+                          <p className="text-xs font-bold uppercase tracking-widest text-white/42">Kabul edilen</p>
+                          <p className="mt-2 text-2xl font-black text-white">{project.applications?.filter((application) => application.status === "accepted").length || 0}</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-6 space-y-3">
+                        <p className="text-xs font-bold uppercase tracking-widest text-[#9ab0ff]">Gelen Başvurular</p>
+                        {project.applications?.length ? (
+                          project.applications.map((application) => (
+                            <div key={application.id} className="rounded-[1.5rem] border border-white/8 bg-black/20 p-4">
+                              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                                <div>
+                                  <button
+                                    type="button"
+                                    onClick={() => openPublicProfile(application.applicant.id)}
+                                    className="text-left text-base font-bold text-white transition hover:text-[#9ab0ff]"
+                                  >
+                                    {application.applicant.full_name}
+                                  </button>
+                                  <p className="mt-1 text-xs uppercase tracking-widest text-white/40">{application.applicant.title}</p>
+                                  <p className="mt-2 text-xs font-bold uppercase tracking-widest text-[#9ab0ff]">{getApplicationStatusLabel(application.status)}</p>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                  {application.status === "pending" && (
+                                    <>
+                                      <button type="button" onClick={() => handleApplicationStatus(application.id, "accepted")} className="rounded-full bg-success px-4 py-2 text-xs font-semibold text-white transition hover:bg-success/90">Kabul Et</button>
+                                      <button type="button" onClick={() => handleApplicationStatus(application.id, "rejected")} className="rounded-full border border-red-400/20 bg-red-500/10 px-4 py-2 text-xs font-semibold text-red-200 transition hover:bg-red-500/16">Reddet</button>
+                                    </>
+                                  )}
+                                  {application.status !== "rejected" && (
+                                    <button type="button" onClick={() => void openApplicationThread(application.id)} className="rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-xs font-semibold text-[#AFC0FF] transition hover:bg-primary/16">
+                                      Mesaj Gönder
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                              <p className="mt-3 text-sm leading-6 text-white/68">{application.message}</p>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="rounded-2xl border border-dashed border-white/12 bg-black/20 p-4 text-sm text-white/55">
+                            Bu projeye henüz başvuru gelmedi.
+                          </div>
+                        )}
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <div className="rounded-[2rem] border border-dashed border-white/12 bg-black/20 p-6 text-sm text-white/55">
+                    Henüz proje oluşturmadın. İlk ilanını açtıktan sonra tüm başvuruları burada yöneteceksin.
+                  </div>
+                )}
+              </div>
+
+              <aside className="rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.2)] backdrop-blur xl:sticky xl:top-28">
+                <p className="app-section-eyebrow text-sm font-bold uppercase tracking-[0.2em]">Hızlı Özet</p>
+                <div className="mt-5 grid gap-3">
+                  {[
+                    ["Toplam Proje", myProjectsWithApplications.length],
+                    ["Toplam Başvuru", receivedApplications.length],
+                    ["Gönderdiğim", sentApplications.length],
+                    ["Açık Sohbet", threads.length],
+                    ["Bekleyen Karar", receivedApplications.filter((application) => application.status === "pending").length],
+                  ].map(([label, value]) => (
+                    <div key={String(label)} className="rounded-2xl border border-white/8 bg-black/20 p-4">
+                      <p className="text-xs font-bold uppercase tracking-widest text-white/42">{label}</p>
+                      <p className="mt-2 text-2xl font-black text-white">{value}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-6 rounded-[1.75rem] border border-white/8 bg-black/20 p-5">
+                  <p className="text-sm font-bold text-white">İpucu</p>
+                  <p className="mt-3 text-sm leading-7 text-white/62">
+                    Başvuranın adına tıklayarak profiline gidebilir, uygun adaylarda direkt mesaj akışı başlatabilirsin.
+                  </p>
+                </div>
+              </aside>
+            </section>
+          </section>
+        )}
+
         {route === "app-create" && (
           <section className="app-panel rounded-[2.25rem] p-8 lg:p-10">
             <p className="app-section-eyebrow text-sm font-bold uppercase tracking-[0.2em]">
-              Proje Oluştur
+              {editingProjectId ? "Proje Düzenle" : "Proje Oluştur"}
             </p>
-            <h2 className="mt-2 text-3xl font-extrabold text-white">Yeni proje başlat</h2>
-            <form className="mt-8 space-y-5" onSubmit={handleProjectCreate}>
+            <h2 className="mt-2 text-3xl font-extrabold text-white">{editingProjectId ? "İlan detaylarını güncelle" : "Yeni proje başlat"}</h2>
+            <form className="mt-8 space-y-5" onSubmit={editingProjectId ? handleProjectUpdate : handleProjectCreate}>
               {[
                 ["Başlık", "title", "Foundrly Mobile App"],
                 ["Kısa Özet", "summary", "Ürünün ne yaptığını tek paragrafta anlat."],
@@ -3121,8 +3445,20 @@ function DashboardPage({
                 type="submit"
                 className="w-full rounded-2xl bg-primary px-6 py-3.5 text-sm font-bold text-white shadow-halo transition hover:bg-primary/90"
               >
-                Projeyi Oluştur
+                {editingProjectId ? "Değişiklikleri Kaydet" : "Projeyi Oluştur"}
               </button>
+              {editingProjectId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    resetProjectComposer();
+                    window.location.hash = "#app-projects";
+                  }}
+                  className="w-full rounded-2xl border border-white/12 bg-white/6 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-white/10"
+                >
+                  Düzenlemeyi İptal Et
+                </button>
+              )}
             </form>
           </section>
         )}
@@ -3925,7 +4261,7 @@ function DashboardPage({
                 {aiAnalysisState === "done" && (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-xl font-bold text-ink">Önerilen Takım Arkadaşları</h3>
+                      <h3 className="text-xl font-bold text-white">Önerilen Takım Arkadaşları</h3>
                       <button onClick={() => setAiAnalysisState("idle")} className="text-sm font-semibold text-primary hover:underline">Farklı Proje Analiz Et</button>
                     </div>
                     {aiMatches.length === 0 ? (
@@ -3984,10 +4320,12 @@ function DashboardPage({
             mentors={mentors}
             onSendRequest={handleMentorRequest}
             onConfirmRequest={handleConfirmMentorRequest}
+            onSendMessage={handleMentorRequestMessage}
             userRequests={userRequests}
             feedback={mentorFeedback}
             credits={summary?.profile.mentor_credits || 0}
             isPremium={isPremium}
+            currentUserEmail={summary?.profile.email || currentUser?.email}
           />
         )}
 
@@ -3995,6 +4333,7 @@ function DashboardPage({
           <MentorPanelView 
             requests={mentorRequests} 
             onStatusUpdate={handleMentorRequestStatus}
+            onSendMessage={handleMentorRequestMessage}
             mentor={summary?.profile || currentUser}
             feedback={mentorFeedback}
           />
@@ -4299,7 +4638,7 @@ function DashboardPage({
                               </button>
                               <button
                                 type="button"
-                                onClick={() => handleProjectDelete(project.id)}
+                                onClick={() => handleAdminProjectDelete(project.id)}
                                 className="rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-500 transition hover:bg-red-500/15"
                               >
                                 Sil
@@ -5888,18 +6227,22 @@ function MentorsView({
   mentors,
   onSendRequest,
   onConfirmRequest,
+  onSendMessage,
   userRequests,
   feedback,
   credits,
-  isPremium
+  isPremium,
+  currentUserEmail,
 }: {
   mentors: any[],
   onSendRequest: (id: number, msg: string) => void,
   onConfirmRequest: (id: number, action?: string, disputeReason?: string) => void,
+  onSendMessage: (requestId: number, content: string) => Promise<void> | void,
   userRequests: any[],
   feedback: string,
   credits: number,
-  isPremium: boolean
+  isPremium: boolean,
+  currentUserEmail?: string,
 }) {
   const [selectedMentor, setSelectedMentor] = useState<any | null>(null);
   const [message, setMessage] = useState("");
@@ -5909,9 +6252,15 @@ function MentorsView({
   const [cardCvc, setCardCvc] = useState("");
   const [sessionPaymentFeedback, setSessionPaymentFeedback] = useState("");
 
+  const pendingRequests = userRequests.filter((r) => r.status === "pending");
   const pendingConfirmation = userRequests.filter((r) => r.status === "offered");
   const reservedSessions = userRequests.filter((r) => r.status === "paid_reserved");
   const mentorCompletedSessions = userRequests.filter((r) => r.status === "mentor_completed");
+  const activeMentorRequestByMentorId = new Map(
+    userRequests
+      .filter((r) => !["declined", "released", "refunded", "disputed"].includes(r.status))
+      .map((r) => [r.mentor, r]),
+  );
 
   return (
     <section className="app-panel rounded-[2.25rem] p-8 lg:p-10 relative overflow-hidden">
@@ -5929,31 +6278,59 @@ function MentorsView({
         </div>
       </div>
 
+      {pendingRequests.length > 0 && (
+        <div className="mt-10 space-y-4">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#9ab0ff]">Mentör Yanıtı Bekleniyor</p>
+          {pendingRequests.map((req) => (
+            <article key={req.id} className="rounded-2xl border border-white/10 bg-white/6 p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="font-bold text-white">{req.mentor_details?.full_name}</p>
+                  <p className="mt-2 text-sm text-white/70">
+                    Talebin mentöre iletildi. Saat önerisi geldiğinde burada otomatik görünecek.
+                  </p>
+                  <p className="mt-2 text-xs text-white/60">
+                    Rezerve edilen seans ücreti: {formatTRY(req.price_at_request || 0)}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-xs font-bold uppercase tracking-wider text-white/65">
+                  Durum: Talep iletildi
+                </div>
+              </div>
+              <MentorConversation request={req} currentUserEmail={currentUserEmail} onSend={onSendMessage} />
+            </article>
+          ))}
+        </div>
+      )}
+
       {pendingConfirmation.length > 0 && (
         <div className="mt-10 space-y-4">
           <p className="text-xs font-bold uppercase tracking-widest text-secondary">Onay Bekleyen Görüşmeler</p>
           {pendingConfirmation.map(req => (
-            <article key={req.id} className="rounded-2xl border border-secondary/20 bg-secondary/10 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-white/10 flex items-center justify-center font-bold">
-                  {req.mentor_details?.full_name.charAt(0)}
+            <article key={req.id} className="rounded-2xl border border-secondary/20 bg-secondary/10 p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-full bg-white/10 flex items-center justify-center font-bold">
+                    {req.mentor_details?.full_name.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="font-bold text-white">{req.mentor_details?.full_name}</p>
+                    <p className="text-xs text-white/60">
+                      Zaman: <span className="text-secondary">{req.meeting_time ? new Date(req.meeting_time).toLocaleString('tr-TR') : 'Belirtilmedi'}</span>
+                    </p>
+                    <p className="text-xs text-white/60">
+                      Seans Ücreti: <span className="text-secondary">{formatTRY(req.price_at_request || req.offered_price || 0)}</span>
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-bold text-white">{req.mentor_details?.full_name}</p>
-                  <p className="text-xs text-white/60">
-                    Zaman: <span className="text-secondary">{req.meeting_time ? new Date(req.meeting_time).toLocaleString('tr-TR') : 'Belirtilmedi'}</span>
-                  </p>
-                  <p className="text-xs text-white/60">
-                    Teklif: <span className="text-secondary">{formatTRY(req.offered_price || 25)}</span>
-                  </p>
-                </div>
+                <button 
+                  onClick={() => onConfirmRequest(req.id, "accept_offer")}
+                  className="rounded-xl bg-secondary px-6 py-2 text-sm font-bold text-white shadow-halo transition hover:bg-secondary/90"
+                >
+                  Teklifi Kabul Et ve Ödemeyi Rezerve Et
+                </button>
               </div>
-              <button 
-                onClick={() => onConfirmRequest(req.id, "accept_offer")}
-                className="rounded-xl bg-secondary px-6 py-2 text-sm font-bold text-white shadow-halo transition hover:bg-secondary/90"
-              >
-                Teklifi Kabul Et ve Ödemeyi Rezerve Et
-              </button>
+              <MentorConversation request={req} currentUserEmail={currentUserEmail} onSend={onSendMessage} />
             </article>
           ))}
         </div>
@@ -5968,16 +6345,17 @@ function MentorsView({
                 <div>
                   <p className="font-bold">{req.mentor_details?.full_name}</p>
                   <p className="mt-2 text-white/70">
-                    Ödeme rezerve edildi. Talep mentör paneline düştü; görüşme sonrası mentör tamamlandı işaretlediğinde burada onay adımı açılacak.
+                    Odeme rezerve edildi. Talep mentor paneline dustu; gorusme sonrasi mentor tamamlandi isaretlediginde burada onay adimi acilacak.
                   </p>
                   <p className="mt-2 text-xs text-white/60">
-                    Zaman: {req.meeting_time ? new Date(req.meeting_time).toLocaleString("tr-TR") : "Belirtilmedi"} · Tutar: {formatTRY(req.reserved_amount || req.offered_price || 0)}
+                    Zaman: {req.meeting_time ? new Date(req.meeting_time).toLocaleString("tr-TR") : "Belirtilmedi"} · Tutar: {formatTRY(req.reserved_amount || req.price_at_request || req.offered_price || 0)}
                   </p>
                 </div>
                 <div className="rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-3 text-xs font-bold uppercase tracking-wider text-cyan-200">
                   Siradaki adim: Mentor gorusmeyi tamamlayacak
                 </div>
               </div>
+              <MentorConversation request={req} currentUserEmail={currentUserEmail} onSend={onSendMessage} />
             </article>
           ))}
         </div>
@@ -6013,6 +6391,7 @@ function MentorsView({
                   İtiraz Aç
                 </button>
               </div>
+              <MentorConversation request={req} currentUserEmail={currentUserEmail} onSend={onSendMessage} />
             </article>
           ))}
         </div>
@@ -6178,6 +6557,10 @@ function MentorsView({
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {mentors.map((m) => (
                 <article key={m.id} className="app-solid-card rounded-2xl p-6 transition hover:border-primary/30">
+                  {(() => {
+                    const activeRequest = activeMentorRequestByMentorId.get(m.id);
+                    return (
+                      <>
                   <div className="flex items-center gap-3 mb-4">
                     <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white/8 text-lg font-bold text-white/70">
                       {m.profile_picture ? (
@@ -6200,17 +6583,36 @@ function MentorsView({
                   <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/38">
                     Görüşmeler seans ücreti ile doğrudan ödeme adımıyla rezerve edilir.
                   </p>
+                  {activeRequest && (
+                    <div className="mb-4 rounded-2xl border border-[#9ab0ff]/20 bg-[#9ab0ff]/10 px-4 py-3 text-xs text-[#d5deff]">
+                      Bu mentör için açık bir talebin var:
+                      {" "}
+                      <span className="font-bold">{activeRequest.status_label || activeRequest.status}</span>
+                    </div>
+                  )}
                   <div className="flex flex-wrap gap-1 mb-6">
                     {m.skills.slice(0, 3).map((s: string) => (
                       <span key={s} className="rounded bg-white/8 px-2 py-0.5 text-[10px] font-bold text-white/58">{s}</span>
                     ))}
                   </div>
                   <button 
-                    onClick={() => setSelectedMentor(m)}
-                    className="w-full rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white transition hover:bg-primary/90"
+                    onClick={() => {
+                      if (activeRequest) {
+                        setSessionPaymentFeedback("Bu mentör için zaten aktif bir talebin bulunuyor.");
+                        return;
+                      }
+                      setSelectedMentor(m);
+                    }}
+                    className={`w-full rounded-xl px-4 py-2 text-sm font-bold text-white transition ${
+                      activeRequest ? "cursor-not-allowed bg-white/10 text-white/60" : "bg-primary hover:bg-primary/90"
+                    }`}
+                    disabled={Boolean(activeRequest)}
                   >
-                    Görüşme Talep Et
+                    {activeRequest ? "Aktif Talep Var" : "Görüşme Talep Et"}
                   </button>
+                      </>
+                    );
+                  })()}
                 </article>
               ))}
             </div>
@@ -6221,14 +6623,91 @@ function MentorsView({
   );
 }
 
+function MentorConversation({
+  request,
+  currentUserEmail,
+  onSend,
+}: {
+  request: any,
+  currentUserEmail?: string,
+  onSend: (requestId: number, content: string) => Promise<void> | void,
+}) {
+  const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
+
+  if (["declined", "refunded"].includes(request.status)) {
+    return null;
+  }
+
+  return (
+    <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#9ab0ff]">Görüşme Sohbeti</p>
+        <span className="text-[11px] text-white/45">Link, not ve görüşme detaylarını burada paylaşın.</span>
+      </div>
+      <div className="mt-4 space-y-3">
+        {request.messages?.length ? (
+          request.messages.map((item: any) => {
+            const mine = item.sender?.email === currentUserEmail;
+            return (
+              <div
+                key={item.id}
+                className={`max-w-[88%] rounded-2xl px-4 py-3 text-sm leading-6 ${
+                  mine ? "ml-auto bg-primary text-white" : "border border-white/10 bg-white/7 text-white"
+                }`}
+              >
+                <p className={`text-[11px] font-bold uppercase tracking-widest ${mine ? "text-white/70" : "text-white/45"}`}>
+                  {item.sender?.full_name || "Kullanıcı"}
+                </p>
+                <p className="mt-1">{item.content}</p>
+              </div>
+            );
+          })
+        ) : (
+          <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 px-4 py-3 text-sm text-white/55">
+            Henüz mesaj yok. Toplantı linkini veya kısa notları ilk mesaj olarak gönderebilirsiniz.
+          </div>
+        )}
+      </div>
+      <form
+        className="mt-4 space-y-3"
+        onSubmit={async (event) => {
+          event.preventDefault();
+          if (!draft.trim() || sending) return;
+          setSending(true);
+          await onSend(request.id, draft.trim());
+          setDraft("");
+          setSending(false);
+        }}
+      >
+        <textarea
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          placeholder="Mesajını yaz..."
+          className="app-input min-h-24"
+        />
+        <button
+          type="submit"
+          disabled={sending || !draft.trim()}
+          className="rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-white shadow-halo transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {sending ? "Gönderiliyor..." : "Mesaj Gönder"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
 function MentorPanelView({
   requests,
   onStatusUpdate,
+  onSendMessage,
   mentor,
   feedback,
 }: {
   requests: any[],
-  onStatusUpdate: (id: number, action: string, price?: number, time?: string) => void,
+  onStatusUpdate: (id: number, action: string, meetingTime?: string) => void,
+  onSendMessage: (requestId: number, content: string) => Promise<void> | void,
   mentor: CurrentUser | null,
   feedback: string,
 }) {
@@ -6325,7 +6804,7 @@ function MentorPanelView({
                       {req.price_at_request > 0 ? (
                         <span className="text-[10px] font-bold bg-secondary/20 text-[#9ab0ff] px-2 py-0.5 rounded-full border border-secondary/30">Ödeme: {formatTRY(req.price_at_request)}</span>
                       ) : (
-                        <span className="text-[10px] font-bold bg-primary/20 text-primary px-2 py-0.5 rounded-full border border-primary/30">Credit</span>
+                        <span className="text-[10px] font-bold bg-secondary/20 text-[#9ab0ff] px-2 py-0.5 rounded-full border border-secondary/30">Ödeme: {formatTRY(req.offered_price || req.price_at_request || 0)}</span>
                       )}
                     </div>
                     <p className="text-xs text-slate-400 mt-1">{formatJoinedDate(req.created_at)}</p>
@@ -6355,15 +6834,6 @@ function MentorPanelView({
                     <div className="flex flex-col w-full gap-3 mt-4 border-t border-white/10 pt-4">
                       <div className="flex flex-col gap-3">
                         <div className="flex items-center gap-3">
-                          <span className="text-xs font-bold text-white/50 uppercase">Ücret Teklifi (TL):</span>
-                          <input 
-                            type="number" 
-                            placeholder="Ücret" 
-                            className="w-32 app-input text-sm bg-black/20"
-                            id={`offer-${req.id}`}
-                          />
-                        </div>
-                        <div className="flex items-center gap-3">
                           <span className="text-xs font-bold text-white/50 uppercase">Görüşme Zamanı:</span>
                           <input 
                             type="datetime-local" 
@@ -6375,21 +6845,16 @@ function MentorPanelView({
                       <div className="flex gap-3 mt-2">
                         <button 
                           onClick={() => {
-                            const val = (document.getElementById(`offer-${req.id}`) as HTMLInputElement)?.value;
                             const timeVal = (document.getElementById(`time-${req.id}`) as HTMLInputElement)?.value;
                             if (!timeVal) {
                               alert("Lütfen görüşme zamanını seçin.");
                               return;
                             }
-                            if (req.price_at_request !== 0 && !val) {
-                              alert("Lütfen ücret teklifini girin.");
-                              return;
-                            }
-                            onStatusUpdate(req.id, 'offer', Number(val) || 0, timeVal);
+                            onStatusUpdate(req.id, 'offer', timeVal);
                           }} 
                           className="rounded-xl bg-primary px-6 py-2.5 text-xs font-bold text-white shadow-halo hover:bg-primary/90 transition"
                         >
-                          Zaman ve Ücret Öner
+                          Zaman Öner
                         </button>
                         <button 
                           onClick={() => onStatusUpdate(req.id, 'decline')} 
@@ -6424,6 +6889,11 @@ function MentorPanelView({
                     </div>
                   )}
                 </div>
+                <MentorConversation
+                  request={req}
+                  currentUserEmail={mentor?.email}
+                  onSend={onSendMessage}
+                />
               </article>
             ))
           )}

@@ -77,6 +77,30 @@ def _interest_matches_roles(user_interests: list, needed_roles: list) -> list[st
     return list(dict.fromkeys(matched))
 
 
+def _role_aligned_skills(user_skills: list, user_title: str, needed_roles: list) -> list[str]:
+    """
+    Kullanıcının unvanı aranan rolle örtüşüyorsa, ilgili kullanıcı becerilerini de
+    eşleşme çıktısına dahil et. Böylece sadece teknoloji stack'i değil rol sinyali de görünür olur.
+    """
+    matched = []
+    title_tokens = _tokenize(user_title)
+
+    for role in needed_roles:
+        role_tokens = _tokenize(role)
+        if not role_tokens:
+            continue
+
+        role_skill_matches = [skill for skill in user_skills if _tokenize(skill) & role_tokens]
+        title_matches_role = bool(title_tokens & role_tokens)
+
+        if role_skill_matches:
+            matched.extend(role_skill_matches[:2])
+        elif title_matches_role:
+            matched.extend(user_skills[:2])
+
+    return list(dict.fromkeys(matched))
+
+
 @dataclass
 class MatchResult:
     score: int
@@ -111,8 +135,10 @@ def score_user_for_project(user: User, project: Project) -> MatchResult:
     user_interests = list(user.interests or [])
     project_roles = list(project.needed_roles or [])
 
-    # Beceri eşleşmesi (exact + partial)
-    matched_skills = _partial_overlap(user_skills, project_stack)
+    # Beceri eşleşmesi (exact + partial) + rol kaynaklı uzmanlık sinyalleri
+    tech_matches = _partial_overlap(user_skills, project_stack)
+    role_aligned_skills = _role_aligned_skills(user_skills, user.title or "", project_roles)
+    matched_skills = list(dict.fromkeys(tech_matches + role_aligned_skills))
     # Eksik beceriler (projenin istediği ama kullanıcıda olmayanlar)
     exact_user_skills = _normalize_items(user_skills)
     missing_skills = sorted(_normalize_items(project_stack) - exact_user_skills)
@@ -129,7 +155,10 @@ def score_user_for_project(user: User, project: Project) -> MatchResult:
     if matched_skills:
         skill_score = min(len(matched_skills) * 15, 40)
         score += skill_score
-        reasons.append(f"Teknik beceriler proje teknolojileriyle uyumlu ({len(matched_skills)} eşleşme).")
+        if tech_matches:
+            reasons.append(f"Teknik beceriler proje ihtiyaçlarıyla uyumlu ({len(matched_skills)} sinyal).")
+        else:
+            reasons.append(f"Rol ve uzmanlık sinyalleri proje ihtiyacıyla örtüşüyor ({len(matched_skills)} sinyal).")
 
     # İlgi alanı / rol puanı (max 20)
     if matched_interests:

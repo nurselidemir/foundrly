@@ -56,6 +56,10 @@ class ProjectListCreateView(generics.ListCreateAPIView):
 
     def get_serializer_class(self):
         if self.request.method == "GET":
+            mine = self.request.query_params.get("mine")
+            joined = self.request.query_params.get("joined")
+            if mine == "true" or joined == "true":
+                return ProjectSerializer
             return ProjectListSerializer
         return ProjectSerializer
 

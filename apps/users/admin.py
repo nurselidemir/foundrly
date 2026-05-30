@@ -4,6 +4,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from apps.users.models import (
     CommunityEvent,
     CommunityThread,
+    MentorRequestMessage,
     PremiumSubscription,
     User,
     UserReview,
@@ -68,3 +69,9 @@ class CommunityEventAdmin(admin.ModelAdmin):
     list_display = ("title", "tag", "location", "event_date", "is_online", "is_featured")
     list_filter = ("is_online", "is_featured", "tag")
     search_fields = ("title", "location", "tag")
+
+
+@admin.register(MentorRequestMessage)
+class MentorRequestMessageAdmin(admin.ModelAdmin):
+    list_display = ("mentor_request", "sender", "created_at")
+    search_fields = ("mentor_request__user__email", "mentor_request__mentor__email", "sender__email", "content")

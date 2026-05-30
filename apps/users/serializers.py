@@ -9,6 +9,7 @@ from apps.users.models import (
     CommunityThread,
     FriendRequest,
     MentorRequest,
+    MentorRequestMessage,
     PremiumSubscription,
     User,
     UserReview,
@@ -240,7 +241,7 @@ class PremiumSubscribeSerializer(serializers.Serializer):
         )
 
         user.is_premium = True
-        user.mentor_credits = 1
+        user.mentor_credits = 0
         user.save(update_fields=["is_premium", "mentor_credits"])
         return subscription
 
@@ -672,10 +673,29 @@ class MentorSerializer(serializers.ModelSerializer):
         fields = ["id", "full_name", "title", "bio", "skills", "profile_picture", "is_mentor", "mentor_price"]
 
 
+class MentorRequestMessageSerializer(serializers.ModelSerializer):
+    sender = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MentorRequestMessage
+        fields = ["id", "sender", "content", "created_at"]
+        read_only_fields = ["id", "sender", "created_at"]
+
+    def get_sender(self, obj):
+        return {
+            "id": obj.sender.id,
+            "email": obj.sender.email,
+            "full_name": obj.sender.full_name,
+            "title": obj.sender.title,
+            "profile_picture": obj.sender.profile_picture.url if obj.sender.profile_picture else None,
+        }
+
+
 class MentorRequestSerializer(serializers.ModelSerializer):
     mentor_details = MentorSerializer(source="mentor", read_only=True)
     user_details = MentorSerializer(source="user", read_only=True)
     status_label = serializers.SerializerMethodField()
+    messages = MentorRequestMessageSerializer(many=True, read_only=True)
 
     class Meta:
         model = MentorRequest
@@ -699,6 +719,7 @@ class MentorRequestSerializer(serializers.ModelSerializer):
             "disputed_at",
             "dispute_reason",
             "status_label",
+            "messages",
             "created_at",
         ]
         read_only_fields = [
@@ -717,6 +738,7 @@ class MentorRequestSerializer(serializers.ModelSerializer):
             "disputed_at",
             "dispute_reason",
             "status_label",
+            "messages",
             "created_at",
         ]
 
@@ -736,11 +758,8 @@ class MentorRequestSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user = self.context["request"].user
-        price = -1
-        if user.mentor_credits > 0:
-            user.mentor_credits -= 1
-            user.save(update_fields=["mentor_credits"])
-            price = 0
+        mentor = validated_data["mentor"]
+        price = mentor.mentor_price or 0
 
         return MentorRequest.objects.create(
             user=user,
@@ -753,7 +772,7 @@ class MentorRequestSerializer(serializers.ModelSerializer):
     def get_status_label(self, obj):
         labels = {
             MentorRequest.STATUS_PENDING: "Talep iletildi",
-            MentorRequest.STATUS_OFFERED: "Teklif bekliyor",
+            MentorRequest.STATUS_OFFERED: "Gorusme zamani onayi bekliyor",
             MentorRequest.STATUS_PAID_RESERVED: "Odeme rezerve edildi",
             MentorRequest.STATUS_MENTOR_COMPLETED: "Mentor tamamlandi dedi",
             MentorRequest.STATUS_RELEASED: "Odeme mentore aktarildi",
@@ -768,7 +787,6 @@ class MentorRequestSerializer(serializers.ModelSerializer):
 
 class MentorRequestMentorActionSerializer(serializers.Serializer):
     action = serializers.ChoiceField(choices=["offer", "decline", "mark_completed"])
-    offered_price = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
     meeting_time = serializers.DateTimeField(required=False)
 
     def validate(self, attrs):
@@ -780,10 +798,7 @@ class MentorRequestMentorActionSerializer(serializers.Serializer):
                 raise serializers.ValidationError("Sadece yeni taleplere teklif verilebilir.")
             if attrs.get("meeting_time") is None:
                 raise serializers.ValidationError({"meeting_time": "Gorusme zamani zorunludur."})
-            if instance.price_at_request == 0:
-                attrs["offered_price"] = 0
-            elif attrs.get("offered_price") is None or attrs["offered_price"] <= 0:
-                raise serializers.ValidationError({"offered_price": "Ucret teklifi pozitif olmalidir."})
+            attrs["offered_price"] = instance.price_at_request or 0
 
         if action == "decline" and instance.status not in {MentorRequest.STATUS_PENDING, MentorRequest.STATUS_OFFERED}:
             raise serializers.ValidationError("Bu talep bu asamada reddedilemez.")

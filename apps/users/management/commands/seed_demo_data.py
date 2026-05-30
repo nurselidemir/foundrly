@@ -44,11 +44,12 @@ class Command(BaseCommand):
             full_name="Nurseli Demir",
             title="Platform Yöneticisi",
             bio=(
-                "Foundrly'nin kurucu yöneticisi. Platform stratejisi, topluluk yönetimi "
-                "ve kullanıcı deneyiminden sorumludur."
+                "Foundrly'nin kurucu yöneticisi. Platform stratejisi, topluluk büyümesi, "
+                "ürün operasyonları ve kullanıcı deneyimi akışlarının tamamından sorumludur. "
+                "Erken aşama ekiplerin onboarding, mentörlük ve eşleşme deneyimlerini birlikte tasarlar."
             ),
-            skills=["Django", "React", "Product Strategy", "PostgreSQL"],
-            interests=["startup", "community", "ai", "product"],
+            skills=["Django", "React", "Product Strategy", "PostgreSQL", "Growth Ops", "Community Design", "UX Writing"],
+            interests=["startup", "community", "ai", "product", "marketplace design", "mentorship"],
             is_staff=True,
             is_superuser=True,
             is_premium=True,
@@ -62,15 +63,16 @@ class Command(BaseCommand):
             title="Startup Mentörü & SaaS Uzmanı",
             bio=(
                 "10+ yıl deneyimli SaaS girişimci ve angel investor. "
-                "Erken aşama startuplara fundraising, GTM stratejisi ve ürün-pazar uyumu konularında mentorluk verir."
+                "Erken aşama startuplara fundraising, GTM stratejisi, ürün-pazar uyumu, "
+                "pricing ve ilk satış sistemi kurma konularında mentorluk verir."
             ),
-            skills=["Fundraising", "SaaS", "Go To Market", "Product Management", "Angel Investing"],
-            interests=["mentorship", "saas", "ai", "startup", "fintech"],
+            skills=["Fundraising", "SaaS", "Go To Market", "Product Management", "Angel Investing", "Pricing", "B2B Sales"],
+            interests=["mentorship", "saas", "ai", "startup", "fintech", "growth", "product strategy"],
             is_mentor=True,
             is_premium=True,
             is_verified_talent=True,
             mentor_price=Decimal("25.00"),
-            mentor_credits=5,
+            mentor_credits=0,
         )
 
         regular_user = self._upsert_user(
@@ -80,10 +82,11 @@ class Command(BaseCommand):
             title="Frontend Geliştirici",
             bio=(
                 "React ve TypeScript konusunda uzmanlaşmış frontend geliştirici. "
-                "Hackathon ekiplerinde aktif rol almayı ve startup projelerinde yer almayı seviyor."
+                "Hackathon ekiplerinde aktif rol almayı, ürün fikrini hızlı prototipe çevirmeyi "
+                "ve startup projelerinde kullanıcı odaklı arayüzler kurmayı seviyor."
             ),
-            skills=["React", "TypeScript", "Tailwind CSS", "Next.js"],
-            interests=["frontend", "startup", "hackathon", "mobile"],
+            skills=["React", "TypeScript", "Tailwind CSS", "Next.js", "Framer Motion", "Design Systems", "Responsive UI"],
+            interests=["frontend", "startup", "hackathon", "mobile", "product design", "community apps"],
         )
 
         # ── 2. Eşleşme ve akış için ek kullanıcılar ────────────────────────
@@ -94,10 +97,11 @@ class Command(BaseCommand):
             title="AI Girişim Kurucusu",
             bio=(
                 "Üniversite projelerini ürüne dönüştürmeyi seven kurucu. "
-                "Yapay zeka ve veri odaklı startup ekiplerinde aktif."
+                "Yapay zeka ve veri odaklı startup ekiplerinde aktif. Ürün stratejisi, "
+                "problem doğrulama ve yatırımcı hikâyesi kurma konularında güçlüdür."
             ),
-            skills=["Product Management", "Growth", "AI", "Python"],
-            interests=["hackathon", "startup", "product", "ai"],
+            skills=["Product Management", "Growth", "AI", "Python", "Customer Discovery", "Pitching", "Experiment Design"],
+            interests=["hackathon", "startup", "product", "ai", "edtech", "community growth"],
             is_premium=True,
             is_verified_talent=True,
         )
@@ -109,10 +113,11 @@ class Command(BaseCommand):
             title="Backend Geliştirici",
             bio=(
                 "Erken aşama girişimlerde hızlı MVP çıkarmayı seven backend geliştirici. "
-                "Django, FastAPI ve PostgreSQL konusunda 4 yıl deneyim."
+                "Django, FastAPI ve PostgreSQL konusunda 4 yıl deneyim. API mimarisi, "
+                "auth akışları, containerization ve ölçeklenebilir veri modelleme alanlarında üretken."
             ),
-            skills=["Python", "Django", "PostgreSQL", "FastAPI", "Docker"],
-            interests=["backend", "fintech", "startup", "devops"],
+            skills=["Python", "Django", "PostgreSQL", "FastAPI", "Docker", "Redis", "REST API", "System Design"],
+            interests=["backend", "fintech", "startup", "devops", "api security", "platform engineering"],
             is_premium=True,
         )
 
@@ -123,10 +128,11 @@ class Command(BaseCommand):
             title="UI/UX Tasarımcısı",
             bio=(
                 "Hackathon ve startup takımları için hızlı kullanıcı deneyimleri tasarlar. "
-                "Figma uzmanı, mobil-first yaklaşım."
+                "Figma uzmanı, mobil-first yaklaşım benimser. UX research, information architecture "
+                "ve onboarding akışları tasarlamada özellikle güçlüdür."
             ),
-            skills=["Figma", "UI Design", "UX Research", "Prototyping", "Design Systems"],
-            interests=["design", "community", "mobile", "startup"],
+            skills=["Figma", "UI Design", "UX Research", "Prototyping", "Design Systems", "Wireframing", "Mobile UX"],
+            interests=["design", "community", "mobile", "startup", "edtech", "product discovery"],
         )
 
         data_scientist = self._upsert_user(
@@ -136,10 +142,11 @@ class Command(BaseCommand):
             title="Veri Bilimci",
             bio=(
                 "Makine öğrenmesi ve veri analizi konusunda uzman. "
-                "Kaggle master, açık kaynak projelere aktif katkı sağlıyor."
+                "Kaggle master, açık kaynak projelere aktif katkı sağlıyor. Tahminleme, "
+                "dashboard tasarımı ve veri ürünleri için model-operasyon kurulumlarında deneyimli."
             ),
-            skills=["Python", "Machine Learning", "TensorFlow", "Data Analysis", "SQL"],
-            interests=["ai", "data", "research", "startup"],
+            skills=["Python", "Machine Learning", "TensorFlow", "Data Analysis", "SQL", "Pandas", "Feature Engineering", "Data Visualization"],
+            interests=["ai", "data", "research", "startup", "analytics", "forecasting"],
             is_verified_talent=True,
         )
 
@@ -155,14 +162,15 @@ class Command(BaseCommand):
             title="CampusMind AI",
             summary=(
                 "Üniversite öğrencileri için yapay zeka destekli çalışma planlayıcı ve proje buddy platformu. "
-                "Kullanıcıların ders, proje ve hackathon hedeflerini AI ile optimize etmesini sağlar."
+                "Kullanıcıların ders, proje ve hackathon hedeflerini AI ile optimize etmesini sağlar. "
+                "Görev önceliklendirme, ekip önerisi ve bireysel çalışma ritmi takibi aynı deneyimde birleşir."
             ),
             problem_statement=(
                 "Ders, proje ve hackathon yoğunluğu içinde öğrenciler ekip ve odak problemi yaşıyor. "
                 "Doğru kişilerle bir araya gelmek için harcanan zaman değerli üretim zamanını tüketiyor."
             ),
-            tech_stack=["React", "Django", "PostgreSQL", "OpenAI API", "Celery"],
-            needed_roles=["Backend Developer", "UI/UX Designer", "Machine Learning Engineer"],
+            tech_stack=["React", "Django", "PostgreSQL", "OpenAI API", "Celery", "Figma", "UX Research"],
+            needed_roles=["Backend Developer", "UI/UX Designer", "Machine Learning Engineer", "Product Manager"],
             is_premium_highlighted=True,
         )
 
@@ -171,14 +179,15 @@ class Command(BaseCommand):
             title="PocketLedger",
             summary=(
                 "Gen Z kullanıcıları için mikro bütçe ve harcama analiz platformu. "
-                "Banka entegrasyonu ve kişiselleştirilmiş finansal tavsiyeler sunar."
+                "Banka entegrasyonu, kategori bazlı analiz ve kişiselleştirilmiş finansal tavsiyeler sunar. "
+                "Kullanıcı davranışından tasarruf alışkanlığı üreten hafif bir ürün deneyimi hedefler."
             ),
             problem_statement=(
                 "Kullanıcı davranışlarını anlamlı finansal aksiyonlara çevirmek zor. "
                 "Mevcut fintech uygulamaları Y ve Z kuşağının ihtiyaçlarını karşılamıyor."
             ),
-            tech_stack=["Django", "PostgreSQL", "React", "Data Visualization", "Plaid API"],
-            needed_roles=["Data Scientist", "Growth Builder", "Frontend Developer"],
+            tech_stack=["Django", "PostgreSQL", "React", "Data Visualization", "Plaid API", "Product Analytics"],
+            needed_roles=["Data Scientist", "Growth Builder", "Frontend Developer", "Product Analyst"],
             is_premium_highlighted=True,
         )
 
@@ -187,14 +196,14 @@ class Command(BaseCommand):
             title="HackSprint Takım Koordinatörü",
             summary=(
                 "48 saatlik üniversite hackathonları için takım koordinasyon ve sunum yönetim platformu. "
-                "Gerçek zamanlı görev dağılımı ve sunum materyali oluşturma."
+                "Gerçek zamanlı görev dağılımı, sunum materyali oluşturma ve sprint bazlı iş takibi sunar."
             ),
             problem_statement=(
                 "Hackathon sürecinde hızlı koordinasyon ve sunum materyali eksikliği var. "
                 "Ekipler kritik saatleri planlama ve senkronizasyonla harcıyor."
             ),
-            tech_stack=["Next.js", "Figma", "Supabase", "WebSocket", "Vercel"],
-            needed_roles=["Frontend Developer", "Product Manager", "Backend Developer"],
+            tech_stack=["Next.js", "Figma", "Supabase", "WebSocket", "Vercel", "UI Design", "Product Strategy"],
+            needed_roles=["Frontend Developer", "Product Manager", "Backend Developer", "UI/UX Designer"],
             is_premium_highlighted=False,
         )
 
@@ -203,14 +212,14 @@ class Command(BaseCommand):
             title="TrendAI - Sosyal Medya Analitik Platformu",
             summary=(
                 "Startup'lar için sosyal medya trendlerini gerçek zamanlı analiz eden AI destekli platform. "
-                "Rakip analizi, sentiment analizi ve içerik önerileri sunar."
+                "Rakip analizi, sentiment analizi, içerik önerileri ve dashboard bazlı içgörü akışı sunar."
             ),
             problem_statement=(
                 "Küçük startuplar büyük veri analitik araçlarına erişemiyor. "
                 "Sosyal medya trendlerini manuel takip etmek zaman alıcı ve hatalı."
             ),
-            tech_stack=["Python", "FastAPI", "React", "TensorFlow", "Redis", "PostgreSQL"],
-            needed_roles=["Frontend Developer", "DevOps Engineer", "UX Designer"],
+            tech_stack=["Python", "FastAPI", "React", "TensorFlow", "Redis", "PostgreSQL", "Dashboard UX"],
+            needed_roles=["Frontend Developer", "DevOps Engineer", "UX Designer", "Data Engineer"],
             is_premium_highlighted=False,
         )
 
@@ -219,14 +228,14 @@ class Command(BaseCommand):
             title="EduConnect - Öğrenci Mentörlük Platformu",
             summary=(
                 "Üniversite öğrencilerini mezunlarla ve sektör profesyonelleriyle buluşturan mentörlük platformu. "
-                "Kariyer rehberliği ve proje desteği odaklı."
+                "Kariyer rehberliği, proje desteği ve eşleşme bazlı birebir oturum planlaması odaklı."
             ),
             problem_statement=(
                 "Öğrenciler kariyer planlaması ve proje geliştirme konularında yeterli rehberliğe ulaşamıyor. "
                 "Mevcut platform ve ağlar hem pahalı hem de erişimsiz."
             ),
-            tech_stack=["React", "Node.js", "MongoDB", "Socket.io", "Tailwind CSS"],
-            needed_roles=["Backend Developer", "UI/UX Designer", "Mobile Developer"],
+            tech_stack=["React", "Node.js", "MongoDB", "Socket.io", "Tailwind CSS", "Mobile UX", "Notification System"],
+            needed_roles=["Backend Developer", "UI/UX Designer", "Mobile Developer", "Community Manager"],
             is_premium_highlighted=False,
         )
 
@@ -707,7 +716,7 @@ class Command(BaseCommand):
     def _ensure_premium(self, user, plan, price_label):
         """Premium üyelik oluştur veya güncelle."""
         user.is_premium = True
-        user.mentor_credits = max(user.mentor_credits, 1)
+        user.mentor_credits = 0
         user.save(update_fields=["is_premium", "mentor_credits"])
         PremiumSubscription.objects.update_or_create(
             user=user,

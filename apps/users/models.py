@@ -166,6 +166,27 @@ class MentorRequest(models.Model):
         return f"{self.user.email} -> {self.mentor.email}"
 
 
+class MentorRequestMessage(models.Model):
+    mentor_request = models.ForeignKey(
+        MentorRequest,
+        on_delete=models.CASCADE,
+        related_name="messages",
+    )
+    sender = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="sent_mentor_request_messages",
+    )
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.sender.email} -> mentor request {self.mentor_request_id}"
+
+
 class UserReview(models.Model):
     reviewer = models.ForeignKey(
         User,

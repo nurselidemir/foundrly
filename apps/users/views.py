@@ -7,7 +7,7 @@ from django.db.models import Q
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 
-from rest_framework import generics
+from rest_framework import generics, serializers
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -18,6 +18,7 @@ from apps.users.models import (
     CommunityEventRegistration,
     CommunityGuide,
     CommunityThread,
+    MentorRequestMessage,
     VerificationRequest,
     User,
     MentorRequest,
@@ -47,8 +48,24 @@ from apps.users.serializers import (
     MentorRequestSerializer,
     MentorRequestMentorActionSerializer,
     MentorRequestUserActionSerializer,
+    MentorRequestMessageSerializer,
     FriendRequestSerializer,
 )
+
+
+def _get_accessible_mentor_request(user, request_id):
+    mentor_request = get_object_or_404(
+        MentorRequest.objects.select_related("user", "mentor").prefetch_related("messages__sender"),
+        pk=request_id,
+    )
+
+    if user.id not in {mentor_request.user_id, mentor_request.mentor_id}:
+        raise PermissionDenied("Bu mentorluk gorusmesine erisemezsiniz.")
+
+    if mentor_request.status in {MentorRequest.STATUS_DECLINED, MentorRequest.STATUS_REFUNDED}:
+        raise PermissionDenied("Bu talep icin mesajlasma kapatildi.")
+
+    return mentor_request
 
 
 class HealthCheckView(APIView):
@@ -172,7 +189,11 @@ class MentorRequestListCreateView(generics.ListCreateAPIView):
     serializer_class = MentorRequestSerializer
 
     def get_queryset(self):
-        return MentorRequest.objects.filter(user=self.request.user)
+        return (
+            MentorRequest.objects.filter(user=self.request.user)
+            .select_related("user", "mentor")
+            .prefetch_related("messages__sender")
+        )
 
 
 class FriendRequestListCreateView(generics.ListCreateAPIView):
@@ -207,7 +228,11 @@ class MentorMyRequestsView(generics.ListAPIView):
     def get_queryset(self):
         if not self.request.user.is_mentor:
             raise PermissionDenied("Sadece mentorlar bu alana erisebilir.")
-        return MentorRequest.objects.filter(mentor=self.request.user)
+        return (
+            MentorRequest.objects.filter(mentor=self.request.user)
+            .select_related("user", "mentor")
+            .prefetch_related("messages__sender")
+        )
 
 
 class MentorRequestStatusUpdateView(generics.UpdateAPIView):
@@ -273,7 +298,7 @@ class MentorRequestConfirmView(generics.UpdateAPIView):
         now = timezone.now()
 
         if action == "accept_offer":
-            reserved_amount = Decimal("0.00") if instance.price_at_request == 0 else instance.offered_price
+            reserved_amount = instance.offered_price or instance.price_at_request or Decimal("0.00")
             instance.status = MentorRequest.STATUS_PAID_RESERVED
             instance.user_confirmed = True
             instance.user_confirmed_at = now
@@ -297,6 +322,24 @@ class MentorRequestConfirmView(generics.UpdateAPIView):
             instance.save(update_fields=["status", "disputed_at", "dispute_reason"])
 
         return Response(MentorRequestSerializer(instance).data)
+
+
+class MentorRequestMessageCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        mentor_request = _get_accessible_mentor_request(request.user, pk)
+        content = request.data.get("content", "").strip()
+
+        if not content:
+            raise serializers.ValidationError({"content": ["Mesaj bos olamaz."]})
+
+        message = MentorRequestMessage.objects.create(
+            mentor_request=mentor_request,
+            sender=request.user,
+            content=content,
+        )
+        return Response(MentorRequestMessageSerializer(message).data, status=201)
 
 
 class CurrentUserView(generics.RetrieveUpdateAPIView):
