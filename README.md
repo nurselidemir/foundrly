@@ -118,7 +118,6 @@ foundrly-backend/
 ├── Dockerfile
 ├── docker-compose.yml
 ├── manage.py
-├── proje.md
 └── requirements.txt
 ```
 
@@ -193,7 +192,6 @@ Bu repository'deki `render.yaml`, kartsız senaryo için Render'ın kendi Postgr
 | Kayıt Ol | http://localhost:3000/#register |
 | Premium | http://localhost:3000/#premium |
 | Django Admin | http://localhost:8000/admin/ |
-| API Root | http://localhost:8000/api/ |
 | Health Check | http://localhost:8000/api/health/ |
 | PostgreSQL | `localhost:5433` |
 
@@ -260,11 +258,12 @@ docker compose exec web python manage.py seed_demo_data
 ```
 
 Aşağıdaki hesapları kullanabilirsin:
-- Admin: `nurselidemiir@gmail.com` / `Nurseli1`
-- Founder: `founder@joinfoundrly.com` / `Founder123!`
-- Builder: `builder@joinfoundrly.com` / `Builder123!`
-- Designer: `designer@joinfoundrly.com` / `Designer123!`
-- Mentor: `mentor@joinfoundrly.com` / `Mentor123!`
+- Admin: `admin@foundrly.com` / `Admin123!`
+- Founder: `founder@foundrly.com` / `Founder123!`
+- Builder: `builder@foundrly.com` / `Builder123!`
+- Designer: `designer@foundrly.com` / `Designer123!`
+- Mentor: `mentor@foundrly.com` / `Mentor123!`
+- User: `user@foundrly.com` / `User123!`
 
 ---
 
@@ -608,7 +607,6 @@ Repository içinde bulunan teslim materyalleri:
 - `mentörler/` story görselleri
 
 Ek notlar:
-- `proje.md` teslim / proje özeti odaklı notları içerir
 - domain satın alımı gibi bazı dış teslim ekran görüntüleri gerekiyorsa manuel olarak ayrıca eklenmelidir
 
 ---
