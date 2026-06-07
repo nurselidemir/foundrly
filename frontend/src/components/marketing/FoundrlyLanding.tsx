@@ -116,7 +116,6 @@ const pricing = [
       "Premium görünürlük artışı",
       "Gelişmiş filtreler",
       "Mentör erişimi",
-      "Öncelikli iş birliği deneyimi",
     ],
     locked: [],
     isPremium: true,

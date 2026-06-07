@@ -5,7 +5,6 @@ const FREE_FEATURES = [
   { text: "Proje keşfi (sınırlı)", included: true },
   { text: "Temel başvurular", included: true },
   { text: "Topluluk erişimi", included: true },
-  { text: "Temel mesajlaşma", included: true },
   { text: "YZ Takım Eşleşmesi", included: false },
   { text: "Doğrulanmış profil rozeti", included: false },
   { text: "Premium görünürlük", included: false },
@@ -30,7 +29,6 @@ const COMPARISON_ROWS = [
   { label: "Verified Rozet", free: "❌", premium: "✅" },
   { label: "Proje Görünürlüğü", free: "Standart", premium: "Premium" },
   { label: "Mentör Erişimi", free: "❌", premium: "✅" },
-  { label: "Mesajlaşma", free: "Temel", premium: "Aktif" },
   { label: "Destek", free: "Standart", premium: "Öncelikli" },
 ];
 
