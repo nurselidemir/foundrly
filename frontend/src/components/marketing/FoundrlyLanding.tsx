@@ -99,7 +99,6 @@ const pricing = [
       "Kurucu profili",
       "Proje keşfi",
       "Temel başvurular",
-      "Temel mesajlaşma",
     ],
     locked: ["YZ takım eşleşmesi", "Doğrulanmış profil", "Premium görünürlük"],
     isPremium: false,
