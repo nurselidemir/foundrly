@@ -5522,7 +5522,7 @@ export default function App() {
           sections={[
             {
               title: "Premium ne sağlar?",
-              body: "Premium üyelik; YZ Ekip Kurucu, gelişmiş ekip filtreleri, doğrulanmış yetenek başvuru akışı ve daha yüksek görünürlük gibi platformun ileri düzey özelliklerine erişim sağlar.",
+              body: "Premium üyelik; YZ Ekip Kurucu, gelişmiş ekip filtreleri, doğrulanmış yetenek başvuru akışı, mentör talebi ve daha yüksek görünürlük gibi platformun ileri düzey özelliklerine erişim sağlar.",
             },
             {
               title: "Doğrulanmış yetenek nasıl çalışıyor?",

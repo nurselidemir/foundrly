@@ -3,7 +3,7 @@ import { useState } from "react";
 const FREE_FEATURES = [
   { text: "Kurucu profili oluşturma", included: true },
   { text: "Proje keşfi (sınırlı)", included: true },
-  { text: "Temel başvurular (3/ay)", included: true },
+  { text: "Temel başvurular", included: true },
   { text: "Topluluk erişimi", included: true },
   { text: "Temel mesajlaşma", included: true },
   { text: "YZ Takım Eşleşmesi", included: false },
@@ -13,25 +13,25 @@ const FREE_FEATURES = [
 ];
 
 const PREMIUM_FEATURES = [
-  { text: "Sınırsız başvuru", included: true },
+  { text: "Gelişmiş başvuru deneyimi", included: true },
   { text: "YZ Takım Eşleşmesi", included: true },
   { text: "Doğrulanmış profil rozeti", included: true },
   { text: "Featured profil & proje", included: true },
   { text: "Gelişmiş filtreler", included: true },
   { text: "Mentör erişimi", included: true },
-  { text: "Sınırsız mesajlaşma", included: true },
-  { text: "7/24 öncelikli destek", included: true },
+  { text: "Öncelikli değerlendirme sinyalleri", included: true },
+  { text: "Premium destek hattı", included: true },
   { text: "Özel etkinlikler & Discord", included: true },
 ];
 
 const COMPARISON_ROWS = [
-  { label: "Başvuru Limiti", free: "3/ay", premium: "Sınırsız" },
+  { label: "Başvuru Deneyimi", free: "Temel", premium: "Gelişmiş" },
   { label: "YZ Eşleştirme", free: "❌", premium: "✅" },
   { label: "Verified Rozet", free: "❌", premium: "✅" },
   { label: "Proje Görünürlüğü", free: "Standart", premium: "Premium" },
   { label: "Mentör Erişimi", free: "❌", premium: "✅" },
-  { label: "Mesajlaşma", free: "Sınırlı", premium: "Sınırsız" },
-  { label: "Destek", free: "Forum", premium: "7/24 Öncelikli" },
+  { label: "Mesajlaşma", free: "Temel", premium: "Aktif" },
+  { label: "Destek", free: "Standart", premium: "Öncelikli" },
 ];
 
 const FAQS = [
