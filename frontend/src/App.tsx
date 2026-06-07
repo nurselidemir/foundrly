@@ -1187,7 +1187,6 @@ function SiteFooter() {
           <div>
             <h3 className="text-lg font-bold text-white">Ürün</h3>
             <div className="mt-5 space-y-4 text-sm text-slate-300">
-              <a href="#premium" className="block transition hover:text-white">Premium</a>
               <a href="#pricing" className="block transition hover:text-white">Fiyatlandırma</a>
               <a href="#register" className="block transition hover:text-white">Kayıt Ol</a>
             </div>
