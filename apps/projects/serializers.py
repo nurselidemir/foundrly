@@ -12,6 +12,9 @@ class UserSummarySerializer(serializers.Serializer):
     is_verified_talent = serializers.BooleanField(read_only=True)
     is_premium = serializers.BooleanField(read_only=True)
     is_mentor = serializers.BooleanField(read_only=True)
+    mentor_credits = serializers.IntegerField(read_only=True)
+    mentor_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    mentor_balance = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     is_staff = serializers.BooleanField(read_only=True)
     is_superuser = serializers.BooleanField(read_only=True)
 
