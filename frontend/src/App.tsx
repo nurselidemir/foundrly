@@ -6711,6 +6711,11 @@ function MentorPanelView({
   feedback: string,
 }) {
   const [newPrice, setNewPrice] = useState(mentor?.mentor_price || 0);
+
+  useEffect(() => {
+    setNewPrice(Number(mentor?.mentor_price || 0));
+  }, [mentor?.mentor_price]);
+
   const sortedRequests = [...requests].sort((a, b) => {
     const statusPriority: Record<string, number> = {
       paid_reserved: 0,
@@ -6731,7 +6736,7 @@ function MentorPanelView({
     const accessToken = localStorage.getItem("foundrly_access_token");
     if (!accessToken) return;
     try {
-      await fetch(apiUrl("/api/users/me/"), {
+      const response = await fetch(apiUrl("/api/users/me/"), {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -6739,8 +6744,17 @@ function MentorPanelView({
         },
         body: JSON.stringify({ mentor_price: newPrice }),
       });
+      if (!response.ok) {
+        throw new Error("Ücret güncellenemedi.");
+      }
+
+      const updatedUser = await response.json();
+      localStorage.setItem("foundrly_current_user", JSON.stringify(updatedUser));
+      setNewPrice(Number(updatedUser.mentor_price || 0));
       alert("Ücretiniz güncellendi.");
-    } catch (e) {}
+    } catch (e) {
+      alert("Ücret güncellenirken bir sorun oluştu.");
+    }
   };
 
   return (
