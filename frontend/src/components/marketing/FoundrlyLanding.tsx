@@ -113,7 +113,6 @@ const pricing = [
       "YZ takım eşleşmesi",
       "Doğrulanmış yetenek iş akışı",
       "Premium görünürlük artışı",
-      "Gelişmiş filtreler",
       "Mentör erişimi",
     ],
     locked: [],
