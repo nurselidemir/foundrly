@@ -20,6 +20,31 @@ enum APIError: LocalizedError {
 struct APIClient {
     var baseURL = URL(string: "https://foundrly-backend-lamb.onrender.com")!
 
+    private func extractErrorMessage(from data: Data) -> String? {
+        if
+            let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        {
+            if let detail = json["detail"] as? String {
+                return detail
+            }
+
+            if let nonFieldErrors = json["non_field_errors"] as? [String], let first = nonFieldErrors.first {
+                return first
+            }
+
+            for value in json.values {
+                if let message = value as? String, !message.isEmpty {
+                    return message
+                }
+                if let messages = value as? [String], let first = messages.first, !first.isEmpty {
+                    return first
+                }
+            }
+        }
+
+        return nil
+    }
+
     func send<T: Decodable>(
         path: String,
         method: String = "GET",
@@ -77,11 +102,8 @@ struct APIClient {
             }
         }
 
-        if
-            let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-            let detail = json["detail"] as? String
-        {
-            throw APIError.server(detail)
+        if let message = extractErrorMessage(from: data) {
+            throw APIError.server(message)
         }
 
         throw APIError.server("İşlem tamamlanamadı.")
@@ -112,11 +134,8 @@ struct APIClient {
             throw APIError.invalidResponse
         }
         guard (200..<300).contains(httpResponse.statusCode) else {
-            if
-                let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                let detail = json["detail"] as? String
-            {
-                throw APIError.server(detail)
+            if let message = extractErrorMessage(from: data) {
+                throw APIError.server(message)
             }
             throw APIError.server("İşlem tamamlanamadı.")
         }
@@ -138,8 +157,8 @@ struct APIClient {
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else { throw APIError.invalidResponse }
         guard (200..<300).contains(httpResponse.statusCode) else {
-            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any], let detail = json["detail"] as? String {
-                throw APIError.server(detail)
+            if let message = extractErrorMessage(from: data) {
+                throw APIError.server(message)
             }
             throw APIError.server("İşlem tamamlanamadı.")
         }

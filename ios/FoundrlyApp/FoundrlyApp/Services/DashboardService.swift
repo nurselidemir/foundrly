@@ -23,6 +23,10 @@ struct DashboardService {
         try await client.send(path: "api/applications/?received=true", token: token)
     }
 
+    func loadSentApplications(token: String) async throws -> [TeamApplication] {
+        try await client.send(path: "api/applications/?mine=true", token: token)
+    }
+
     func updateApplicationStatus(token: String, applicationId: Int, status: String) async throws {
         let body = try JSONSerialization.data(withJSONObject: ["status": status])
         try await client.sendWithoutResponse(

@@ -10,6 +10,10 @@ struct DiscoverView: View {
         viewModel.projects.filter { $0.owner.id != session.currentUser?.id }
     }
 
+    func existingApplication(for projectId: Int) -> TeamApplication? {
+        viewModel.sentApplications.first(where: { $0.project == projectId })
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -106,12 +110,14 @@ struct DiscoverView: View {
                                                     selectedProjectId = nil
                                                 }
                                             }
+                                            .disabled(applyMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                                             .font(.caption.bold())
                                             .padding(.horizontal, 16)
                                             .padding(.vertical, 8)
                                             .background(FoundrlyTheme.primary)
                                             .foregroundStyle(.white)
                                             .clipShape(Capsule())
+                                            .opacity(applyMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.5 : 1)
 
                                             Button("Vazgeç") {
                                                 selectedProjectId = nil
@@ -126,15 +132,25 @@ struct DiscoverView: View {
                                         }
                                     } else {
                                         HStack(spacing: 12) {
-                                            Button("Hızlı Başvur") {
-                                                selectedProjectId = project.id
+                                            if let application = existingApplication(for: project.id) {
+                                                Text(application.status == "accepted" ? "Başvurun kabul edildi" : application.status == "rejected" ? "Başvurun reddedildi" : "Zaten başvurdun")
+                                                    .font(.caption.bold())
+                                                    .foregroundStyle(application.status == "accepted" ? FoundrlyTheme.accent : FoundrlyTheme.textSecondary)
+                                                    .padding(.horizontal, 16)
+                                                    .padding(.vertical, 8)
+                                                    .background(FoundrlyTheme.surfaceRaised)
+                                                    .clipShape(Capsule())
+                                            } else {
+                                                Button("Hızlı Başvur") {
+                                                    selectedProjectId = project.id
+                                                }
+                                                .font(.caption.bold())
+                                                .padding(.horizontal, 16)
+                                                .padding(.vertical, 8)
+                                                .background(FoundrlyTheme.primary)
+                                                .foregroundStyle(.white)
+                                                .clipShape(Capsule())
                                             }
-                                            .font(.caption.bold())
-                                            .padding(.horizontal, 16)
-                                            .padding(.vertical, 8)
-                                            .background(FoundrlyTheme.primary)
-                                            .foregroundStyle(.white)
-                                            .clipShape(Capsule())
 
                                             NavigationLink {
                                                 ProjectDetailView(project: project, viewModel: viewModel)

@@ -12,6 +12,10 @@ struct ProjectDetailView: View {
         project.owner.id == session.currentUser?.id
     }
 
+    var myApplication: TeamApplication? {
+        viewModel.sentApplications.first(where: { $0.project == project.id })
+    }
+
     var body: some View {
         ZStack {
             FoundrlyBackground()
@@ -264,18 +268,25 @@ struct ProjectDetailView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .foundrlyCard()
                     } else {
-                        // Apply button for non-owner
-                        Button {
-                            showApplySheet = true
-                        } label: {
-                            Text("Projeye Başvur")
-                                .font(.headline.weight(.bold))
-                                .foregroundStyle(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(FoundrlyTheme.primary)
-                                .clipShape(RoundedRectangle(cornerRadius: 16))
-                                .shadow(color: FoundrlyTheme.primary.opacity(0.3), radius: 10, y: 5)
+                        if let application = myApplication {
+                            Text(application.status == "accepted" ? "Bu projeye başvurun kabul edildi." : application.status == "rejected" ? "Bu projeye yaptığın başvuru reddedildi." : "Bu projeye zaten başvurdun.")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(application.status == "accepted" ? FoundrlyTheme.accent : FoundrlyTheme.textSecondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .foundrlyCard()
+                        } else {
+                            Button {
+                                showApplySheet = true
+                            } label: {
+                                Text("Projeye Başvur")
+                                    .font(.headline.weight(.bold))
+                                    .foregroundStyle(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                                    .background(FoundrlyTheme.primary)
+                                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                                    .shadow(color: FoundrlyTheme.primary.opacity(0.3), radius: 10, y: 5)
+                            }
                         }
                     }
                     
@@ -330,11 +341,13 @@ struct ProjectDetailView: View {
                                 applyMessage = ""
                             }
                         }
+                        .disabled(applyMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(FoundrlyTheme.primary)
                         .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .opacity(applyMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.5 : 1)
                     }
                 }
                 .padding(24)

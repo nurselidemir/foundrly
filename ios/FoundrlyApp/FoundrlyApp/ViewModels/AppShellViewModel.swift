@@ -8,6 +8,7 @@ final class AppShellViewModel: ObservableObject {
     @Published var recommendedProjects: [RecommendedProjectMatch] = []
     @Published var aiMatches: [CandidateMatch] = []
     @Published var receivedApplications: [TeamApplication] = []
+    @Published var sentApplications: [TeamApplication] = []
     @Published var mentors: [MentorSummary] = []
     @Published var mentorRequests: [MentorRequestSummary] = []
     @Published var events: [EventItem] = []
@@ -48,12 +49,14 @@ final class AppShellViewModel: ObservableObject {
             async let projectsTask = service.loadProjects(token: token)
             async let threadsTask = service.loadThreads(token: token)
             async let receivedTask = service.loadReceivedApplications(token: token)
+            async let sentTask = service.loadSentApplications(token: token)
 
-            let (summary, projects, threads, receivedApplications) = try await (summaryTask, projectsTask, threadsTask, receivedTask)
+            let (summary, projects, threads, receivedApplications, sentApplications) = try await (summaryTask, projectsTask, threadsTask, receivedTask, sentTask)
             self.summary = summary
             self.projects = projects
             self.threads = threads
             self.receivedApplications = receivedApplications
+            self.sentApplications = sentApplications
             if let first = threads.first {
                 self.selectedThread = try await service.loadThreadDetail(token: token, applicationId: first.application_id)
             }
